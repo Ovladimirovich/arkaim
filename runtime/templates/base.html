@@ -22,6 +22,7 @@
         <a href="/_ui/admin" {% if active == 'admin' %}class="active"{% endif %} id="navAdmin" style="display:none">Админ <span id="wsBadge" class="nav-badge" style="display:none"></span></a>
       </div>
       <div class="nav-user" id="navUser">
+        <button class="nav-theme-toggle" onclick="toggleTheme()" title="Переключить тему" id="themeToggle">🌙</button>
         <span id="navUserName"></span>
         <a href="/auth/logout" class="btn-outline btn-sm">Выйти</a>
       </div>

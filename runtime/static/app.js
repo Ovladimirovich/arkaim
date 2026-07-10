@@ -2,6 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   loadUser();
+  initTheme();
 
   const page = document.body.className;
   if (page === 'page-book') loadBookMeta();
@@ -11,6 +12,27 @@ document.addEventListener('DOMContentLoaded', () => {
   // WebSocket на всех страницах для персональных уведомлений
   connectWS();
 });
+
+// ── Theme ──────────────────────────
+
+function initTheme() {
+  const saved = localStorage.getItem('theme');
+  if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.body.classList.add('dark');
+    updateThemeIcon(true);
+  }
+}
+
+function toggleTheme() {
+  const isDark = document.body.classList.toggle('dark');
+  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  updateThemeIcon(isDark);
+}
+
+function updateThemeIcon(isDark) {
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = isDark ? '☀️' : '🌙';
+}
 
 // ── API helper ────────────────────────
 
