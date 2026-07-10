@@ -50,4 +50,6 @@ class LeadStore:
         return [dict(r) for r in await cursor.fetchall()]
 
     async def close(self):
+        if self._conn is not None:
+            await self._conn.close()
         self._conn = None

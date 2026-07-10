@@ -55,6 +55,8 @@ class UserStore:
             )
 
     async def close(self):
+        if self._conn is not None:
+            await self._conn.close()
         self._conn = None
 
     async def get_user_by_provider(self, provider: str, provider_user_id: str) -> dict | None:

@@ -96,4 +96,6 @@ class MemoryStore:
         return {"archived": len(rows)}
 
     async def close(self):
+        if self._conn is not None:
+            await self._conn.close()
         self._conn = None
