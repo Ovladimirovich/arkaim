@@ -221,8 +221,7 @@ async def lifespan(app: FastAPI):
                 await asyncio.sleep(60)
 
     _crowdfunding_task = asyncio.create_task(_crowdfunding_check_loop())
-    log.info("crowdfunding_scheduled interval=%ds enabled=%s",
-             cfg.get("check_interval", 3600), cfg.get("enabled", False))
+    log.info("crowdfunding_scheduled")
 
     yield
 
@@ -336,6 +335,10 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 from core.ui_routes import router as ui_router, configure_static
 configure_static(app)
 app.include_router(ui_router)
+
+# Auth routes
+from auth.routes import router as auth_router
+app.include_router(auth_router)
 
 # X-Ray dashboard (admin only, legacy)
 from fastapi.staticfiles import StaticFiles

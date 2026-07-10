@@ -1,38 +1,76 @@
 @echo off
 chcp 65001 >nul
-echo Stopping Arkaim server and freeing ports 8642 8188...
+echo ========================================
+echo   Arkaim Digital Consciousness
+echo   Server Shutdown
+echo ========================================
+echo.
 
-:: Kill python processes running uvicorn (our server)
-for /f "tokens=2 delims=," %%a in ('tasklist /fi "imagename eq python.exe" /fo csv /nh 2^>nul') do (
-    tasklist /fi "pid eq %%a" /fi "modules eq uvicorn" 2>nul | findstr /i "python" >nul && (
-        echo Killing python process %%a
-        taskkill /f /pid %%a >nul 2>&1
+:: ── Остановка по портам ──────────────────────────
+echo Checking ports...
+
+set "FOUND="
+for %%p in (8642 8080) do (
+    netstat -ano | findstr ":%%p " | findstr LISTENING >nul 2>&1
+    if not errorlevel 1 (
+        echo   Port %%p: in use
+        set "FOUND=1"
+    ) else (
+        echo   Port %%p: free
     )
 )
 
-:: Force kill any process on port 8642 (our server)
-for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":8642 " ^| findstr LISTENING') do (
-    echo Killing process %%a on port 8642
-    taskkill /f /pid %%a >nul 2>&1
+if not defined FOUND (
+    echo.
+    echo No Arkaim services running.
+    goto :end
 )
 
-:: Force kill any process on port 8188 (ComfyUI)
-for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":8188 " ^| findstr LISTENING') do (
-    echo Killing process %%a on port 8188
-    taskkill /f /pid %%a >nul 2>&1
+echo.
+set /p CONFIRM="Stop all Arkaim services? (Y/N): "
+if /i not "%CONFIRM%"=="Y" (
+    echo Cancelled.
+    goto :end
 )
 
-:: Kill all remaining python.exe processes (safety net)
-taskkill /f /im python.exe >nul 2>&1
+echo.
+echo Stopping services...
 
+:: ── Остановка по имени окна (безопасно) ──────────
+taskkill /fi "WINDOWTITLE eq Hermes Core*" /f >nul 2>&1 && echo   [OK] Core stopped || echo   [--] Core not found
+taskkill /fi "WINDOWTITLE eq Hermes Gateway*" /f >nul 2>&1 && echo   [OK] Gateway stopped || echo   [--] Gateway not found
+taskkill /fi "WINDOWTITLE eq Hermes Telegram*" /f >nul 2>&1 && echo   [OK] Telegram Bot stopped || echo   [--] Telegram Bot not found
+
+:: ── Остановка uvicorn по портам (если окно не найдено) ──
+echo.
+echo Freeing ports...
+
+for %%p in (8642 8080) do (
+    for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":%%p " ^| findstr LISTENING 2^>nul') do (
+        if not "%%a"=="0" (
+            echo   Killing PID %%a on port %%p
+            taskkill /f /pid %%a >nul 2>&1
+        )
+    )
+)
+
+:: ── Проверка ─────────────────────────────────────
+echo.
 timeout /t 2 /nobreak >nul
 
-:: Verify
-set "BUSY="
-netstat -ano | findstr ":8642 " | findstr LISTENING >nul && set BUSY=1
-netstat -ano | findstr ":8188 " | findstr LISTENING >nul && set BUSY=1
-if defined BUSY (
-    echo WARNING: Some ports still in use. Run again.
+set "STILL_BUSY="
+netstat -ano | findstr ":8642 " | findstr LISTENING >nul 2>&1 && set STILL_BUSY=1
+netstat -ano | findstr ":8080 " | findstr LISTENING >nul 2>&1 && set STILL_BUSY=1
+
+if defined STILL_BUSY (
+    echo WARNING: Some ports still in use.
+    echo   Run 'netstat -ano ^| findstr ":8642"' to check.
 ) else (
-    echo Ports 8642 and 8188 are free.
+    echo All ports free.
 )
+
+:end
+echo.
+echo ========================================
+echo   Done.
+echo ========================================
