@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (page === 'page-about') loadAbout();
   if (page === 'page-profile') loadProfile();
   if (page === 'page-admin') connectWS();
+  if (page === 'page-history') loadHistory();
 });
 
 // ── API helper ────────────────────────
@@ -461,4 +462,85 @@ function showToast(message, type = 'info') {
     toast.classList.remove('show');
     setTimeout(() => toast.remove(), 300);
   }, 4000);
+}
+
+// ── History page ─────────────────────
+
+async function loadHistory() {
+  const sessionId = document.getElementById('sessionFilter')?.value || '';
+  const statsEl = document.getElementById('historyStats');
+  const listEl = document.getElementById('historyList');
+  const filterEl = document.getElementById('sessionFilter');
+
+  // Load stats
+  const stats = await api('/book/reader/history/stats').catch(() => null);
+  if (statsEl && stats) {
+    statsEl.innerHTML = `
+      <span class="stat-item">Вопросов: ${stats.questions || 0}</span>
+      <span class="stat-item">Сессий: ${stats.sessions || 0}</span>
+      ${stats.last_active ? `<span class="stat-item">Последняя: ${new Date(stats.last_active).toLocaleString('ru')}</span>` : ''}
+    `;
+  }
+
+  // Load sessions for filter
+  if (filterEl && filterEl.options.length <= 1) {
+    const sessions = await api('/book/reader/history/sessions').catch(() => ({ data: [] }));
+    for (const sid of (sessions.data || [])) {
+      const opt = document.createElement('option');
+      opt.value = sid;
+      opt.textContent = sid.slice(0, 20) + '...';
+      filterEl.appendChild(opt);
+    }
+  }
+
+  // Load history
+  if (!listEl) return;
+  const url = sessionId
+    ? `/book/reader/history/full?session_id=${encodeURIComponent(sessionId)}&limit=100`
+    : '/book/reader/history?limit=50';
+  const data = await api(url).catch(() => ({ data: [] }));
+  const items = data.data || [];
+
+  if (!items.length) {
+    listEl.innerHTML = '<div class="empty-state"><p>Нет истории вопросов</p><p>Задайте вопрос в чате, и он появится здесь.</p></div>';
+    return;
+  }
+
+  if (sessionId) {
+    // Full conversation view
+    listEl.innerHTML = items.map(m => `
+      <div class="history-item" style="border-left: 3px solid ${m.role === 'user' ? '#3b82f6' : '#10b981'};">
+        <div class="history-item-header">
+          <strong>${m.role === 'user' ? 'Вы' : 'Книга'}</strong>
+          <span class="history-item-date">${m.created_at ? new Date(m.created_at).toLocaleString('ru') : ''}</span>
+        </div>
+        <div class="history-item-content">${escapeHtml(m.content)}</div>
+      </div>
+    `).join('');
+  } else {
+    // Questions list
+    listEl.innerHTML = items.map(q => `
+      <div class="history-item" onclick="viewSession('${q.session_id}')" style="cursor:pointer;">
+        <div class="history-item-header">
+          <div class="history-item-content">${escapeHtml(q.content)}</div>
+          <span class="history-item-date">${q.created_at ? new Date(q.created_at).toLocaleString('ru') : ''}</span>
+        </div>
+        <div class="history-item-session">Сессия: ${q.session_id.slice(0, 16)}...</div>
+      </div>
+    `).join('');
+  }
+}
+
+function viewSession(sessionId) {
+  const filter = document.getElementById('sessionFilter');
+  if (filter) {
+    filter.value = sessionId;
+    loadHistory();
+  }
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }

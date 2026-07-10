@@ -21,16 +21,17 @@ class MemoryStore:
             return
         db_manager = get_db_manager()
         self._conn = await db_manager.get_connection(db_path=self._db_path)
-        # Ручное создание таблиц (нет отдельной папки миграций)
         await self._conn.executescript("""
             CREATE TABLE IF NOT EXISTS conversations (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 session_id TEXT NOT NULL,
+                user_id TEXT DEFAULT '',
                 role TEXT NOT NULL,
                 content TEXT NOT NULL,
                 created_at TEXT NOT NULL
             );
             CREATE INDEX IF NOT EXISTS idx_memory_session ON conversations (session_id, created_at);
+            CREATE INDEX IF NOT EXISTS idx_memory_user ON conversations (user_id, created_at);
         """)
 
     async def retrieve(self, query: str, session_id: str | None = None) -> list[dict]:
@@ -44,14 +45,14 @@ class MemoryStore:
         rows = await cursor.fetchall()
         return [{"role": r["role"], "content": r["content"]} for r in reversed(rows)]
 
-    async def store(self, messages: list[dict], response: str, session_id: str | None = None):
+    async def store(self, messages: list[dict], response: str, session_id: str | None = None, user_id: str = ""):
         await self._ensure_db()
         now = datetime.now(tz=timezone.utc).isoformat()
         sid = session_id or "default"
-        rows = [(sid, m["role"], m["content"], now) for m in messages[-4:]]
-        rows.append((sid, "assistant", response if isinstance(response, str) else str(response), now))
+        rows = [(sid, user_id, m["role"], m["content"], now) for m in messages[-4:]]
+        rows.append((sid, user_id, "assistant", response if isinstance(response, str) else str(response), now))
         await self._conn.executemany(
-            "INSERT INTO conversations (session_id, role, content, created_at) VALUES (?, ?, ?, ?)", rows
+            "INSERT INTO conversations (session_id, user_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)", rows
         )
         await self._conn.commit()
 
@@ -99,3 +100,73 @@ class MemoryStore:
         if self._conn is not None:
             await self._conn.close()
         self._conn = None
+
+    # ── User history ──────────────────────────────────
+
+    async def get_user_history(self, user_id: str, limit: int = 50) -> list[dict]:
+        """Получить историю вопросов пользователя."""
+        await self._ensure_db()
+        if not user_id:
+            return []
+        cursor = await self._conn.execute(
+            "SELECT id, session_id, role, content, created_at "
+            "FROM conversations WHERE user_id = ? AND role = 'user' "
+            "ORDER BY created_at DESC LIMIT ?",
+            (user_id, limit),
+        )
+        rows = await cursor.fetchall()
+        return [{"id": r["id"], "session_id": r["session_id"], "content": r["content"],
+                 "created_at": r["created_at"]} for r in rows]
+
+    async def get_user_history_full(self, user_id: str, session_id: str | None = None, limit: int = 100) -> list[dict]:
+        """Получить полную историю (user + assistant) для пользователя."""
+        await self._ensure_db()
+        if not user_id:
+            return []
+        if session_id:
+            cursor = await self._conn.execute(
+                "SELECT role, content, created_at FROM conversations "
+                "WHERE user_id = ? AND session_id = ? ORDER BY created_at ASC LIMIT ?",
+                (user_id, session_id, limit),
+            )
+        else:
+            cursor = await self._conn.execute(
+                "SELECT role, content, created_at FROM conversations "
+                "WHERE user_id = ? ORDER BY created_at ASC LIMIT ?",
+                (user_id, limit),
+            )
+        rows = await cursor.fetchall()
+        return [{"role": r["role"], "content": r["content"], "created_at": r["created_at"]} for r in rows]
+
+    async def get_user_sessions(self, user_id: str) -> list[str]:
+        """Получить список session_id для пользователя."""
+        await self._ensure_db()
+        if not user_id:
+            return []
+        cursor = await self._conn.execute(
+            "SELECT DISTINCT session_id FROM conversations WHERE user_id = ? ORDER BY MAX(created_at) DESC",
+            (user_id,),
+        )
+        return [r["session_id"] for r in await cursor.fetchall()]
+
+    async def get_user_stats(self, user_id: str) -> dict:
+        """Статистика пользователя: количество вопросов, сессий, последняя активность."""
+        await self._ensure_db()
+        if not user_id:
+            return {"questions": 0, "sessions": 0, "last_active": None}
+        cursor = await self._conn.execute(
+            "SELECT COUNT(*) as cnt FROM conversations WHERE user_id = ? AND role = 'user'",
+            (user_id,),
+        )
+        questions = (await cursor.fetchone())["cnt"]
+        cursor = await self._conn.execute(
+            "SELECT COUNT(DISTINCT session_id) as cnt FROM conversations WHERE user_id = ?",
+            (user_id,),
+        )
+        sessions = (await cursor.fetchone())["cnt"]
+        cursor = await self._conn.execute(
+            "SELECT MAX(created_at) as last FROM conversations WHERE user_id = ?",
+            (user_id,),
+        )
+        last = (await cursor.fetchone())["last"]
+        return {"questions": questions, "sessions": sessions, "last_active": last}

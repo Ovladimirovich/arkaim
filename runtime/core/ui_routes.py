@@ -88,6 +88,12 @@ async def crowdfunding_page(request: Request, user: dict = Depends(get_current_u
     })
 
 
+@router.get("/history", response_class=HTMLResponse)
+async def history_page(request: Request, user: dict = Depends(get_current_user)):
+    """Страница истории вопросов."""
+    return templates.TemplateResponse("history.html", {"request": request, "active": "history"})
+
+
 def _get_pulse_from_import():
     """Импортировать Pulse без Depends (для шаблонов)."""
     import sys

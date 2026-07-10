@@ -40,3 +40,58 @@ async def reader_context(request: Request, reader_memory=Depends(get_reader_memo
 async def reader_stats(reader_memory=Depends(get_reader_memory)):
     stats = await reader_memory.get_stats()
     return ReaderStatsResponse(**stats)
+
+
+# ── History endpoints ────────────────────────────────
+
+
+@router.get("/history", dependencies=[Depends(require_role("reader"))])
+async def reader_history(request: Request, limit: int = 50):
+    """История вопросов текущего пользователя."""
+    from memory.store import MemoryStore
+    user = await get_current_user(request)
+    store = MemoryStore()
+    try:
+        history = await store.get_user_history(user["user_id"], limit=limit)
+        return {"ok": True, "data": history, "total": len(history)}
+    finally:
+        await store.close()
+
+
+@router.get("/history/full", dependencies=[Depends(require_role("reader"))])
+async def reader_history_full(request: Request, session_id: str | None = None, limit: int = 100):
+    """Полная история (user + assistant) для текущего пользователя."""
+    from memory.store import MemoryStore
+    user = await get_current_user(request)
+    store = MemoryStore()
+    try:
+        history = await store.get_user_history_full(user["user_id"], session_id=session_id, limit=limit)
+        return {"ok": True, "data": history, "total": len(history)}
+    finally:
+        await store.close()
+
+
+@router.get("/history/sessions", dependencies=[Depends(require_role("reader"))])
+async def reader_sessions(request: Request):
+    """Список сессий пользователя."""
+    from memory.store import MemoryStore
+    user = await get_current_user(request)
+    store = MemoryStore()
+    try:
+        sessions = await store.get_user_sessions(user["user_id"])
+        return {"ok": True, "data": sessions}
+    finally:
+        await store.close()
+
+
+@router.get("/history/stats", dependencies=[Depends(require_role("reader"))])
+async def reader_history_stats(request: Request):
+    """Статистика истории пользователя."""
+    from memory.store import MemoryStore
+    user = await get_current_user(request)
+    store = MemoryStore()
+    try:
+        stats = await store.get_user_stats(user["user_id"])
+        return {"ok": True, **stats}
+    finally:
+        await store.close()

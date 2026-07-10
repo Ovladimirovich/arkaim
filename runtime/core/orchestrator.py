@@ -82,7 +82,7 @@ class Orchestrator:
                 contexts.append(result.context)
 
         if final_response is not None:
-            await self.memory.store(req["messages"], final_response, session_id=session_id)
+            await self.memory.store(req["messages"], final_response, session_id=session_id, user_id=user.get("sub", ""))
             metrics.increment("memory_store")
             orch_span.end()
             trace.end()
@@ -162,7 +162,7 @@ class Orchestrator:
                 except Exception as exc:
                     log.warning("skill_post_process_error name=%s trace_id=%s error=%s", skill.name, trace_id, exc)
 
-            await self.memory.store(req["messages"], safe_response, session_id=session_id)
+            await self.memory.store(req["messages"], safe_response, session_id=session_id, user_id=user.get("sub", ""))
             metrics.increment("memory_store")
             metrics.increment("chat_ok")
             total_latency = (time.time() - t0) * 1000
@@ -244,7 +244,7 @@ class Orchestrator:
                     safe_text = await skill.post_process(safe_text, ctx)
                 except Exception:
                     pass
-            await self.memory.store(req["messages"], safe_text, session_id=session_id)
+            await self.memory.store(req["messages"], safe_text, session_id=session_id, user_id=user.get("sub", ""))
             metrics.increment("memory_store")
             metrics.increment("chat_ok")
             total_latency = (time.time() - t0) * 1000
