@@ -201,3 +201,38 @@ class UserStore:
         now = datetime.now(tz=timezone.utc).isoformat()
         await self._conn.execute("UPDATE api_keys SET last_used_at = ? WHERE id = ?", (now, key_id))
         await self._conn.commit()
+
+    # ── Admin methods ─────────────────────────────────
+
+    async def delete_user_sessions(self, user_id: str) -> int:
+        """Удалить все сессии пользователя."""
+        await self._ensure_db()
+        cursor = await self._conn.execute("DELETE FROM sessions WHERE user_id = ?", (user_id,))
+        await self._conn.commit()
+        return cursor.rowcount
+
+    async def delete_user_api_keys(self, user_id: str) -> int:
+        """Удалить все API-ключи пользователя."""
+        await self._ensure_db()
+        cursor = await self._conn.execute("DELETE FROM api_keys WHERE user_id = ?", (user_id,))
+        await self._conn.commit()
+        return cursor.rowcount
+
+    async def list_sessions(self, limit: int = 200) -> list[dict]:
+        """Список всех сессий."""
+        await self._ensure_db()
+        cursor = await self._conn.execute(
+            "SELECT id, user_id, expires_at, created_at FROM sessions ORDER BY created_at DESC LIMIT ?",
+            (limit,),
+        )
+        return [dict(row) for row in await cursor.fetchall()]
+
+    async def list_all_api_keys(self, limit: int = 200) -> list[dict]:
+        """Список всех API-ключей."""
+        await self._ensure_db()
+        cursor = await self._conn.execute(
+            "SELECT id, user_id, key_prefix, name, last_used_at, is_active, created_at "
+            "FROM api_keys ORDER BY created_at DESC LIMIT ?",
+            (limit,),
+        )
+        return [dict(row) for row in await cursor.fetchall()]

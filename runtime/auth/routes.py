@@ -237,3 +237,99 @@ async def _get_reader_stats():
         return await mem.get_stats()
     except Exception:
         return {}
+
+
+# ── Admin CRUD: пользователи ─────────────────────────
+
+
+@router.get("/admin/users/{user_id}", dependencies=[Depends(require_role("admin"))])
+async def admin_get_user(user_id: str):
+    """Получить детали пользователя."""
+    user = await user_store.get_user(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    return {
+        "id": user["id"],
+        "provider": user["provider"],
+        "provider_user_id": user["provider_user_id"],
+        "username": user["username"],
+        "display_name": user["display_name"],
+        "role": user["role"],
+        "is_active": user["is_active"],
+        "created_at": user["created_at"],
+        "updated_at": user["updated_at"],
+    }
+
+
+@router.delete("/admin/users/{user_id}", dependencies=[Depends(require_role("admin"))])
+async def admin_delete_user(user_id: str):
+    """Удалить пользователя и все связанные данные (сессии, API-ключи)."""
+    user = await user_store.get_user(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    # Удаляем сессии и API-ключи пользователя
+    await user_store.delete_user_sessions(user_id)
+    await user_store.delete_user_api_keys(user_id)
+    # Деактивируем пользователя (мягкое удаление)
+    await user_store.set_active(user_id, False)
+    log.info("admin_user_deleted user_id=%s by admin", user_id)
+    return {"ok": True, "user_id": user_id}
+
+
+# ── Admin CRUD: сессии ───────────────────────────────
+
+
+@router.get("/admin/sessions", dependencies=[Depends(require_role("admin"))])
+async def admin_list_sessions():
+    """Список всех активных сессий."""
+    sessions = await user_store.list_sessions()
+    return [
+        {
+            "id": s["id"],
+            "user_id": s["user_id"],
+            "expires_at": s["expires_at"],
+            "created_at": s["created_at"],
+        }
+        for s in sessions
+    ]
+
+
+@router.delete("/admin/sessions/{session_id}", dependencies=[Depends(require_role("admin"))])
+async def admin_delete_session(session_id: str):
+    """Отозвать сессию."""
+    ok = await user_store.delete_session(session_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Сессия не найдена")
+    log.info("admin_session_revoked session_id=%s", session_id)
+    return {"ok": True, "session_id": session_id}
+
+
+# ── Admin CRUD: API-ключи ────────────────────────────
+
+
+@router.get("/admin/api-keys", dependencies=[Depends(require_role("admin"))])
+async def admin_list_api_keys():
+    """Список всех API-ключей."""
+    keys = await user_store.list_all_api_keys()
+    return [
+        {
+            "id": k["id"],
+            "user_id": k["user_id"],
+            "key_prefix": k["key_prefix"],
+            "name": k["name"],
+            "last_used_at": k["last_used_at"],
+            "is_active": k["is_active"],
+            "created_at": k["created_at"],
+        }
+        for k in keys
+    ]
+
+
+@router.delete("/admin/api-keys/{key_id}", dependencies=[Depends(require_role("admin"))])
+async def admin_delete_api_key(key_id: str):
+    """Отозвать API-ключ."""
+    ok = await user_store.revoke_api_key(key_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="API-ключ не найден")
+    log.info("admin_api_key_revoked key_id=%s", key_id)
+    return {"ok": True, "key_id": key_id}

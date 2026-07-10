@@ -134,6 +134,8 @@ async function loadProfile() {
 
 async function loadAdmin() {
   loadUsers();
+  loadSessions();
+  loadApiKeys();
   loadSuggestions();
   loadAdminStats();
 }
@@ -153,7 +155,11 @@ async function loadUsers() {
       ${['reader','editor','admin'].map(r => `<option ${r === u.role ? 'selected' : ''}>${r}</option>`).join('')}
     </select></td>
     <td>${u.is_active ? '✅' : '⛔'}</td>
-    <td><button class="btn btn-sm ${u.is_active ? 'btn-outline' : 'btn-primary'}" onclick="toggleUser('${u.id}')">${u.is_active ? 'Деакт.' : 'Акт.'}</button></td>
+    <td>
+      <button class="btn-sm" onclick="viewUser('${u.id}')" title="Просмотр">👁</button>
+      <button class="btn btn-sm ${u.is_active ? 'btn-outline' : 'btn-primary'}" onclick="toggleUser('${u.id}')">${u.is_active ? 'Деакт.' : 'Акт.'}</button>
+      <button class="btn-danger" onclick="deleteUser('${u.id}')" title="Удалить">🗑</button>
+    </td>
   </tr>`).join('');
 }
 
@@ -164,6 +170,81 @@ async function changeRole(userId, role) {
 async function toggleUser(userId) {
   await api(`/auth/admin/users/${userId}/toggle`, { method: 'POST' });
   loadUsers();
+}
+
+async function viewUser(userId) {
+  const data = await api(`/auth/admin/users/${userId}`).catch(() => null);
+  if (!data) return;
+  const modal = document.getElementById('userModal');
+  const details = document.getElementById('modalUserDetails');
+  const nameEl = document.getElementById('modalUserName');
+  nameEl.textContent = data.display_name || data.username || data.id;
+  details.innerHTML = `
+    <p><strong>ID:</strong> ${data.id}</p>
+    <p><strong>Провайдер:</strong> ${data.provider} (${data.provider_user_id})</p>
+    <p><strong>Имя:</strong> ${data.username || '—'}</p>
+    <p><strong>Отображаемое имя:</strong> ${data.display_name || '—'}</p>
+    <p><strong>Роль:</strong> ${data.role}</p>
+    <p><strong>Статус:</strong> ${data.is_active ? '✅ Активен' : '⛔ Заблокирован'}</p>
+    <p><strong>Создан:</strong> ${data.created_at || '—'}</p>
+    <p><strong>Обновлён:</strong> ${data.updated_at || '—'}</p>
+  `;
+  modal.style.display = 'flex';
+}
+
+function closeUserModal() {
+  document.getElementById('userModal').style.display = 'none';
+}
+
+async function deleteUser(userId) {
+  if (!confirm('Удалить пользователя и все его данные? Это действие необратимо.')) return;
+  await api(`/auth/admin/users/${userId}`, { method: 'DELETE' });
+  loadUsers();
+}
+
+async function loadSessions() {
+  const data = await api('/auth/admin/sessions').catch(() => []);
+  const tbody = document.getElementById('sessionsBody');
+  const count = document.getElementById('sessionCount');
+  if (count) count.textContent = data.length + ' шт.';
+  if (!tbody) return;
+  if (!data.length) { tbody.innerHTML = '<tr><td colspan="5">Нет активных сессий</td></tr>'; return; }
+  tbody.innerHTML = data.map(s => `<tr>
+    <td class="cell-id">${s.id.slice(0, 12)}..</td>
+    <td>${s.user_id.slice(0, 8)}..</td>
+    <td>${s.expires_at ? new Date(s.expires_at).toLocaleString('ru') : '—'}</td>
+    <td>${s.created_at ? new Date(s.created_at).toLocaleString('ru') : '—'}</td>
+    <td><button class="btn-danger" onclick="deleteSession('${s.id}')">Отозвать</button></td>
+  </tr>`).join('');
+}
+
+async function deleteSession(sessionId) {
+  if (!confirm('Отозвать эту сессию?')) return;
+  await api(`/auth/admin/sessions/${sessionId}`, { method: 'DELETE' });
+  loadSessions();
+}
+
+async function loadApiKeys() {
+  const data = await api('/auth/admin/api-keys').catch(() => []);
+  const tbody = document.getElementById('apiKeysBody');
+  const count = document.getElementById('apiKeyCount');
+  if (count) count.textContent = data.length + ' шт.';
+  if (!tbody) return;
+  if (!data.length) { tbody.innerHTML = '<tr><td colspan="6">Нет API-ключей</td></tr>'; return; }
+  tbody.innerHTML = data.map(k => `<tr>
+    <td>${k.key_prefix}...</td>
+    <td>${k.name || '—'}</td>
+    <td>${k.user_id.slice(0, 8)}..</td>
+    <td>${k.last_used_at ? new Date(k.last_used_at).toLocaleString('ru') : 'Никогда'}</td>
+    <td class="${k.is_active ? 'status-active' : 'status-inactive'}">${k.is_active ? 'Активен' : 'Отозван'}</td>
+    <td>${k.is_active ? `<button class="btn-danger" onclick="deleteApiKey('${k.id}')">Отозвать</button>` : '—'}</td>
+  </tr>`).join('');
+}
+
+async function deleteApiKey(keyId) {
+  if (!confirm('Отозвать этот API-ключ?')) return;
+  await api(`/auth/admin/api-keys/${keyId}`, { method: 'DELETE' });
+  loadApiKeys();
 }
 
 async function loadSuggestions() {
@@ -198,14 +279,19 @@ async function rejectSuggestion(id) {
 
 async function loadAdminStats() {
   const el = document.getElementById('statsGrid');
-  const data = await api('/auth/admin/stats').catch(() => null);
+  const [data, sessions, apiKeys] = await Promise.all([
+    api('/auth/admin/stats').catch(() => null),
+    api('/auth/admin/sessions').catch(() => []),
+    api('/auth/admin/api-keys').catch(() => []),
+  ]);
   if (!el || !data) { if (el) el.innerHTML = '<p class="text-muted">Ошибка загрузки</p>'; return; }
   el.innerHTML = `
     <div class="stat-card"><div class="stat-value">${data.users?.total || 0}</div><div class="stat-label">Пользователей</div></div>
     <div class="stat-card"><div class="stat-value">${data.users?.by_role?.reader || 0}</div><div class="stat-label">Читателей</div></div>
     <div class="stat-card"><div class="stat-value">${data.users?.by_role?.editor || 0}</div><div class="stat-label">Редакторов</div></div>
+    <div class="stat-card"><div class="stat-value">${sessions.length}</div><div class="stat-label">Активных сессий</div></div>
+    <div class="stat-card"><div class="stat-value">${apiKeys.filter(k => k.is_active).length}</div><div class="stat-label">API-ключей</div></div>
     <div class="stat-card"><div class="stat-value">${data.presence?.pending_suggestions || 0}</div><div class="stat-label">Предложений</div></div>
-    <div class="stat-card"><div class="stat-value">${data.email?.subscribers || 0}</div><div class="stat-label">Подписчиков</div></div>
   `;
 }
 
@@ -229,6 +315,12 @@ function switchTab(name) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name)?.classList.add('active');
   document.querySelector(`.tab-btn[onclick*="'${name}'"]`)?.classList.add('active');
+  // Обновить данные при переключении вкладки
+  if (name === 'users') loadUsers();
+  if (name === 'sessions') loadSessions();
+  if (name === 'apikeys') loadApiKeys();
+  if (name === 'suggestions') loadSuggestions();
+  if (name === 'stats') loadAdminStats();
 }
 
 document.getElementById('subscribeForm')?.addEventListener('submit', async (e) => {
