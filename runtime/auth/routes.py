@@ -333,3 +333,82 @@ async def admin_delete_api_key(key_id: str):
         raise HTTPException(status_code=404, detail="API-ключ не найден")
     log.info("admin_api_key_revoked key_id=%s", key_id)
     return {"ok": True, "key_id": key_id}
+
+
+# ── Invite endpoints ────────────────────────────────
+
+
+@router.post("/admin/invites", dependencies=[Depends(require_role("admin"))])
+async def admin_create_invite(request: Request, role: str = "reader", max_uses: int = 1,
+                               expires_at: str | None = None, note: str = ""):
+    """Создать инвайт-ссылку."""
+    from auth.rbac import get_current_user
+    user = await get_current_user(request)
+    if role not in ("reader", "editor", "admin"):
+        raise HTTPException(status_code=400, detail="Недопустимая роль")
+    if max_uses < 1 or max_uses > 100:
+        raise HTTPException(status_code=400, detail="max_uses должен быть от 1 до 100")
+    invite = await user_store.create_invite(
+        created_by=user["user_id"], role=role, max_uses=max_uses,
+        expires_at=expires_at, note=note,
+    )
+    base_url = settings.PUBLIC_BASE_URL or "http://localhost:8642"
+    invite_url = f"{base_url}/auth/invite/{invite['token']}"
+    log.info("admin_invite_created invite_id=%s role=%s by=%s", invite["id"], role, user["user_id"])
+    return {"ok": True, "invite": invite, "url": invite_url}
+
+
+@router.get("/admin/invites", dependencies=[Depends(require_role("admin"))])
+async def admin_list_invites():
+    """Список всех инвайтов."""
+    invites = await user_store.list_invites()
+    base_url = settings.PUBLIC_BASE_URL or "http://localhost:8642"
+    for inv in invites:
+        inv["url"] = f"{base_url}/auth/invite/{inv['token']}"
+    return invites
+
+
+@router.delete("/admin/invites/{invite_id}", dependencies=[Depends(require_role("admin"))])
+async def admin_delete_invite(invite_id: str):
+    """Деактивировать инвайт."""
+    ok = await user_store.revoke_invite(invite_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Инвайт не найден")
+    log.info("admin_invite_revoked invite_id=%s", invite_id)
+    return {"ok": True, "invite_id": invite_id}
+
+
+@router.get("/invite/{token}")
+async def accept_invite_page(request: Request, token: str):
+    """Страница принятия инвайта."""
+    invite = await user_store.get_invite_by_token(token)
+    if not invite:
+        return Response(content="<h2>Инвайт недействителен или уже использован</h2>", media_type="text/html")
+    return Response(content=f"""
+    <html><head><title>Приглашение</title></head>
+    <body style="font-family:sans-serif;text-align:center;padding:50px;">
+    <h2>Вы приглашены в «Наследие Аркаима»</h2>
+    <p>Роль: <b>{invite['role']}</b></p>
+    <p>Осталось использований: {invite['max_uses'] - invite['use_count']}</p>
+    <a href="/auth/login" style="display:inline-block;padding:12px 24px;background:#3b82f6;color:white;text-decoration:none;border-radius:8px;">Войти через Telegram</a>
+    <br><br>
+    <a href="/auth/google" style="display:inline-block;padding:12px 24px;background:#ef4444;color:white;text-decoration:none;border-radius:8px;">Войти через Google</a>
+    </body></html>
+    """, media_type="text/html")
+
+
+@router.post("/invite/{token}/accept")
+async def accept_invite(token: str, request: Request):
+    """Применить инвайт к текущему пользователю."""
+    from auth.rbac import get_current_user
+    try:
+        user = await get_current_user(request)
+    except HTTPException:
+        raise HTTPException(status_code=401, detail="Войдите в систему для принятия приглашения")
+    invite = await user_store.use_invite(token)
+    if not invite:
+        raise HTTPException(status_code=400, detail="Инвайт недействителен, истёк или уже использован")
+    # Обновляем роль пользователя
+    await user_store.set_role(user["user_id"], invite["role"])
+    log.info("invite_accepted user_id=%s role=%s invite_id=%s", user["user_id"], invite["role"], invite["id"])
+    return {"ok": True, "role": invite["role"]}

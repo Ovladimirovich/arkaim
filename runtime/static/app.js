@@ -134,6 +134,7 @@ async function loadProfile() {
 
 async function loadAdmin() {
   loadUsers();
+  loadInvites();
   loadSessions();
   loadApiKeys();
   loadSuggestions();
@@ -200,6 +201,56 @@ async function deleteUser(userId) {
   if (!confirm('Удалить пользователя и все его данные? Это действие необратимо.')) return;
   await api(`/auth/admin/users/${userId}`, { method: 'DELETE' });
   loadUsers();
+}
+
+// ── Invites ──────────────────────────
+
+function showCreateInvite() {
+  document.getElementById('createInviteForm').style.display = 'block';
+}
+
+async function createInvite() {
+  const role = document.getElementById('inviteRole').value;
+  const maxUses = document.getElementById('inviteMaxUses').value;
+  const note = document.getElementById('inviteNote').value;
+  const data = await api(`/auth/admin/invites?role=${role}&max_uses=${maxUses}&note=${encodeURIComponent(note)}`, { method: 'POST' });
+  if (data?.ok) {
+    // Копировать ссылку в буфер обмена
+    const url = data.url;
+    try { await navigator.clipboard.writeText(url); alert('Ссылка скопирована:\n' + url); } catch { alert('Ссылка:\n' + url); }
+    document.getElementById('createInviteForm').style.display = 'none';
+    loadInvites();
+  }
+}
+
+async function loadInvites() {
+  const data = await api('/auth/admin/invites').catch(() => []);
+  const tbody = document.getElementById('invitesBody');
+  const count = document.getElementById('inviteCount');
+  if (count) count.textContent = data.length + ' шт.';
+  if (!tbody) return;
+  if (!data.length) { tbody.innerHTML = '<tr><td colspan="7">Нет инвайтов</td></tr>'; return; }
+  tbody.innerHTML = data.map(inv => {
+    const isActive = inv.is_active && inv.use_count < inv.max_uses;
+    const expired = inv.expires_at && new Date(inv.expires_at) < new Date();
+    const status = expired ? '⏰ Истёк' : isActive ? '✅ Активен' : '⛔ Использован';
+    return `<tr>
+      <td><code style="font-size:0.75rem;word-break:break-all;">${inv.url || inv.token.slice(0, 20) + '...'}</code>
+        <button class="btn-sm" onclick="navigator.clipboard.writeText('${inv.url || ''}').then(()=>alert('Скопировано'))" title="Копировать">📋</button></td>
+      <td>${inv.role}</td>
+      <td>${inv.use_count} / ${inv.max_uses}</td>
+      <td>${inv.expires_at ? new Date(inv.expires_at).toLocaleString('ru') : 'Бессрочно'}</td>
+      <td>${inv.note || '—'}</td>
+      <td>${status}</td>
+      <td><button class="btn-danger" onclick="deleteInvite('${inv.id}')">Удалить</button></td>
+    </tr>`;
+  }).join('');
+}
+
+async function deleteInvite(inviteId) {
+  if (!confirm('Удалить инвайт?')) return;
+  await api(`/auth/admin/invites/${inviteId}`, { method: 'DELETE' });
+  loadInvites();
 }
 
 async function loadSessions() {
@@ -279,16 +330,19 @@ async function rejectSuggestion(id) {
 
 async function loadAdminStats() {
   const el = document.getElementById('statsGrid');
-  const [data, sessions, apiKeys] = await Promise.all([
+  const [data, sessions, apiKeys, invites] = await Promise.all([
     api('/auth/admin/stats').catch(() => null),
     api('/auth/admin/sessions').catch(() => []),
     api('/auth/admin/api-keys').catch(() => []),
+    api('/auth/admin/invites').catch(() => []),
   ]);
   if (!el || !data) { if (el) el.innerHTML = '<p class="text-muted">Ошибка загрузки</p>'; return; }
+  const activeInvites = invites.filter(i => i.is_active && i.use_count < i.max_uses).length;
   el.innerHTML = `
     <div class="stat-card"><div class="stat-value">${data.users?.total || 0}</div><div class="stat-label">Пользователей</div></div>
     <div class="stat-card"><div class="stat-value">${data.users?.by_role?.reader || 0}</div><div class="stat-label">Читателей</div></div>
     <div class="stat-card"><div class="stat-value">${data.users?.by_role?.editor || 0}</div><div class="stat-label">Редакторов</div></div>
+    <div class="stat-card"><div class="stat-value">${activeInvites}</div><div class="stat-label">Активных инвайтов</div></div>
     <div class="stat-card"><div class="stat-value">${sessions.length}</div><div class="stat-label">Активных сессий</div></div>
     <div class="stat-card"><div class="stat-value">${apiKeys.filter(k => k.is_active).length}</div><div class="stat-label">API-ключей</div></div>
     <div class="stat-card"><div class="stat-value">${data.presence?.pending_suggestions || 0}</div><div class="stat-label">Предложений</div></div>
@@ -317,6 +371,7 @@ function switchTab(name) {
   document.querySelector(`.tab-btn[onclick*="'${name}'"]`)?.classList.add('active');
   // Обновить данные при переключении вкладки
   if (name === 'users') loadUsers();
+  if (name === 'invites') loadInvites();
   if (name === 'sessions') loadSessions();
   if (name === 'apikeys') loadApiKeys();
   if (name === 'suggestions') loadSuggestions();

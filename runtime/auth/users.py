@@ -46,6 +46,20 @@ class UserStore:
                     FOREIGN KEY (user_id) REFERENCES users(id)
                 );
                 CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys(user_id);
+                CREATE TABLE IF NOT EXISTS invites (
+                    id TEXT PRIMARY KEY,
+                    token TEXT NOT NULL UNIQUE,
+                    created_by TEXT NOT NULL,
+                    role TEXT NOT NULL DEFAULT 'reader',
+                    max_uses INTEGER NOT NULL DEFAULT 1,
+                    use_count INTEGER NOT NULL DEFAULT 0,
+                    expires_at TEXT,
+                    is_active BOOLEAN NOT NULL DEFAULT 1,
+                    created_at TEXT NOT NULL,
+                    note TEXT DEFAULT ''
+                );
+                CREATE INDEX IF NOT EXISTS idx_invites_token ON invites(token);
+                CREATE INDEX IF NOT EXISTS idx_invites_active ON invites(is_active);
             """)
         else:
             db_manager = get_db_manager()
@@ -236,3 +250,89 @@ class UserStore:
             (limit,),
         )
         return [dict(row) for row in await cursor.fetchall()]
+
+    # ── Invite methods ────────────────────────────────
+
+    async def create_invite(self, created_by: str, role: str = "reader", max_uses: int = 1,
+                            expires_at: str | None = None, note: str = "") -> dict:
+        """Создать инвайт-ссылку."""
+        import secrets
+        await self._ensure_db()
+        invite_id = uuid.uuid4().hex
+        token = secrets.token_urlsafe(32)
+        now = datetime.now(tz=timezone.utc).isoformat()
+        await self._conn.execute(
+            "INSERT INTO invites (id, token, created_by, role, max_uses, expires_at, created_at, note) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (invite_id, token, created_by, role, max_uses, expires_at, now, note),
+        )
+        await self._conn.commit()
+        return {"id": invite_id, "token": token, "role": role, "max_uses": max_uses,
+                "expires_at": expires_at, "created_at": now, "note": note}
+
+    async def get_invite_by_token(self, token: str) -> dict | None:
+        """Найти инвайт по токену."""
+        await self._ensure_db()
+        cursor = await self._conn.execute(
+            "SELECT * FROM invites WHERE token = ? AND is_active = 1", (token,),
+        )
+        row = await cursor.fetchone()
+        return dict(row) if row else None
+
+    async def use_invite(self, token: str) -> dict | None:
+        """Использовать инвайт (увеличить use_count, деактивировать если исчерпан)."""
+        await self._ensure_db()
+        invite = await self.get_invite_by_token(token)
+        if not invite:
+            return None
+        # Проверка срока действия
+        if invite.get("expires_at"):
+            from datetime import datetime as dt, timezone
+            expires = dt.fromisoformat(invite["expires_at"])
+            if dt.now(tz=timezone.utc) > expires:
+                return None
+        new_count = invite["use_count"] + 1
+        if new_count >= invite["max_uses"]:
+            await self._conn.execute(
+                "UPDATE invites SET use_count = ?, is_active = 0 WHERE id = ?",
+                (new_count, invite["id"]),
+            )
+        else:
+            await self._conn.execute(
+                "UPDATE invites SET use_count = ? WHERE id = ?",
+                (new_count, invite["id"]),
+            )
+        await self._conn.commit()
+        return invite
+
+    async def list_invites(self, created_by: str | None = None, limit: int = 100) -> list[dict]:
+        """Список инвайтов."""
+        await self._ensure_db()
+        if created_by:
+            cursor = await self._conn.execute(
+                "SELECT * FROM invites WHERE created_by = ? ORDER BY created_at DESC LIMIT ?",
+                (created_by, limit),
+            )
+        else:
+            cursor = await self._conn.execute(
+                "SELECT * FROM invites ORDER BY created_at DESC LIMIT ?", (limit,),
+            )
+        return [dict(row) for row in await cursor.fetchall()]
+
+    async def revoke_invite(self, invite_id: str) -> bool:
+        """Деактивировать инвайт."""
+        await self._ensure_db()
+        cursor = await self._conn.execute(
+            "UPDATE invites SET is_active = 0 WHERE id = ?", (invite_id,),
+        )
+        await self._conn.commit()
+        return cursor.rowcount > 0
+
+    async def delete_invite(self, invite_id: str) -> bool:
+        """Удалить инвайт."""
+        await self._ensure_db()
+        cursor = await self._conn.execute(
+            "DELETE FROM invites WHERE id = ?", (invite_id,),
+        )
+        await self._conn.commit()
+        return cursor.rowcount > 0

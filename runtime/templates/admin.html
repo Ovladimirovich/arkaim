@@ -10,6 +10,7 @@
 
   <div class="admin-tabs">
     <button class="tab-btn active" onclick="switchTab('users')">Пользователи</button>
+    <button class="tab-btn" onclick="switchTab('invites')">Инвайты</button>
     <button class="tab-btn" onclick="switchTab('sessions')">Сессии</button>
     <button class="tab-btn" onclick="switchTab('apikeys')">API-ключи</button>
     <button class="tab-btn" onclick="switchTab('suggestions')">Предложения</button>
@@ -28,6 +29,34 @@
         <table class="admin-table" id="usersTable">
           <thead><tr><th>ID</th><th>Имя</th><th>Провайдер</th><th>Роль</th><th>Статус</th><th>Действия</th></tr></thead>
           <tbody id="usersBody"><tr><td colspan="6" class="loading">загрузка...</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- Инвайты -->
+  <div id="tab-invites" class="admin-tab">
+    <section class="admin-card">
+      <div class="admin-card-header">
+        <h2>Инвайт-ссылки</h2>
+        <span id="inviteCount" class="badge"></span>
+        <button class="btn btn-primary" onclick="showCreateInvite()" style="margin-left:auto;">+ Создать</button>
+      </div>
+      <!-- Форма создания -->
+      <div id="createInviteForm" style="display:none; margin-bottom: 1rem; padding: 1rem; border: 1px solid #e2e8f0; border-radius: 8px;">
+        <h3>Новый инвайт</h3>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: end;">
+          <label>Роль: <select id="inviteRole"><option value="reader">reader</option><option value="editor">editor</option></select></label>
+          <label>Макс. использований: <input type="number" id="inviteMaxUses" value="1" min="1" max="100" style="width:60px;"></label>
+          <label>Заметка: <input type="text" id="inviteNote" placeholder="Опционально" style="width:200px;"></label>
+          <button class="btn btn-primary" onclick="createInvite()">Создать</button>
+          <button class="btn btn-sm" onclick="document.getElementById('createInviteForm').style.display='none'">Отмена</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead><tr><th>Ссылка</th><th>Роль</th><th>Использовано</th><th>Срок</th><th>Заметка</th><th>Статус</th><th>Действия</th></tr></thead>
+          <tbody id="invitesBody"><tr><td colspan="7" class="loading">загрузка...</td></tr></tbody>
         </table>
       </div>
     </section>
