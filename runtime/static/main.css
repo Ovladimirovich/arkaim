@@ -240,14 +240,104 @@ a:hover { text-decoration: underline; }
 .toast-error { background: var(--danger); }
 
 /* ── Mobile responsive ───────────────── */
+
+/* Планшеты (768px и меньше) */
 @media (max-width: 768px) {
   .nav-inner { flex-wrap: wrap; height: auto; padding: .5rem 0; gap: .5rem; }
   .nav-links { order: 3; width: 100%; justify-content: center; gap: .5rem; }
   .nav-links a { font-size: .8rem; padding: 4px 6px; }
+  .nav-user { gap: .5rem; }
+  .main { padding: 1rem .75rem; }
+
+  /* Book layout */
   .book-layout { grid-template-columns: 1fr; }
   .book-sidebar { position: static; margin-bottom: 1rem; }
+  .book-cover { padding: 1.5rem; }
+  .cover-icon { font-size: 2.5rem; }
+
+  /* Chat */
   .chat-form { flex-direction: column; }
   .chat-btn { width: 100%; }
-  .admin-tabs { flex-wrap: wrap; }
+  .chat-input { font-size: 1rem; }
+  .msg-body { max-width: 90%; }
+
+  /* Admin */
+  .admin-tabs { flex-wrap: wrap; gap: .25rem; }
+  .tab-btn { padding: .4rem .75rem; font-size: .8rem; }
   .admin-table { font-size: .75rem; }
+  .admin-table th, .admin-table td { padding: .4rem .5rem; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* About */
+  .about-grid { grid-template-columns: 1fr; }
+  .about-hero h1 { font-size: 1.4rem; }
+
+  /* Profile */
+  .profile-header h1 { font-size: 1.3rem; }
+
+  /* Upload */
+  .upload-zone { padding: 1.5rem 1rem; }
+  .upload-options { flex-direction: column; }
+  .upload-select, .upload-input-sm { min-width: 100%; }
+
+  /* History */
+  .history-header { flex-direction: column; align-items: flex-start; gap: .5rem; }
+  .history-filters { flex-direction: column; }
+  .history-filters select { width: 100%; }
+
+  /* Invite form */
+  #createInviteForm > div { flex-direction: column; }
+  #createInviteForm input, #createInviteForm select { width: 100%; }
 }
+
+/* Телефоны (480px и меньше) */
+@media (max-width: 480px) {
+  .nav-logo { font-size: .95rem; }
+  .nav-links a { font-size: .75rem; padding: 3px 5px; }
+  .nav-theme-toggle { font-size: .85rem; padding: 2px 6px; }
+
+  .main { padding: .75rem .5rem; }
+
+  /* Book */
+  .book-cover { padding: 1rem; }
+  .cover-placeholder h2 { font-size: 1rem; }
+  .chat-header h1 { font-size: 1.1rem; }
+  .msg-avatar { width: 30px; height: 30px; font-size: .9rem; }
+  .msg-body { padding: .5rem .75rem; font-size: .9rem; }
+
+  /* Admin */
+  .admin-header h1 { font-size: 1.2rem; }
+  .tab-btn { padding: .3rem .6rem; font-size: .75rem; }
+  .admin-card { padding: .75rem; }
+  .stat-value { font-size: 1.2rem; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: .5rem; }
+  .stat-card { padding: .75rem .5rem; }
+
+  /* Table horizontal scroll */
+  .table-wrap { margin: 0 -.5rem; padding: 0 .5rem; }
+
+  /* Toast */
+  .toast { left: 1rem; right: 1rem; max-width: none; font-size: .85rem; }
+
+  /* Modal */
+  .modal-content { padding: 1.25rem; margin: .5rem; }
+}
+
+/* Горизонтальная ориентация на телефоне */
+@media (max-width: 480px) and (orientation: landscape) {
+  .nav-inner { flex-wrap: nowrap; }
+  .nav-links { width: auto; justify-content: flex-start; }
+}
+
+/* Touch-friendly: увеличиваем область нажатия на мобильных */
+@media (pointer: coarse) {
+  .btn { min-height: 44px; }
+  .tab-btn { min-height: 40px; }
+  .nav-links a { min-height: 40px; display: flex; align-items: center; }
+  .chat-input { min-height: 48px; font-size: 16px; /* предотвращает zoom на iOS */ }
+  .admin-table td { min-height: 44px; }
+}
+
+/* Предотвращаем горизонтальный скролл на мобильных */
+html { overflow-x: hidden; }
+body { overflow-x: hidden; }
