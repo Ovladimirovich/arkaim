@@ -1,5 +1,4 @@
 @echo off
-chcp 65001 >nul
 echo ========================================
 echo   Arkaim Digital Consciousness
 echo   Server Startup
@@ -8,7 +7,6 @@ echo.
 
 cd /d "%~dp0runtime"
 
-:: ── Проверка Python ──────────────────────────────
 echo [1/4] Checking Python...
 python --version >nul 2>&1
 if errorlevel 1 (
@@ -18,7 +16,6 @@ if errorlevel 1 (
 )
 for /f "tokens=*" %%v in ('python --version 2^>^&1') do echo   %%v
 
-:: ── Проверка venv ────────────────────────────────
 echo [2/4] Checking virtual environment...
 if not exist ".venv\Scripts\python.exe" (
     echo Creating virtual environment...
@@ -38,7 +35,6 @@ if not exist ".venv\Scripts\python.exe" (
 )
 echo   venv OK.
 
-:: ── Проверка .env ────────────────────────────────
 echo [3/4] Checking configuration...
 if not exist ".env" (
     if exist ".env.example" (
@@ -48,23 +44,21 @@ if not exist ".env" (
         echo.
     ) else (
         echo WARNING: .env file not found!
-        echo Create .env with required variables (see .env.example^).
+        echo Create .env with required variables.
         echo.
     )
 )
 
-:: Проверка критических переменных
 for /f "tokens=1,* delims==" %%a in (.env 2^>nul) do (
     if "%%a"=="SESSION_SECRET" (
         if "%%b"=="change-me-in-production" (
             echo WARNING: SESSION_SECRET is default value!
-            echo   Generate a secure key: python -c "import secrets; print(secrets.token_urlsafe(48))"
+            echo   Generate: python -c "import secrets; print(secrets.token_urlsafe(48))"
             echo.
         )
     )
 )
 
-:: ── Запуск сервера ───────────────────────────────
 echo [4/4] Starting server...
 echo.
 if "%CORE_HOST%"=="" set CORE_HOST=127.0.0.1
@@ -78,9 +72,4 @@ echo.
 echo   Press Ctrl+C to stop the server.
 echo.
 
-.venv\Scripts\python -m uvicorn core.main:app --host %CORE_HOST% --port %CORE_PORT% --log-level info
-if errorlevel 1 (
-    echo.
-    echo Server exited with error. Check logs in runtime\logs\
-)
-pause
+.venv\Scripts\python.exe -m uvicorn core.main:app --host %CORE_HOST% --port %CORE_PORT% --log-level info
