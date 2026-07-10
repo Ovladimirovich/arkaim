@@ -1,15 +1,11 @@
-﻿"""
+"""
 pulse_manager — FastAPI-интеграция BookPulse + ReaderMemory в Runtime.
 
 Живёт в runtime/core/ и предоставляет Pulse, Voice, ReaderMemory как зависимости.
+CORE/ добавляется в sys.path один раз при старте (core/main.py).
 """
 import logging
 from pathlib import Path
-from core.bootstrap import prepare_core_path
-
-# Добавить ADC CORE в sys.path (изолировано здесь, а не в adc_deps)
-_ADC_CORE = prepare_core_path()
-
 
 from pulse.pulse import BookPulse
 from pulse.voice import BookVoice

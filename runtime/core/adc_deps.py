@@ -1,58 +1,15 @@
 """
 adc_deps — FastAPI зависимости для ADC-компонентов.
-Без sys.path hack: использует importlib для ленивого импорта.
+CORE/ добавляется в sys.path один раз при старте (core/main.py).
 """
 
-import importlib
 import logging
-import warnings
-from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 from fastapi import Depends
 from core.pulse_manager import get_pulse as _gp, get_voice as _gv, get_reader_memory as _grm
 
 log = logging.getLogger("hermes.adc_deps")
-
-# ── Определение пути к CORE ──────────────────────────
-_RUNTIME = Path(__file__).resolve().parent.parent
-_PROJECT = _RUNTIME.parent
-_ADC_CORE = _PROJECT / "core" / "CORE"
-
-
-def _lazy_import(module_path: str, class_name: Optional[str] = None) -> Any:
-    """
-    Ленивый импорт модуля из CORE без sys.path модификации.
-    
-    Пытается импортировать напрямую. Если не находит — добавляет CORE/ в sys.path
-    только для этого импорта (deprecated).
-    """
-    import sys
-    
-    # Пробуем прямой импорт
-    try:
-        module = importlib.import_module(module_path)
-        if class_name:
-            return getattr(module, class_name)
-        return module
-    except ImportError:
-        pass
-    
-    # Fallback (deprecated): добавляем CORE/ в sys.path
-    path_str = str(_ADC_CORE)
-    if path_str not in sys.path:
-        sys.path.insert(0, path_str)
-        warnings.warn(
-            f"DEPRECATED: {module_path} не найден напрямую. Использован sys.path hack через {path_str}. "
-            f"Переместите модуль в runtime/ или настройте PYTHONPATH.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-    
-    module = importlib.import_module(module_path)
-    if class_name:
-        return getattr(module, class_name)
-    return module
 
 
 # ── Pulse + Voice (живые, через pulse_manager) ───────
@@ -81,17 +38,17 @@ def get_voice():
 # ── Агенты (с Pulse) ─────────────────────────────────
 
 def _get_keeper():
-    KeeperAgent = _lazy_import("agents.keeper", "KeeperAgent")
+    from agents.keeper import KeeperAgent
     return KeeperAgent(pulse=_cached_pulse(), voice=_cached_voice())
 
 
 def _get_herald():
-    HeraldAgent = _lazy_import("agents.keeper", "HeraldAgent")
+    from agents.keeper import HeraldAgent
     return HeraldAgent(pulse=_cached_pulse())
 
 
 def _get_diplomat():
-    DiplomatAgent = _lazy_import("agents.keeper", "DiplomatAgent")
+    from agents.keeper import DiplomatAgent
     return DiplomatAgent(pulse=_cached_pulse())
 
 
@@ -110,29 +67,34 @@ def _cached_diplomat():
     return _get_diplomat()
 
 
-# ── Компоненты с обратной совместимостью ─────────────
+# ── Конфиг ───────────────────────────────────────────
 
 def _get_config():
-    """Импорт config.py из CORE."""
-    return _lazy_import("config", "config")
+    from config import config
+    return config
+
+
+@functools.cache
+def _cached_config():
+    return _get_config()
 
 
 # ── Visualization ───────────────────────────────────
 
 def _get_scene_engine():
-    SceneEngine = _lazy_import("visualization.scene_engine", "SceneEngine")
+    from visualization.scene_engine import SceneEngine
     return SceneEngine(genome=_cached_pulse().genome, retriever=_get_retriever())
 
 
 def _get_prompt_builder():
-    PromptBuilder = _lazy_import("visualization.prompt_builder", "PromptBuilder")
+    from visualization.prompt_builder import PromptBuilder
     return PromptBuilder(pulse=_cached_pulse())
 
 
 def _get_image_provider():
-    ImageProviderChain = _lazy_import("providers.image", "ImageProviderChain")
-    ComfyUIProvider = _lazy_import("providers.image.comfyui", "ComfyUIProvider")
-    MockImageProvider = _lazy_import("providers.image.mock", "MockImageProvider")
+    from providers.image import ImageProviderChain
+    from providers.image.comfyui import ComfyUIProvider
+    from providers.image.mock import MockImageProvider
     return ImageProviderChain([ComfyUIProvider(), MockImageProvider()])
 
 
@@ -166,33 +128,28 @@ def get_image_provider():
 # ── Retriever ──────────────────────────────────────
 
 def _get_retriever():
-    BookRetriever = _lazy_import("intelligence.retriever", "BookRetriever")
+    from intelligence.retriever import BookRetriever
     return BookRetriever()
 
 
 def _get_event_logger():
-    EventLogger = _lazy_import("core_memory.logger", "EventLogger")
+    from core_memory.logger import EventLogger
     return EventLogger()
 
 
 def _get_xray():
-    XRayObserver = _lazy_import("core_memory.analyzer", "XRayObserver")
+    from core_memory.analyzer import XRayObserver
     return XRayObserver()
 
 
 def _get_drafts():
-    DraftManager = _lazy_import("community.telegram", "DraftManager")
+    from community.telegram import DraftManager
     return DraftManager()
 
 
 def _get_telegram_stub():
-    TelegramBotStub = _lazy_import("community.telegram", "TelegramBotStub")
+    from community.telegram import TelegramBotStub
     return TelegramBotStub()
-
-
-@functools.cache
-def _cached_config():
-    return _get_config()
 
 
 @functools.cache

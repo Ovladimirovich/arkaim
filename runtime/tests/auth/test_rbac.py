@@ -1,4 +1,4 @@
-﻿"""Тесты для auth/rbac.py — Role-Based Access Control."""
+"""Тесты для auth/rbac.py — Role-Based Access Control."""
 
 import pytest
 from fastapi import HTTPException
@@ -59,12 +59,12 @@ class TestGetCurrentUser:
             await get_current_user(request)
         assert exc_info.value.status_code == 401
 
-    async def test_service_key_returns_admin(self):
-        """Сервисный ключ (HERMES_API_KEY) возвращает admin."""
+    async def test_service_key_without_attached_user_returns_403(self):
+        """Service key без привязанного пользователя возвращает 403."""
         import os
         api_key = os.environ.get("HERMES_API_KEY", "test-service-key")
         from auth.rbac import get_current_user
-        from fastapi import Request
+        from fastapi import Request, HTTPException
 
         scope = {
             "type": "http",
@@ -73,9 +73,9 @@ class TestGetCurrentUser:
             "headers": [(b"authorization", f"Bearer {api_key}".encode())],
         }
         request = Request(scope)
-        user = await get_current_user(request)
-        assert user is not None
-        assert user["role"] == "admin"
+        with pytest.raises(HTTPException) as exc_info:
+            await get_current_user(request)
+        assert exc_info.value.status_code == 403
 
     async def test_cookie_token_returns_401_for_unknown_user(self):
         """Токен в cookie для несуществующего пользователя возвращает 403."""

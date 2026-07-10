@@ -1,4 +1,4 @@
-﻿"""
+"""
 Модуль для работы с Telegram.
 Включает обработку сообщений, управление черновиками (SQLite) и отправку уведомлений.
 Интеграция с Telegram Bot API для российского рынка.
@@ -12,11 +12,7 @@ from pathlib import Path
 
 import httpx
 from config import config as current_config
-try:
-    from CORE.memory.logger import EventLogger
-except ImportError:
-    # Фолбэк для runtime-тестов: пакет CORE в PYTHONPATH может отсутствовать
-    from core.CORE.memory.logger import EventLogger
+from core_memory.logger import EventLogger
 
 
 

@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import sys
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -8,6 +9,12 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+
+# ── Добавляем CORE/ в sys.path (один раз при старте) ──
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # корень проекта
+_CORE_DIR = _PROJECT_ROOT / "core" / "CORE"
+if _CORE_DIR.exists() and str(_CORE_DIR) not in sys.path:
+    sys.path.insert(0, str(_CORE_DIR))
 
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse, Response, RedirectResponse
