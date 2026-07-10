@@ -6,10 +6,11 @@ websocket — real-time уведомления для дашборда.
 - Новые предложения Presence
 - Статус сервисов
 - Pulse-бит (каждые 5 минут)
+- Краудфандинговые майлстоуны
 """
 import json
 import logging
-from typing import Set
+from typing import Set, Optional
 
 from fastapi import WebSocket, WebSocketDisconnect
 
@@ -17,19 +18,30 @@ log = logging.getLogger("hermes.websocket")
 
 
 class ConnectionManager:
-    """Управляет WebSocket-соединениями."""
+    """Управляет WebSocket-соединениями с поддержкой user_id."""
 
     def __init__(self):
         self._connections: Set[WebSocket] = set()
+        self._user_connections: dict[str, Set[WebSocket]] = {}  # user_id -> connections
 
-    async def connect(self, ws: WebSocket):
+    async def connect(self, ws: WebSocket, user_id: str = ""):
         await ws.accept()
         self._connections.add(ws)
-        log.info("ws_connected total=%d", len(self._connections))
+        if user_id:
+            if user_id not in self._user_connections:
+                self._user_connections[user_id] = set()
+            self._user_connections[user_id].add(ws)
+        ws.state.user_id = user_id
+        log.info("ws_connected user_id=%s total=%d", user_id or "anon", len(self._connections))
 
     def disconnect(self, ws: WebSocket):
+        user_id = getattr(ws.state, "user_id", "")
         self._connections.discard(ws)
-        log.info("ws_disconnected total=%d", len(self._connections))
+        if user_id and user_id in self._user_connections:
+            self._user_connections[user_id].discard(ws)
+            if not self._user_connections[user_id]:
+                del self._user_connections[user_id]
+        log.info("ws_disconnected user_id=%s total=%d", user_id or "anon", len(self._connections))
 
     async def broadcast(self, event: str, data: dict):
         """Разослать событие всем подключённым клиентам."""
@@ -41,7 +53,21 @@ class ConnectionManager:
             except Exception:
                 dead.add(ws)
         for ws in dead:
-            self._connections.discard(ws)
+            self.disconnect(ws)
+
+    async def send_to_user(self, user_id: str, event: str, data: dict):
+        """Отправить событие конкретному пользователю."""
+        if user_id not in self._user_connections:
+            return
+        message = json.dumps({"event": event, "data": data}, ensure_ascii=False)
+        dead = set()
+        for ws in self._user_connections.get(user_id, set()):
+            try:
+                await ws.send_text(message)
+            except Exception:
+                dead.add(ws)
+        for ws in dead:
+            self.disconnect(ws)
 
     @property
     def count(self) -> int:
@@ -52,8 +78,20 @@ manager = ConnectionManager()
 
 
 async def ws_endpoint(ws: WebSocket):
-    """WebSocket эндпоинт для дашборда."""
-    await manager.connect(ws)
+    """WebSocket эндпоинт для дашборда. Аутентификация через query param token."""
+    # Попытка аутентификации из query params
+    user_id = ""
+    token = ws.query_params.get("token", "")
+    if token:
+        try:
+            from auth.tokens import decode_access_token
+            payload = decode_access_token(token)
+            if payload:
+                user_id = payload.sub
+        except Exception:
+            pass
+
+    await manager.connect(ws, user_id)
     try:
         while True:
             await ws.receive_text()
@@ -80,13 +118,19 @@ async def notify_service_status(statuses: dict):
     await manager.broadcast("service_status", statuses)
 
 
-async def notify_new_question(question: str, topic: str):
+async def notify_new_question(question: str, topic: str, user_id: str = ""):
     """Уведомить о новом вопросе читателя."""
     await manager.broadcast("new_question", {
         "question": question[:100],
         "topic": topic,
         "count": 0,
     })
+    # Также отправить конкретному пользователю (если он онлайн)
+    if user_id:
+        await manager.send_to_user(user_id, "your_question_answered", {
+            "question": question[:100],
+            "topic": topic,
+        })
 
 
 async def notify_crowdfunding_milestone(alert: dict):
@@ -94,8 +138,17 @@ async def notify_crowdfunding_milestone(alert: dict):
     await manager.broadcast("crowdfunding_milestone", alert)
 
 
+async def notify_chat_response(user_id: str, question: str, answer: str):
+    """Уведомить пользователя о ответе на его вопрос."""
+    await manager.send_to_user(user_id, "chat_response", {
+        "question": question[:100],
+        "answer": answer[:200],
+    })
+
+
 __all__ = [
     "manager", "ws_endpoint",
     "notify_pulse_beat", "notify_new_suggestion",
     "notify_service_status", "notify_new_question",
+    "notify_chat_response",
 ]

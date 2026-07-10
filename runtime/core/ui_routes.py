@@ -132,6 +132,10 @@ async def chat_ask(
     from core.presence_manager import register_question
     register_question(question[:60], question, result.get("answer", ""))
 
+    # WebSocket уведомление о новом вопросе
+    from core.websocket import notify_new_question
+    await notify_new_question(question, question[:60], user.get("user_id", ""))
+
     return templates.TemplateResponse("chat_message.html", {
         "request": request,
         "question": question,

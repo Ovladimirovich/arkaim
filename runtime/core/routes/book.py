@@ -113,6 +113,11 @@ async def ask(
         "user_sentiment": "neutral", "system_action": "keeper_response", "outcome": "ok",
     })
     register_question(req.question[:60], req.question, result.get("answer", ""))
+
+    # WebSocket уведомление
+    from core.websocket import notify_new_question
+    await notify_new_question(req.question, req.question[:60], user.get("user_id", ""))
+
     return SuccessResponse(data=result)
 
 

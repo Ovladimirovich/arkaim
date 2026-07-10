@@ -7,8 +7,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (page === 'page-book') loadBookMeta();
   if (page === 'page-about') loadAbout();
   if (page === 'page-profile') loadProfile();
-  if (page === 'page-admin') connectWS();
   if (page === 'page-history') loadHistory();
+  // WebSocket на всех страницах для персональных уведомлений
+  connectWS();
 });
 
 // ── API helper ────────────────────────
@@ -427,8 +428,17 @@ let ws = null;
 let wsNotifCount = 0;
 
 function connectWS() {
+  // Получаем токен из cookie для аутентификации
+  const token = document.cookie.split('; ').find(c => c.startsWith('arkaim_session='))?.split('=')[1] || '';
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  ws = new WebSocket(`${proto}//${location.host}/ws`);
+  const url = token
+    ? `${proto}//${location.host}/ws?token=${encodeURIComponent(token)}`
+    : `${proto}//${location.host}/ws`;
+  ws = new WebSocket(url);
+  ws.onopen = () => {
+    const badge = document.getElementById('wsBadge');
+    if (badge) { badge.textContent = '●'; badge.style.color = '#16a34a'; badge.style.display = 'inline'; }
+  };
   ws.onmessage = (e) => {
     try {
       const msg = JSON.parse(e.data);
@@ -446,9 +456,19 @@ function connectWS() {
       if (msg.event === 'pulse_beat') {
         showToast('Pulse: ядро книги активно', 'success');
       }
+      if (msg.event === 'crowdfunding_milestone') {
+        showToast('Краудфандинг: ' + (msg.data?.title || 'майлстоун'), 'success');
+      }
+      if (msg.event === 'chat_response') {
+        showToast('Книга ответила на ваш вопрос', 'success');
+      }
     } catch {}
   };
-  ws.onclose = () => { setTimeout(connectWS, 5000); };
+  ws.onclose = () => {
+    const badge = document.getElementById('wsBadge');
+    if (badge) { badge.textContent = '●'; badge.style.color = '#dc2626'; badge.style.display = 'inline'; }
+    setTimeout(connectWS, 5000);
+  };
   ws.onerror = () => { ws?.close(); };
 }
 
