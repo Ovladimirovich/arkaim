@@ -10,11 +10,20 @@ from core.config import settings
 
 log = logging.getLogger("hermes.skills.health_monitor")
 
-SERVICES = {
-    "core": "http://127.0.0.1:8642/health",
-    "gateway": "http://127.0.0.1:8080/health",
-    "book_api": "http://127.0.0.1:9090/health",
-}
+
+def _build_services() -> dict[str, str]:
+    """Формирует URLs сервисов из настроек."""
+    core_host = settings.CORE_HOST
+    core_port = settings.CORE_PORT
+    gateway_host = settings.GATEWAY_HOST
+    gateway_port = settings.GATEWAY_PORT
+    api_host = settings.API_HOST
+    api_port = settings.API_PORT
+    return {
+        "core": f"http://{core_host}:{core_port}/health",
+        "gateway": f"http://{gateway_host}:{gateway_port}/health",
+        "book_api": f"http://{api_host}:{api_port}/health",
+    }
 
 _FAILURE_COUNTER: dict[str, int] = {}
 _ALERTED: dict[str, bool] = {}
@@ -41,9 +50,10 @@ async def _send_telegram_alert(message: str):
 
 async def check_all_services() -> dict[str, bool]:
     """Проверить все сервисы, обновить счётчики, вернуть {name: ok}."""
+    services = _build_services()
     statuses = {}
     async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT) as client:
-        for name, url in SERVICES.items():
+        for name, url in services.items():
             try:
                 r = await client.get(url)
                 ok = r.status_code == 200
