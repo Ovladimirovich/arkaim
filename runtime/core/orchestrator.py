@@ -133,7 +133,7 @@ class Orchestrator:
                 span.end("error")
                 provider_failures.inc()
                 metrics.increment("provider_failed")
-                ProviderRegistry.report_failure(name)
+                await ProviderRegistry.areport_failure(name)
                 emit(Event(time.time(), trace_id, ComponentKind.PROVIDER, EventKind.PROVIDER_FAILED, Severity.ERROR,
                            f"{name} failed", {"provider": name, "error": str(exc)}))
                 log.warning("provider_fallback provider=%s trace_id=%s error=%s", name, trace_id, exc)
@@ -142,7 +142,7 @@ class Orchestrator:
                     fallback_count.inc()
                     metrics.increment("fallback_triggered")
                 continue
-            ProviderRegistry.report_success(name)
+            await ProviderRegistry.areport_success(name)
             ab_selector.record_latency(name, (time.time() - provider_t0) * 1000)
             if idx > 0:
                 emit(Event(time.time(), trace_id, ComponentKind.PROVIDER, EventKind.PROVIDER_FALLBACK, Severity.INFO,

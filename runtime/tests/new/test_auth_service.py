@@ -64,10 +64,11 @@ async def auth_service(in_memory_repos):
 
 
 def _make_telegram_data(user_id: str = "12345", username: str = "testuser") -> dict:
-    """Создать валидные данные Telegram (без реальной HMAC-проверки)."""
+    """Создать валидные данные Telegram с HMAC-подписью."""
     import hmac
     import hashlib
     import time
+    from core.config import settings
 
     data = {
         "id": user_id,
@@ -76,9 +77,9 @@ def _make_telegram_data(user_id: str = "12345", username: str = "testuser") -> d
         "last_name": "User",
         "auth_date": str(int(time.time())),
     }
-    # Подпись для теста — используем тестовый токен
+    bot_token = settings.TELEGRAM_BOT_TOKEN or "test-telegram-bot-token"
     data_check_string = "\n".join(f"{k}={v}" for k, v in sorted(data.items()))
-    secret_key = hashlib.sha256(b"test-telegram-bot-token").digest()
+    secret_key = hashlib.sha256(bot_token.encode()).digest()
     data["hash"] = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
     return data
 

@@ -91,7 +91,7 @@ class TestCircuitBreakerCore:
         for _ in range(settings.PROVIDER_FAILURE_THRESHOLD):
             ProviderRegistry.report_failure("p")
         assert ProviderRegistry.is_healthy("p") is False
-        ProviderRegistry._health_state["p"]["cooldown_until"] = time.time() - 1
+        ProviderRegistry._health_state["p"].cooldown_until = time.time() - 1
         assert ProviderRegistry.is_healthy("p") is True
 
 
@@ -111,20 +111,23 @@ class TestCircuitBreakerIntegration:
         orch = Orchestrator()
         req = {"messages": [{"role": "user", "content": "hi"}], "provider": "fail", "metadata": {"session_id": "s1"}}
         await orch.chat(req, {"sub": "u1"})
-        state = ProviderRegistry._health_state.get("fail", {})
-        assert state.get("failure_count", 0) > 0
+        state = ProviderRegistry._health_state.get("fail")
+        assert state is not None
+        assert state.failure_count > 0
 
     @pytest.mark.asyncio
     async def test_success_resets_failures(self, monkeypatch):
         monkeypatch.setattr("core.config.settings.PROVIDER_CHAIN", ["ok"])
         ProviderRegistry.register("ok", OkProvider)
-        ProviderRegistry._health_state["ok"] = {"failure_count": 2, "cooldown_until": 0.0}
+        ProviderRegistry._health_state["ok"].failure_count = 2
+        ProviderRegistry._health_state["ok"].cooldown_until = 0.0
         from core.orchestrator import Orchestrator
         orch = Orchestrator()
         req = {"messages": [{"role": "user", "content": "hi"}], "provider": "ok", "metadata": {"session_id": "s1"}}
         await orch.chat(req, {"sub": "u1"})
-        state = ProviderRegistry._health_state.get("ok", {})
-        assert state.get("failure_count", -1) == 0
+        state = ProviderRegistry._health_state.get("ok")
+        assert state is not None
+        assert state.failure_count == 0
 
     @pytest.mark.asyncio
     async def test_unhealthy_provider_skipped_in_chain(self, monkeypatch):
