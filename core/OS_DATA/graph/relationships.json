@@ -1,0 +1,110 @@
+[
+  {
+    "id": "c5a3eddd-4fd7-4d3a-b851-d3962ddbf68b",
+    "source_id": "f75fd87e-14be-4786-b6bb-70a8df3155de",
+    "target_id": "342b914c-fbed-4902-947a-0c093b63e16b",
+    "type": "teacher_student",
+    "doc_id": "e2354b02-ca95-455f-9a2d-5350fc866961",
+    "description": "Славный обучает Велика языку, культуре и обычаям Гипербореи",
+    "weight": 1.0
+  },
+  {
+    "id": "82f9b4d7-90c1-4979-9b64-fa2819b33b1e",
+    "source_id": "f75fd87e-14be-4786-b6bb-70a8df3155de",
+    "target_id": "a60145d2-82e2-4bc6-b83e-a120c6648cce",
+    "type": "teacher_student",
+    "doc_id": "e2354b02-ca95-455f-9a2d-5350fc866961",
+    "description": "Световит объясняет Велику законы мироздания и философию Учения",
+    "weight": 1.0
+  },
+  {
+    "id": "110142f6-715e-4b91-8a1c-5e4f2d4fc653",
+    "source_id": "f75fd87e-14be-4786-b6bb-70a8df3155de",
+    "target_id": "be9ea541-87a3-44d0-81ab-8b7df70b38a4",
+    "type": "friend",
+    "doc_id": "e2354b02-ca95-455f-9a2d-5350fc866961",
+    "description": "Вера помогает Велику адаптироваться в Гиперборее",
+    "weight": 1.0
+  },
+  {
+    "id": "22f9ed88-db75-4d08-8de8-0be4e48f887c",
+    "source_id": "f75fd87e-14be-4786-b6bb-70a8df3155de",
+    "target_id": "9adc9688-2adb-49fa-8eb5-9e412d3f9a21",
+    "type": "friend",
+    "doc_id": "e2354b02-ca95-455f-9a2d-5350fc866961",
+    "description": "Влад предоставил Велику дом для проживания",
+    "weight": 1.0
+  },
+  {
+    "id": "ced18d3c-5cca-4e44-8a24-5c56e4819051",
+    "source_id": "f75fd87e-14be-4786-b6bb-70a8df3155de",
+    "target_id": "e11d6b57-9d52-46ae-a1d7-70b4478b37d4",
+    "type": "friend",
+    "doc_id": "e2354b02-ca95-455f-9a2d-5350fc866961",
+    "description": "Учитель (Архат) призывает Велика через Зов",
+    "weight": 1.0
+  },
+  {
+    "id": "14ab49c4-ecac-490f-bd3f-c86715a206b2",
+    "source_id": "342b914c-fbed-4902-947a-0c093b63e16b",
+    "target_id": "a60145d2-82e2-4bc6-b83e-a120c6648cce",
+    "type": "brotherhood",
+    "doc_id": "e2354b02-ca95-455f-9a2d-5350fc866961",
+    "description": "Световит — Старший Брат Славного",
+    "weight": 1.0
+  },
+  {
+    "id": "a28a2a89-125e-4e65-a6fa-c682ae71892d",
+    "source_id": "fafeeb55-09eb-48cd-af18-ae3836354669",
+    "target_id": "d0c74617-3231-47f5-8565-00a4cb611a96",
+    "type": "friend",
+    "doc_id": "e2354b02-ca95-455f-9a2d-5350fc866961",
+    "description": "Гиперборея и Атлантида — две ветви одной древней традиции",
+    "weight": 1.0
+  },
+  {
+    "id": "6358d30e-dd12-4382-acde-51229474d085",
+    "source_id": "f75fd87e-14be-4786-b6bb-70a8df3155de",
+    "target_id": "a5e5881c-3e77-4472-b5f7-fe1550ae7880",
+    "type": "origin",
+    "doc_id": "e2354b02-ca95-455f-9a2d-5350fc866961",
+    "description": "Велик родом из цивилизации Океании",
+    "weight": 1.0
+  },
+  {
+    "id": "37610024-5f46-4a01-a482-1a7256d149da",
+    "source_id": "fafeeb55-09eb-48cd-af18-ae3836354669",
+    "target_id": "9a314463-a583-4436-b430-236b86fd8ffc",
+    "type": "friend",
+    "doc_id": "e2354b02-ca95-455f-9a2d-5350fc866961",
+    "description": "Наставники — духовные лидеры общества Гипербореи",
+    "weight": 1.0
+  },
+  {
+    "id": "c97fe65d-99f7-490d-9ce7-72b2f9328474",
+    "source_id": "84ce5283-0bdb-414a-a635-747cdac3ba1c",
+    "target_id": "65560284-10a7-4dfd-9f8f-fc5fab1b46cc",
+    "type": "founder",
+    "doc_id": "e2354b02-ca95-455f-9a2d-5350fc866961",
+    "description": "Архат — один из основателей Иерархии Света на планете",
+    "weight": 1.0
+  },
+  {
+    "id": "310deb18-2862-406c-ab3a-570deede5ff4",
+    "source_id": "50d27ac0-ee44-48b4-8ac7-85463067ff1e",
+    "target_id": "fafeeb55-09eb-48cd-af18-ae3836354669",
+    "type": "legacy",
+    "doc_id": "e2354b02-ca95-455f-9a2d-5350fc866961",
+    "description": "Аркаим — материальное наследие гиперборейской цивилизации",
+    "weight": 1.0
+  },
+  {
+    "id": "b7804378-3e40-4022-83a5-1536f8c7426f",
+    "source_id": "81df0309-f213-42ab-a757-137051adfc5c",
+    "target_id": "219b8815-fd24-4ca9-a56d-b718ef3f24cd",
+    "type": "cycle",
+    "doc_id": "e2354b02-ca95-455f-9a2d-5350fc866961",
+    "description": "Кали Юга сменяется Сати Югой — эпохой возрождения",
+    "weight": 1.0
+  }
+]

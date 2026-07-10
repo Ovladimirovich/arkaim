@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# SQLite databases (runtime data)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# ChromaDB
+core/CHROMA_DB/*.sqlite3
+core/CHROMA_DB/[a-f0-9-]*/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# MiMoCode
+.mimocode/
+
+# Pytest
+.pytest_cache/
+
+# Temp files
+*.tmp
+*.bak

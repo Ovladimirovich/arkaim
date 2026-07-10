@@ -1,0 +1,322 @@
+"""FastAPI router для BOOK OS endpoints."""
+
+from pathlib import Path
+from typing import List, Optional
+
+from fastapi import APIRouter, HTTPException, UploadFile, File, Depends
+from pydantic import BaseModel
+from auth.rbac import require_role
+
+from book_os.provider import BookOSProvider
+from book_os.pipeline.orchestrator import IngestionOrchestrator
+from book_os.exceptions import EntityNotFoundError, DocumentNotFoundError
+from schemas.chunk import Chunk
+
+router = APIRouter(prefix="/os", tags=["book_os"])
+
+# Global provider — инициализируется при старте
+_provider: Optional[BookOSProvider] = None
+
+
+def init_provider(data_dir: Optional[Path] = None) -> BookOSProvider:
+    global _provider
+    if _provider is None:
+        _provider = BookOSProvider(data_dir=data_dir)
+    return _provider
+
+
+def get_provider() -> BookOSProvider:
+    if _provider is None:
+        raise RuntimeError("BOOK OS Provider not initialized")
+    return _provider
+
+
+# ── Request/Response models ────────────────────────────
+
+
+class SearchRequest(BaseModel):
+    query: str
+    entity_ids: Optional[List[str]] = None
+    provenance: Optional[str] = None
+    doc_ids: Optional[List[str]] = None
+    n_results: int = 5
+
+
+class StatsResponse(BaseModel):
+    source_store: dict
+    entity_store: dict
+    fact_store: dict
+    relationship_store: dict
+    provenance_tracker: dict
+    index_engine: dict
+    trace_id: str
+
+
+class FactResponse(BaseModel):
+    id: str
+    statement: str
+    entity_id: str
+    doc_id: str
+    provenance: str
+    confidence: float
+
+
+# ── Endpoints ──────────────────────────────────────────
+
+
+@router.get("/stats", dependencies=[Depends(require_role("reader"))])
+async def get_stats() -> StatsResponse:
+    """Статистика всех хранилищ BOOK OS."""
+    return get_provider().get_stats()  # type: ignore
+
+
+@router.get("/documents", dependencies=[Depends(require_role("reader"))])
+async def list_documents(doc_type: Optional[str] = None) -> List[dict]:
+    """Список документов."""
+    docs = get_provider().list_documents(doc_type=doc_type)
+    return [d.to_dict() for d in docs]
+
+
+@router.get("/documents/{doc_id}", dependencies=[Depends(require_role("reader"))])
+async def get_document(doc_id: str) -> dict:
+    """Получить документ по ID."""
+    try:
+        doc = get_provider().get_document(doc_id)
+        if doc is None:
+            raise HTTPException(404, "Document not found")
+        return doc.to_dict()
+    except DocumentNotFoundError:
+        raise HTTPException(404, "Document not found")
+
+
+@router.post("/documents/ingest", dependencies=[Depends(require_role("editor"))])
+async def ingest_document(file: UploadFile = File(...)) -> dict:
+    """Загрузить документ в BOOK OS."""
+    if not file.filename:
+        raise HTTPException(400, "No file provided")
+    import tempfile
+    suffix = Path(file.filename).suffix or ".txt"
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+        content = await file.read()
+        tmp.write(content)
+        tmp_path = Path(tmp.name)
+    try:
+        result = get_provider().ingest_document(str(tmp_path))
+    finally:
+        if tmp_path.exists():
+            tmp_path.unlink()
+    return result
+
+
+@router.post("/pipeline/ingest", dependencies=[Depends(require_role("editor"))])
+async def pipeline_ingest(file: UploadFile = File(...), doc_type: str = "primary_source", version: str = "1.0.0") -> dict:
+    """Полный конвейер: загрузка → Source Store → чанкинг → извлечение → Knowledge Graph → ChromaDB.
+
+    После успешного ингеста триггерит Pulse.evolve(), чтобы книга "узнала" новый материал.
+    """
+    if not file.filename:
+        raise HTTPException(400, "No file provided")
+    import tempfile
+    suffix = Path(file.filename).suffix or ".txt"
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+        content = await file.read()
+        tmp.write(content)
+        tmp_path = Path(tmp.name)
+    try:
+        provider = get_provider()
+        orchestrator = IngestionOrchestrator(
+            source_store=provider.source_store,
+            entity_store=provider.entity_store,
+            fact_store=provider.fact_store,
+            relationship_store=provider.relationship_store,
+            provenance_tracker=provider.provenance_tracker,
+            index_engine=provider.index_engine,
+        )
+        result = orchestrator.ingest(tmp_path, doc_type=doc_type, version=version)
+
+        if result.get("status") == "ok":
+            try:
+                from core.pulse_manager import get_pulse
+                pulse = get_pulse()
+                if pulse and pulse.is_loaded:
+                    pulse.evolve()
+            except Exception:
+                pass
+
+        return result
+    except Exception as e:
+        raise HTTPException(500, f"Pipeline error: {e}")
+    finally:
+        if tmp_path.exists():
+            tmp_path.unlink()
+
+
+@router.get("/entities", dependencies=[Depends(require_role("reader"))])
+async def search_entities(query: str = "",
+                          entity_type: Optional[str] = None) -> List[dict]:
+    """Поиск сущностей."""
+    entities = get_provider().search_entities(query, entity_type=entity_type)
+    return [e.model_dump() for e in entities]
+
+
+@router.get("/entities/{name}", dependencies=[Depends(require_role("reader"))])
+async def get_entity(name: str) -> dict:
+    """Получить сущность по каноническому имени."""
+    try:
+        entity = get_provider().get_entity(name)
+        if entity is None:
+            raise HTTPException(404, "Entity not found")
+        return entity.model_dump()
+    except EntityNotFoundError:
+        raise HTTPException(404, "Entity not found")
+
+
+@router.get("/entities/{name}/resolve", dependencies=[Depends(require_role("reader"))])
+async def resolve_name(name: str) -> dict:
+    """Привести имя/алиас к канонической форме."""
+    canonical = get_provider().resolve_name(name)
+    return {"name": name, "resolved": canonical}
+
+
+@router.get("/facts", dependencies=[Depends(require_role("reader"))])
+async def get_facts(entity_id: str,
+                    provenance: Optional[str] = None) -> List[FactResponse]:
+    """Факты о сущности."""
+    facts = get_provider().get_facts(entity_id, provenance=provenance)
+    return [FactResponse(
+        id=f.id, statement=f.statement, entity_id=f.entity_id,
+        doc_id=f.doc_id, provenance=f.provenance, confidence=f.confidence,
+    ) for f in facts]
+
+
+@router.get("/facts/search", dependencies=[Depends(require_role("reader"))])
+async def search_facts(statement: str) -> List[FactResponse]:
+    """Поиск фактов по тексту."""
+    facts = get_provider().search_facts(statement)
+    return [FactResponse(
+        id=f.id, statement=f.statement, entity_id=f.entity_id,
+        doc_id=f.doc_id, provenance=f.provenance, confidence=f.confidence,
+    ) for f in facts]
+
+
+@router.get("/relationships", dependencies=[Depends(require_role("reader"))])
+async def get_relationships(entity_id: str,
+                            rel_type: Optional[str] = None) -> List[dict]:
+    """Связи сущности."""
+    rels = get_provider().get_relationships(entity_id, rel_type=rel_type)
+    return [r.model_dump() for r in rels]
+
+
+@router.post("/search", dependencies=[Depends(require_role("reader"))])
+async def search_chunks(req: SearchRequest) -> List[dict]:
+    """Векторный поиск по тексту с фильтрацией."""
+    chunks = get_provider().search_chunks(
+        query=req.query,
+        entity_ids=req.entity_ids,
+        provenance=req.provenance,
+        doc_ids=req.doc_ids,
+        n_results=req.n_results,
+    )
+    return [
+        {
+            "id": c.id,
+            "doc_id": c.doc_id,
+            "text": c.text[:300],
+            "position": c.position,
+            "metadata": {k: v for k, v in c.metadata.items()
+                         if not k.startswith("_")} if c.metadata else {},
+            "score": c.metadata.get("_score", "0") if c.metadata else "0",
+        }
+        for c in chunks
+    ]
+
+
+class IndexRequest(BaseModel):
+    chunks: List[dict]
+    provenance: str = "source"
+
+
+@router.post("/index", dependencies=[Depends(require_role("editor"))])
+async def index_chunks(req: IndexRequest) -> dict:
+    """Проиндексировать чанки в ChromaDB."""
+    chunk_models = []
+    for item in req.chunks:
+        chunk_models.append(Chunk(
+            id=item.get("id", ""),
+            doc_id=item.get("doc_id", ""),
+            text=item.get("text", ""),
+            position=item.get("position", 0),
+            metadata=item.get("metadata", {}),
+        ))
+    count = get_provider().index_engine.index_chunks(chunk_models, provenance=req.provenance)
+    return {"indexed": count}
+
+
+class DeleteRequest(BaseModel):
+    chunk_ids: List[str]
+
+
+@router.delete("/chunks", dependencies=[Depends(require_role("editor"))])
+async def delete_chunks(req: DeleteRequest) -> dict:
+    """Удалить чанки по ID."""
+    get_provider().index_engine.delete_chunks(req.chunk_ids)
+    return {"deleted": len(req.chunk_ids)}
+
+
+@router.post("/cross-search", dependencies=[Depends(require_role("reader"))])
+async def cross_search(req: SearchRequest) -> dict:
+    """Поиск по нескольким документам с группировкой."""
+    return get_provider().cross_document_search(
+        query=req.query,
+        doc_ids=req.doc_ids,
+        n_results=req.n_results * 4,
+    )
+
+
+@router.get("/cross-search/summary", dependencies=[Depends(require_role("reader"))])
+async def cross_search_summary(query: str, doc_ids: Optional[str] = None) -> dict:
+    """Сводка поиска по документам (только статистика)."""
+    doc_id_list = doc_ids.split(",") if doc_ids else None
+    return get_provider().cross_search_summary(query=query, doc_ids=doc_id_list)
+
+
+@router.post("/hybrid-search", dependencies=[Depends(require_role("reader"))])
+async def hybrid_search(req: SearchRequest) -> List[dict]:
+    """Гибридный поиск: BM25 keyword + векторный ChromaDB."""
+    chunks = get_provider().hybrid_search(
+        query=req.query,
+        entity_ids=req.entity_ids,
+        provenance=req.provenance,
+        doc_ids=req.doc_ids,
+        n_results=req.n_results,
+    )
+    return [
+        {
+            "id": c.id,
+            "doc_id": c.doc_id,
+            "text": c.text[:300],
+            "position": c.position,
+            "metadata": {k: v for k, v in c.metadata.items()
+                         if not k.startswith("_")} if c.metadata else {},
+            "scores": {
+                "hybrid": c.metadata.get("hybrid_score", "0") if c.metadata else "0",
+                "keyword": c.metadata.get("keyword_score", "0") if c.metadata else "0",
+                "vector": c.metadata.get("vector_score", "0") if c.metadata else "0",
+            },
+        }
+        for c in chunks
+    ]
+
+
+@router.post("/build-bm25", dependencies=[Depends(require_role("editor"))])
+async def build_bm25() -> dict:
+    """Построить BM25 индекс из чанков ChromaDB."""
+    count = get_provider().build_bm25_index()
+    return {"bm25_built": count}
+
+
+@router.post("/clear", dependencies=[Depends(require_role("admin"))])
+async def clear_index() -> dict:
+    """Очистить векторный индекс (ChromaDB)."""
+    get_provider().index_engine.clear()
+    return {"status": "cleared"}
