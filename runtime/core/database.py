@@ -45,7 +45,7 @@ class DatabaseManager:
         if migrations_dir:
             engine = MigrationEngine(db_path=path, migrations_dir=Path(migrations_dir))
             self._migration_engines[key] = engine
-            await engine.run()
+            await engine.run(conn)
 
         log.info("database_connected path=%s", key)
         return conn

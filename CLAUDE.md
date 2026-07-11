@@ -1,0 +1,107 @@
+## Проект
+«Наследие Аркаима» — цифровое сознание книги. Бэкенд FastAPI + SQLite, фронтенд React + Next.js.
+
+## Запуск
+```bash
+start_all.bat              # Всё сразу (Backend + Frontend + браузер)
+stop_all.bat               # Остановка всего
+cd arkaim-web && npm run dev       # Только фронтенд (порт 3000)
+cd runtime && .venv\Scripts\python -m uvicorn core.main:app --port 8642  # Только бэкенд
+cd arkaim-web && npx vitest run    # Тесты
+```
+
+## Порты
+- Backend: 8642
+- Frontend: 3000
+- Frontend проксирует API на бэкенд через Next.js rewrites
+
+## Текущее состояние
+- 23 страницы фронтенда, все работают
+- 23 unit-теста
+- Авторизация: Telegram бот (/login) + email регистрация + dev-режим
+- WebSocket реалтайм уведомления
+- Боковая навигация с группировкой
+
+## Архитектура
+- Бэкенд: FastAPI + SQLite (runtime/, порт 8642)
+- Фронтенд: React 19 + Next.js 16 + Ant Design 5 (arkaim-web/, порт 3000)
+- Мобильное: React Native + Expo (arkaim-mobile/)
+- Ядро: Pulse + Voice + Agents (core/)
+- API прокси: Next.js rewrites (3000 → 8642)
+- FSD: entities / features / widgets / shared
+
+## Страницы (23 шт.)
+| Страница | Путь | Описание |
+|----------|------|----------|
+| Задать вопрос | /ask | Минималистичный ввод вопроса, популярные вопросы, streaming |
+| Чат с книгой | /book | Чат с sidebar (темы, профиль, статистика), streaming, сессии |
+| Чтение | /reading | Режим чтения глав с оглавлением, размер шрифта, навигация |
+| Библиотека | /library | Геном (темы, персонажи, ценности, мир) + слои сознания + эволюция |
+| Жанры | /genres | Темы по 6 жанрам (мифология, история, философия...) + ценности + мир |
+| Визуал | /visual-view | Галерея сцен, персонажей, локаций |
+| Редактор | /editor | Создание/редактирование сцен, персонажей, локаций |
+| О книге | /about | Геном + Слои сознания + Эволюция |
+| Поиск | /search | 4 вкладки: знания, факты, сущности, граф |
+| Профиль | /profile | Быстрые действия, статистика, темы, API-ключи, подписка |
+| Рекомендации | /recommendations | Персонализированные рекомендации, тренды, прогресс |
+| История | /history | Вопросы, сессии, фильтры |
+| Краудфандинг | /crowdfunding | Кампании, майлстоуны, admin-панель |
+| Аналитика | /analytics | Запросы, граф знаний, системная статистика |
+| Уведомления | /notifications | Предложения, тренды, email-рассылка, подписчики |
+| API | /api | Ключи, тестер, примеры, документация |
+| Настройки | /settings | Аккаунт, внешний вид, язык, уведомления, безопасность, конфиденциальность |
+| Загрузка | /upload | Drag-and-drop загрузка, история в localStorage |
+| Визуалы | /visual | Формы создания сцен/персонажей/локаций + голосовой ввод |
+| Админ | /admin | Дашборд, пользователи, инвайты, сессии, ключи, статистика |
+| X-Ray | /xray | Статистика, трейсы, диагностика |
+| Вход | /login | Telegram бот + email + dev-режим |
+| Регистрация | /register | Email регистрация |
+
+## Авторизация
+- **Telegram бот**: `/login` → токен → ссылка → JWT + cookie
+- **Email**: `/register` → форма → JWT + cookie
+- **Dev**: кнопка «Войти как разработчик» → dev-login API → JWT + cookie
+- Cookie: `arkaim_session` (HttpOnly, SameSite=Lax)
+- API routes: `/api/auth/login`, `/api/auth/logout`, `/api/auth/register`, `/api/auth/dev-login`
+
+## Навигация
+- Боковая панель с группировкой: Книга, Читатель, Сообщество, Инструменты, Админ
+- Сворачиваемая панель (кнопка ☰)
+- Ролевая фильтрация (admin/editor скрыты для reader)
+- WebSocket badge на колокольчике
+
+## API прокси (Next.js rewrites)
+```
+/auth/:path*   → http://localhost:8642/auth/:path*
+/book/:path*   → http://localhost:8642/book/:path*
+/api/:path*    → http://localhost:8642/api/:path*
+/xray/:path*   → http://localhost:8642/xray/:path*
+```
+
+## Mock-режим
+`src/shared/lib/api.ts` — при 401 возвращает mock-данные из `MOCK_DATA`.
+Все страницы работают без реального бэкенда.
+
+## Файлы API routes
+```
+src/app/api/auth/login/route.ts      # Логин по токену
+src/app/api/auth/logout/route.ts     # Выход
+src/app/api/auth/register/route.ts   # Регистрация
+src/app/api/auth/dev-login/route.ts  # Dev-вход через бэкенд
+src/app/api/telegram/callback/route.ts  # Telegram widget
+```
+
+## Известные проблемы
+- Google OAuth недоступен в РФ
+- Telegram бот нуждается в стабильном интернете для polling
+- Некоторые API требуют реальную авторизацию
+- /book/ask возвращает 500 (Pulse/Voice не инициализированы полностью)
+
+## Команды
+```bash
+start_all.bat              # Запуск всего
+stop_all.bat               # Остановка всего
+cd arkaim-web && npm run dev       # Фронтенд
+cd arkaim-web && npx vitest run    # Тесты
+cd arkaim-web && npm run build     # Production сборка
+```

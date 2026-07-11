@@ -1,0 +1,145 @@
+"""
+telegram_bot — Telegram бот для «Наследие Аркаима».
+Обрабатывает команду /login для авторизации через ссылку.
+"""
+import asyncio
+import logging
+import os
+from typing import Optional
+
+import httpx
+
+from auth.login_tokens import generate_login_token
+
+log = logging.getLogger("hermes.telegram_bot")
+
+TELEGRAM_API = "https://api.telegram.org/bot{token}/{method}"
+
+
+class TelegramBot:
+    """Простой Telegram бот для обработки команд."""
+
+    def __init__(self, bot_token: str, public_base_url: str):
+        self.bot_token = bot_token
+        self.public_base_url = public_base_url.rstrip("/")
+        self._offset = 0
+        self._running = False
+
+    async def _api(self, method: str, data: dict = None) -> dict:
+        """Вызов Telegram Bot API."""
+        url = TELEGRAM_API.format(token=self.bot_token, method=method)
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(url, json=data or {}, timeout=10)
+            return resp.json()
+
+    async def send_message(self, chat_id: int, text: str, parse_mode: str = "HTML"):
+        """Отправить сообщение."""
+        await self._api("sendMessage", {
+            "chat_id": chat_id,
+            "text": text,
+            "parse_mode": parse_mode,
+        })
+
+    async def handle_command(self, message: dict):
+        """Обработка команд."""
+        chat_id = message["chat"]["id"]
+        user = message.get("from", {})
+        text = message.get("text", "").strip()
+        username = user.get("username", "")
+        display_name = " ".join(filter(None, [user.get("first_name"), user.get("last_name")]))
+        telegram_user_id = str(user.get("id", ""))
+
+        if text == "/login":
+            # Генерируем одноразовый токен
+            token = generate_login_token(
+                telegram_user_id=telegram_user_id,
+                username=username,
+                display_name=display_name,
+            )
+            login_url = f"{self.public_base_url}/auth/login?token={token}"
+
+            await self.send_message(chat_id,
+                f"🔐 <b>Вход в «Наследие Аркаима»</b>\n\n"
+                f"Нажмите на ссылку для входа:\n"
+                f"<a href=\"{login_url}\">Войти в систему</a>\n\n"
+                f"Ссылка действительна 10 минут.\n"
+                f"Пользователь: @{username or 'без username'}"
+            )
+            log.info("login_token_sent user_id=%s username=%s", telegram_user_id, username)
+
+        elif text == "/start":
+            await self.send_message(chat_id,
+                "👋 Добро пожаловать в «Наследие Аркаима»!\n\n"
+                "Команды:\n"
+                "/login — Войти в систему\n"
+                "/help — Помощь"
+            )
+
+        elif text == "/help":
+            await self.send_message(chat_id,
+                "📖 <b>Наследие Аркаима</b> — цифровое сознание книги\n\n"
+                "Команды:\n"
+                "/login — Получить ссылку для входа\n"
+                "/help — Эта справка"
+            )
+
+    async def poll(self):
+        """Long polling — обработка входящих сообщений."""
+        self._running = True
+        log.info("telegram_bot_started")
+
+        while self._running:
+            try:
+                result = await self._api("getUpdates", {
+                    "offset": self._offset,
+                    "timeout": 30,
+                    "allowed_updates": ["message"],
+                })
+
+                if not result.get("ok"):
+                    log.error("telegram_get_updates_error: %s", result)
+                    await asyncio.sleep(5)
+                    continue
+
+                for update in result.get("result", []):
+                    self._offset = update["update_id"] + 1
+                    message = update.get("message")
+                    if message and message.get("text", "").startswith("/"):
+                        try:
+                            await self.handle_command(message)
+                        except Exception as e:
+                            log.error("telegram_handle_command_error: %s", e)
+
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                log.error("telegram_poll_error: %s", e)
+                await asyncio.sleep(5)
+
+    def stop(self):
+        """Остановить polling."""
+        self._running = False
+
+
+# Синглтон
+_bot: Optional[TelegramBot] = None
+
+
+def get_bot() -> Optional[TelegramBot]:
+    """Получить экземпляр бота."""
+    return _bot
+
+
+def init_bot():
+    """Инициализировать бота из env."""
+    global _bot
+    bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "")
+    public_base_url = os.getenv("PUBLIC_BASE_URL", "http://localhost:3000")
+
+    if not bot_token:
+        log.warning("telegram_bot_not_configured: TELEGRAM_BOT_TOKEN не задан")
+        return None
+
+    _bot = TelegramBot(bot_token=bot_token, public_base_url=public_base_url)
+    log.info("telegram_bot_initialized base_url=%s", public_base_url)
+    return _bot

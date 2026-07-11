@@ -96,6 +96,7 @@ _pulse_beat_task: asyncio.Task | None = None
 _suggest_task: asyncio.Task | None = None
 _email_task: asyncio.Task | None = None
 _crowdfunding_task: asyncio.Task | None = None
+_telegram_bot_task: asyncio.Task | None = None
 
 
 # ── Pulse reference for email digest ──────────────────────
@@ -105,7 +106,7 @@ _pulse_ref = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _health_check_task, _pulse_beat_task
-    global _suggest_task, _email_task, _pulse_ref, _crowdfunding_task
+    global _suggest_task, _email_task, _pulse_ref, _crowdfunding_task, _telegram_bot_task
 
     # DatabaseManager — единое управление соединениями
     from core.database import get_db_manager, close_db_manager
@@ -223,6 +224,15 @@ async def lifespan(app: FastAPI):
     _crowdfunding_task = asyncio.create_task(_crowdfunding_check_loop())
     log.info("crowdfunding_scheduled")
 
+    # Telegram Bot — обработка /login
+    from bot.telegram_bot import init_bot
+    bot = init_bot()
+    if bot:
+        async def _bot_poll_loop():
+            await bot.poll()
+        _telegram_bot_task = asyncio.create_task(_bot_poll_loop())
+        log.info("telegram_bot_started")
+
     yield
 
     if _health_check_task:
@@ -235,6 +245,8 @@ async def lifespan(app: FastAPI):
         _email_task.cancel()
     if _crowdfunding_task:
         _crowdfunding_task.cancel()
+    if _telegram_bot_task:
+        _telegram_bot_task.cancel()
     log.info("health_monitor_stopped")
     log.info("core_shutdown")
     await core.close()

@@ -11,12 +11,23 @@ log = logging.getLogger("hermes.core.auth")
 
 async def verify_request(request: Request) -> dict:
     auth_header = request.headers.get("authorization", "")
-    if not auth_header:
+    token = None
+
+    if auth_header:
+        token = auth_header.split(" ", 1)[1].strip() if auth_header.lower().startswith("bearer ") else auth_header.strip()
+    else:
+        # Fallback: читаем token из cookie arkaim_session
+        cookie_header = request.headers.get("cookie", "")
+        for part in cookie_header.split(";"):
+            part = part.strip()
+            if part.startswith("arkaim_session="):
+                token = part.split("=", 1)[1]
+                break
+
+    if not token:
         if settings.HERMES_API_KEY:
             raise HTTPException(status_code=401, detail="Missing API key")
-        raise HTTPException(status_code=401, detail="Missing Authorization header")
-
-    token = auth_header.split(" ", 1)[1].strip() if auth_header.lower().startswith("bearer ") else auth_header.strip()
+        raise HTTPException(status_code=401, detail="Missing Authorization header or session cookie")
 
     user_store = UserStore()
 

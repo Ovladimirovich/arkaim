@@ -15,6 +15,7 @@ from auth.oauth.google import (
     get_google_auth_url,
     GoogleOAuthError,
 )
+from auth.login_tokens import generate_login_token, verify_login_token
 from auth.rbac import require_role
 from auth.tokens import create_access_token
 from auth.api_keys import generate_api_key, mask_api_key
@@ -72,6 +73,69 @@ async def telegram_callback(request: Request):
     )
     log.info("user_logged_in provider=%s user_id=%s", telegram_data["provider"], user["id"])
     return resp
+
+
+@router.post("/telegram/login")
+async def telegram_login_token(request: Request):
+    """Вход по одноразовому токену (сгенерированному ботом /login)."""
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Некорректный JSON")
+
+    token = body.get("token")
+    if not token:
+        raise HTTPException(status_code=400, detail="Отсутствует token")
+
+    telegram_data = verify_login_token(token)
+    if not telegram_data:
+        raise HTTPException(status_code=400, detail="Токен недействителен или истёк")
+
+    user = await user_store.upsert_user(
+        provider=telegram_data["provider"],
+        provider_user_id=telegram_data["provider_user_id"],
+        username=telegram_data.get("username"),
+        display_name=telegram_data.get("display_name"),
+        role="reader",
+    )
+    jwt_token = create_access_token(
+        subject=user["id"],
+        role=user["role"],
+        provider=user["provider"],
+        expires_delta=timedelta(hours=12),
+    )
+    resp = JSONResponse({
+        "ok": True,
+        "user": {
+            "id": user["id"],
+            "role": user["role"],
+            "username": user.get("username"),
+            "display_name": user.get("display_name"),
+        },
+    })
+    is_secure = bool(settings.PUBLIC_BASE_URL.startswith("https://"))
+    resp.set_cookie(
+        "arkaim_session",
+        jwt_token,
+        httponly=True,
+        secure=is_secure,
+        samesite="Lax",
+        max_age=3600 * 12,
+        path="/",
+    )
+    log.info("user_logged_in_via_token provider=%s user_id=%s", telegram_data["provider"], user["id"])
+    return resp
+
+
+@router.post("/dev/generate-token")
+async def dev_generate_token(request: Request):
+    """Только для разработки: генерирует тестовый токен для входа."""
+    body = await request.json()
+    telegram_user_id = body.get("telegram_user_id", "dev-test-user")
+    username = body.get("username", "dev_user")
+    display_name = body.get("display_name", "Dev User")
+    token = generate_login_token(telegram_user_id, username, display_name)
+    return {"token": token, "login_url": f"/auth/login?token={token}"}
 
 
 @router.get("/google")
@@ -136,6 +200,66 @@ async def auth_logout_post():
 async def auth_logout_get():
     resp = RedirectResponse(url="/auth/login")
     resp.delete_cookie("arkaim_session", path="/")
+    return resp
+
+
+@router.post("/register")
+async def auth_register(request: Request):
+    """Регистрация нового пользователя по email/username."""
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Некорректный JSON")
+
+    username = body.get("username", "").strip()
+    email = body.get("email", "").strip()
+    display_name = body.get("display_name", "").strip() or username
+
+    if not username:
+        raise HTTPException(status_code=400, detail="Введите имя пользователя")
+    if len(username) < 3:
+        raise HTTPException(status_code=400, detail="Имя пользователя — минимум 3 символа")
+
+    # Проверяем уникальность username
+    existing = await user_store.get_user_by_provider("email", username)
+    if existing:
+        raise HTTPException(status_code=409, detail="Пользователь с таким именем уже существует")
+
+    user = await user_store.upsert_user(
+        provider="email",
+        provider_user_id=username,
+        username=username,
+        display_name=display_name,
+        role="reader",
+    )
+
+    token = create_access_token(
+        subject=user["id"],
+        role=user["role"],
+        provider=user["provider"],
+        expires_delta=timedelta(hours=12),
+    )
+
+    resp = JSONResponse({
+        "ok": True,
+        "user": {
+            "id": user["id"],
+            "role": user["role"],
+            "username": user.get("username"),
+            "display_name": user.get("display_name"),
+        },
+    })
+    is_secure = bool(settings.PUBLIC_BASE_URL.startswith("https://"))
+    resp.set_cookie(
+        "arkaim_session",
+        token,
+        httponly=True,
+        secure=is_secure,
+        samesite="Lax",
+        max_age=3600 * 12,
+        path="/",
+    )
+    log.info("user_registered provider=email user_id=%s username=%s", user["id"], username)
     return resp
 
 
