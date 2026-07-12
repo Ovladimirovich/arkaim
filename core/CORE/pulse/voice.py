@@ -217,81 +217,79 @@ class BookVoice:
                 pass
 
         if self._llm:
-            # Используем LLM когда: углубление, низкая уверенность, ИЛИ есть история диалога
+            # Всегда используем LLM если он доступен
             is_deepen = "deepen_topic" in reader_ctx
-            has_dialogue = messages and len(messages) > 0
-            if is_deepen or response.confidence < 0.9 or has_dialogue:
-                try:
-                    context = self._pulse.build_context()
+            try:
+                context = self._pulse.build_context()
 
-                    # Добавить контекст читателя, если есть
-                    reader_info = ""
-                    if self._memory and reader_id:
-                        reader_info = await self._memory.build_reader_context(reader_id)
-                        if reader_info:
-                            context += f"\n\nКонтекст читателя:\n{reader_info}"
+                # Добавить контекст читателя, если есть
+                reader_info = ""
+                if self._memory and reader_id:
+                    reader_info = await self._memory.build_reader_context(reader_id)
+                    if reader_info:
+                        context += f"\n\nКонтекст читателя:\n{reader_info}"
 
-                    if is_deepen:
-                        voice_prompt = (
-                            f"Читатель просит углубить тему «{reader_ctx.get('deepen_topic', '')}». "
-                            f"Ранее ему было сказано:\n{reader_ctx.get('last_answer', '')}\n\n"
-                            f"Ответь глубже, используя только факты из книги. 3-5 предложений."
-                        )
-                    else:
-                        mood_instruction = {
-                            'joy': 'Говори с радостью и теплотой.',
-                            'curiosity': 'Говори с интересом, как исследователь.',
-                            'sadness': 'Говори мягко, с сочувствием.',
-                            'doubt': 'Говори спокойно, уважительно проясняя.',
-                            'deep': 'Говори мудро, с глубиной.',
-                            'neutral': '',
-                        }.get(mood, '')
+                if is_deepen:
+                    voice_prompt = (
+                        f"Читатель просит углубить тему «{reader_ctx.get('deepen_topic', '')}». "
+                        f"Ранее ему было сказано:\n{reader_ctx.get('last_answer', '')}\n\n"
+                        f"Ответь глубже, используя только факты из книги. 3-5 предложений."
+                    )
+                else:
+                    mood_instruction = {
+                        'joy': 'Говори с радостью и теплотой.',
+                        'curiosity': 'Говори с интересом, как исследователь.',
+                        'sadness': 'Говори мягко, с сочувствием.',
+                        'doubt': 'Говори спокойно, уважительно проясняя.',
+                        'deep': 'Говори мудро, с глубиной.',
+                        'neutral': '',
+                    }.get(mood, '')
 
-                        # Построить контекст из истории диалога
-                        dialogue_context = ""
-                        if messages:
-                            for m in messages[-6:]:  # последние 6 сообщений
-                                role = "Читатель" if m.get("role") == "user" else "Книга"
-                                dialogue_context += f"{role}: {m.get('content', '')[:200]}\n"
+                    # Построить контекст из истории диалога
+                    dialogue_context = ""
+                    if messages:
+                        for m in messages[-6:]:  # последние 6 сообщений
+                            role = "Читатель" if m.get("role") == "user" else "Книга"
+                            dialogue_context += f"{role}: {m.get('content', '')[:200]}\n"
 
-                        voice_prompt = (
-                            f"Предыдущий диалог:\n{dialogue_context}\n"
-                            f"Читатель спрашивает: {query}\n\n"
-                            f"Я знаю из книги:\n{response.text}\n\n"
-                            f"{mood_instruction}\n"
-                            f"Ответь с учётом контекста диалога. "
-                            f"Связывай с предыдущими ответами. 2-4 предложения."
-                        )
+                    voice_prompt = (
+                        f"Предыдущий диалог:\n{dialogue_context}\n"
+                        f"Читатель спрашивает: {query}\n\n"
+                        f"Я знаю из книги:\n{response.text}\n\n"
+                        f"{mood_instruction}\n"
+                        f"Ответь с учётом контекста диалога. "
+                        f"Связывай с предыдущими ответами. 2-4 предложения."
+                    )
 
-                    if self._llm and hasattr(self._llm, "chat"):
-                        llm_text = await self._llm.chat([
-                            {"role": "system", "content": context},
-                            {"role": "user", "content": voice_prompt},
-                        ])
+                if self._llm and hasattr(self._llm, "chat"):
+                    llm_text = await self._llm.chat([
+                        {"role": "system", "content": context},
+                        {"role": "user", "content": voice_prompt},
+                    ])
 
-                        # Identity check
-                        identity = self._pulse.layers.get("identity")
-                        identity_passed = True
-                        if identity and hasattr(identity, "validate_detail"):
-                            result = identity.validate_detail(llm_text)
-                            identity_passed = result["passed"]
-                            if not identity_passed:
-                                log.warning("voice_identity_blocked trigger=%s topic=%s", result.get("trigger", "?"), query[:60])
+                    # Identity check
+                    identity = self._pulse.layers.get("identity")
+                    identity_passed = True
+                    if identity and hasattr(identity, "validate_detail"):
+                        result = identity.validate_detail(llm_text)
+                        identity_passed = result["passed"]
                         if not identity_passed:
-                            llm_text = response.text
+                            log.warning("voice_identity_blocked trigger=%s topic=%s", result.get("trigger", "?"), query[:60])
+                    if not identity_passed:
+                        llm_text = response.text
 
-                        return Utterance(
-                            text=llm_text,
-                            source=response.source,
-                            pulse_response=response,
-                            llm_used=True,
-                            llm_model=getattr(self._llm, "model", "unknown"),
-                            reader_topic=topic,
-                            reader_depth=depth,
-                            mood=mood,
-                        )
-                except Exception as e:
-                    log.error("voice_llm_error %s", e)
+                    return Utterance(
+                        text=llm_text,
+                        source=response.source,
+                        pulse_response=response,
+                        llm_used=True,
+                        llm_model=getattr(self._llm, "model", "unknown"),
+                        reader_topic=topic,
+                        reader_depth=depth,
+                        mood=mood,
+                    )
+            except Exception as e:
+                log.error("voice_llm_error %s", e)
 
         # Проверить response.text на identity (на случай, если Pulse вернул невалидное)
         identity = self._pulse.layers.get("identity")
