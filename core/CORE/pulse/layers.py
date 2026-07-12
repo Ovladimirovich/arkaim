@@ -299,7 +299,19 @@ class KnowledgeLayer(BaseLayer):
 
         # Сущности мира
         for we in self._genome.get("world_entities", []):
-            if we["name"].lower() in q:
+            name_lower = we["name"].lower()
+            # Улучшенный матчинг: проверяем точное вхождение + начало слова
+            name_found = False
+            if name_lower in q:
+                name_found = True
+            else:
+                # Проверяем слова в запросе на совпадение с началом имени
+                for word in q.split():
+                    word_clean = word.strip(".,!?;:")
+                    if len(word_clean) >= 4 and (name_lower.startswith(word_clean) or word_clean.startswith(name_lower[:4])):
+                        name_found = True
+                        break
+            if name_found:
                 desc = we.get("description", "")
                 values = we.get("values", [])
                 text = f"{we['name']}"
