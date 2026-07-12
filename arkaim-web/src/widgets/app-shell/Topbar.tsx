@@ -1,7 +1,7 @@
 'use client';
 
 import { Button, Space, Typography, Badge, Tooltip } from 'antd';
-import { MenuFoldOutlined, MenuUnfoldOutlined, BellOutlined } from '@ant-design/icons';
+import { MenuFoldOutlined, MenuUnfoldOutlined, BellOutlined, BulbOutlined, LogoutOutlined } from '@ant-design/icons';
 import { useAuth, useTheme } from '@/app/providers';
 import { useWsContext } from '@/shared/lib/ws-hooks';
 import { useState, useEffect, useCallback } from 'react';
@@ -14,8 +14,8 @@ type TopbarProps = {
 };
 
 export function Topbar({ collapsed, onToggleCollapse }: TopbarProps) {
-  const { user } = useAuth();
-  const { isDark } = useTheme();
+  const { user, logout } = useAuth();
+  const { isDark, toggle } = useTheme();
   const { connected, lastEvent } = useWsContext();
   const [notificationCount, setNotificationCount] = useState(0);
 
@@ -61,15 +61,23 @@ export function Topbar({ collapsed, onToggleCollapse }: TopbarProps) {
             onClick={clearNotifications}
           />
         </Badge>
+        <Tooltip title={isDark ? 'Светлая тема' : 'Тёмная тема'}>
+          <Button type="text" icon={<BulbOutlined />} onClick={toggle} />
+        </Tooltip>
         {user && (
-          <Space size={4}>
-            <Text type="secondary" style={{ fontSize: '.85rem' }}>
-              {user.display_name || user.username}
-            </Text>
-            <Text type="secondary" style={{ fontSize: '.75rem' }}>
-              ({user.role})
-            </Text>
-          </Space>
+          <>
+            <Space size={4}>
+              <Text type="secondary" style={{ fontSize: '.85rem' }}>
+                {user.display_name || user.username}
+              </Text>
+              <Text type="secondary" style={{ fontSize: '.75rem' }}>
+                ({user.role})
+              </Text>
+            </Space>
+            <Tooltip title="Выйти">
+              <Button type="text" icon={<LogoutOutlined />} onClick={logout} />
+            </Tooltip>
+          </>
         )}
       </Space>
     </div>

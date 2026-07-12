@@ -1,16 +1,16 @@
 'use client';
 
-import { Layout, Menu, Button, Tooltip } from 'antd';
+import { Layout, Menu } from 'antd';
 import {
   BookOutlined, ReadOutlined, EditOutlined, VideoCameraOutlined,
   HistoryOutlined, UploadOutlined, PictureOutlined, EyeOutlined,
   TagsOutlined, TrophyOutlined, FileTextOutlined, QuestionCircleOutlined,
-  InfoCircleOutlined, SettingOutlined, BulbOutlined, LogoutOutlined,
+  InfoCircleOutlined, SettingOutlined,
   CodeOutlined, DollarOutlined, RiseOutlined, BellOutlined, SearchOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth, useTheme } from '@/app/providers';
+import { useAuth } from '@/app/providers';
 
 const { Sider } = Layout;
 
@@ -73,8 +73,7 @@ type SidebarProps = {
 };
 
 export function Sidebar({ collapsed, onCollapse, selectedKey }: SidebarProps) {
-  const { user, logout } = useAuth();
-  const { isDark, toggle } = useTheme();
+  const { user } = useAuth();
   const router = useRouter();
 
   const filteredGroups = NAV_GROUPS
@@ -136,26 +135,6 @@ export function Sidebar({ collapsed, onCollapse, selectedKey }: SidebarProps) {
           style={{ borderRight: 0 }}
           onClick={({ key }) => router.push(key)}
         />
-      </div>
-
-      {/* Footer — тема и выход, прижаты к низу */}
-      <div style={{
-        padding: '12px 0',
-        borderTop: '1px solid rgba(255,255,255,0.1)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 8,
-        flexShrink: 0,
-      }}>
-        <Tooltip title={isDark ? 'Светлая тема' : 'Тёмная тема'} placement="right">
-          <Button type="text" icon={<BulbOutlined />} onClick={toggle} style={{ color: '#fff' }} />
-        </Tooltip>
-        {user && (
-          <Tooltip title="Выйти" placement="right">
-            <Button type="text" icon={<LogoutOutlined />} onClick={logout} style={{ color: '#94a3b8' }} />
-          </Tooltip>
-        )}
       </div>
     </Sider>
   );
