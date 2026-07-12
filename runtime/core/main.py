@@ -38,12 +38,34 @@ from core.providers.gigachat import GigaChatProvider
 from core.providers.openrouter import OpenRouterProvider
 from core.providers.huggingface import HuggingFaceProvider
 from observability.metrics import metrics
-def check_rate_limit(_: str) -> bool:  # contract-test stub
+
+# ── In-memory rate limiter ──────────────────────────────
+_rate_limits: dict[str, list[float]] = {}
+RATE_LIMIT_MAX_REQUESTS = 100
+RATE_LIMIT_WINDOW_SECONDS = 60
+
+def check_rate_limit(client_id: str) -> bool:
+    """Simple sliding window rate limiter."""
+    now = time.time()
+    if client_id not in _rate_limits:
+        _rate_limits[client_id] = []
+    # Remove old entries outside the window
+    _rate_limits[client_id] = [
+        t for t in _rate_limits[client_id]
+        if now - t < RATE_LIMIT_WINDOW_SECONDS
+    ]
+    if len(_rate_limits[client_id]) >= RATE_LIMIT_MAX_REQUESTS:
+        return False
+    _rate_limits[client_id].append(now)
     return True
 
 
-def get_rate_limit_info(_: str) -> dict:
-    return {"rate": 100.0, "remaining": 100}
+def get_rate_limit_info(client_id: str) -> dict:
+    now = time.time()
+    requests = _rate_limits.get(client_id, [])
+    requests = [t for t in requests if now - t < RATE_LIMIT_WINDOW_SECONDS]
+    remaining = max(0, RATE_LIMIT_MAX_REQUESTS - len(requests))
+    return {"rate": RATE_LIMIT_MAX_REQUESTS, "remaining": remaining}
 
 
 # NOTE: gateway dependency intentionally avoided in core for contract tests

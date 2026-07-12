@@ -48,8 +48,8 @@ async def verify_request(request: Request) -> dict:
                         "username": user.get("username"),
                         "display_name": user.get("display_name"),
                     }
-        except Exception:
-            pass
+        except Exception as e:
+            log.warning("auth_gateway_forward_error: %s", e)
         return {
             "auth": "ok",
             "user_id": "service",
