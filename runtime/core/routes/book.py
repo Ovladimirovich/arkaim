@@ -112,6 +112,7 @@ async def ask(
     result = await keeper.act({
         "question": req.question,
         "context": req.context,
+        "messages": [{"role": m.role, "content": m.content} for m in (req.messages or [])],
         "reader_id": user.get("user_id", ""),
         "reader_name": user.get("display_name", "") or user.get("username", ""),
     })

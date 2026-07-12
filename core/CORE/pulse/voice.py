@@ -165,7 +165,7 @@ class BookVoice:
             log.error("voice_extract_visual_error %s", e)
             return None
 
-    async def speak(self, query: str, reader_id: str = "", reader_name: str = "") -> Utterance:
+    async def speak(self, query: str, reader_id: str = "", reader_name: str = "", messages: list[dict] | None = None) -> Utterance:
         """
         Ответить на вопрос голосом книги, зная читателя.
 
@@ -246,12 +246,20 @@ class BookVoice:
                             'neutral': '',
                         }.get(mood, '')
 
+                        # Построить контекст из истории диалога
+                        dialogue_context = ""
+                        if messages:
+                            for m in messages[-6:]:  # последние 6 сообщений
+                                role = "Читатель" if m.get("role") == "user" else "Книга"
+                                dialogue_context += f"{role}: {m.get('content', '')[:200]}\n"
+
                         voice_prompt = (
+                            f"Предыдущий диалог:\n{dialogue_context}\n"
                             f"Читатель спрашивает: {query}\n\n"
                             f"Я знаю из книги:\n{response.text}\n\n"
                             f"{mood_instruction}\n"
-                            f"Сформулируй ответ голосом книги. "
-                            f"Не добавляй новых фактов. 2-4 предложения."
+                            f"Ответь с учётом контекста диалога. "
+                            f"Связывай с предыдущими ответами. 2-4 предложения."
                         )
 
                     if self._llm and hasattr(self._llm, "chat"):

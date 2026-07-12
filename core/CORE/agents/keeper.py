@@ -38,6 +38,7 @@ class KeeperAgent(BaseAgent):
         question = input_data.get("question", "")
         reader_id = input_data.get("reader_id", "")
         reader_name = input_data.get("reader_name", "")
+        messages = input_data.get("messages", [])
 
         if not self.pulse:
             return {"answer": "Система ещё не загрузила книгу. Попробуйте позже.", "source": "pulse_unavailable"}
@@ -49,7 +50,7 @@ class KeeperAgent(BaseAgent):
             return {"answer": "", "source": "silence", "spam": True}
 
         if self.voice:
-            utterance = await self.voice.speak(question, reader_id=reader_id, reader_name=reader_name)
+            utterance = await self.voice.speak(question, reader_id=reader_id, reader_name=reader_name, messages=messages)
         else:
             response = self.pulse.listen(question)
             utterance_text = response.text if response else "Я не нахожу ответа в книге."

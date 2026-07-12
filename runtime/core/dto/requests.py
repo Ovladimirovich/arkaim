@@ -24,6 +24,7 @@ class ChatRequest(BaseModel):
 class BookAskRequest(BaseModel):
     question: str = Field(..., min_length=3, max_length=2000, json_schema_extra={"example": "Кто такой Велик?"})
     context: str | None = Field(None, max_length=1000)
+    messages: list[Message] | None = None  # история диалога
 
 
 class BookGenerateRequest(BaseModel):

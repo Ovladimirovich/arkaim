@@ -18,6 +18,8 @@ type Message = {
   source?: string;
   time?: string;
   sourceType?: 'pulse' | 'llm' | 'hybrid' | 'mock';
+  mood?: 'joy' | 'curiosity' | 'sadness' | 'doubt' | 'deep' | 'neutral';
+  suggestion?: string;
 };
 type HistoryItem = { id: number; content: string; created_at: string };
 type HistoryFullItem = { role: 'user' | 'assistant'; content: string; created_at: string };
@@ -135,12 +137,18 @@ function ChatContent() {
     setSending(true);
     setStreamingText('');
 
+    // Подготовить историю диалога (последние 6 сообщений)
+    const dialogueHistory = messages.slice(-6).map(m => ({
+      role: m.role,
+      content: m.content,
+    }));
+
     try {
       const token = document.cookie.split('; ').find(c => c.startsWith('arkaim_session='))?.split('=')[1] || '';
       const resp = await fetch('/v1/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ question: q }),
+        body: JSON.stringify({ question: q, messages: dialogueHistory }),
       });
 
       if (resp.ok && resp.headers.get('content-type')?.includes('text/event-stream')) {
@@ -160,9 +168,17 @@ function ChatContent() {
         }
         setMessages(prev => [...prev, { role: 'assistant', content: fullText || 'Получен пустой ответ.', sourceType: 'hybrid', time: now() }]);
       } else {
-        const result = await api.post<{ data: { answer: string; source?: string } }>('/book/ask', { question: q });
+        const result = await api.post<{ data: { answer: string; source?: string; mood?: string; suggestion?: string } }>('/book/ask', { question: q, messages: dialogueHistory });
         const sourceType = result.data.source === 'mock' ? 'mock' : result.data.source?.includes('pulse') ? 'pulse' : 'llm';
-        setMessages(prev => [...prev, { role: 'assistant', content: result.data.answer, source: result.data.source, sourceType, time: now() }]);
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: result.data.answer,
+          source: result.data.source,
+          sourceType,
+          mood: result.data.mood as any,
+          suggestion: result.data.suggestion,
+          time: now(),
+        }]);
       }
     } catch {
       setMessages(prev => [...prev, { role: 'assistant', content: 'Извините, произошла ошибка. Попробуйте позже.', sourceType: 'mock', time: now() }]);
@@ -170,7 +186,7 @@ function ChatContent() {
       setSending(false);
       setStreamingText('');
     }
-  }, [input, sending]);
+  }, [input, sending, messages]);
 
   const newSession = () => { setMessages([]); setInput(''); localStorage.removeItem(SESSION_KEY); };
 
