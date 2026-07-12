@@ -100,16 +100,18 @@ export function Sidebar({ collapsed, onCollapse, selectedKey }: SidebarProps) {
       collapsedWidth={60}
       style={{
         background: isDark ? '#141414' : '#001529',
-        overflow: 'auto',
         height: '100vh',
         position: 'fixed',
         left: 0,
         top: 0,
         bottom: 0,
         zIndex: 100,
+        display: 'flex',
+        flexDirection: 'column',
       }}
       trigger={null}
     >
+      {/* Logo */}
       <div style={{
         height: 64,
         display: 'flex',
@@ -117,32 +119,34 @@ export function Sidebar({ collapsed, onCollapse, selectedKey }: SidebarProps) {
         justifyContent: collapsed ? 'center' : 'flex-start',
         padding: collapsed ? '0' : '0 16px',
         borderBottom: '1px solid rgba(255,255,255,0.1)',
+        flexShrink: 0,
       }}>
         <Link href="/book" style={{ color: '#fff', fontWeight: 700, fontSize: collapsed ? '1.2rem' : '1rem', textDecoration: 'none', whiteSpace: 'nowrap' }}>
           {collapsed ? '𓃉' : 'Наследие Аркаима'}
         </Link>
       </div>
 
-      <Menu
-        theme="dark"
-        mode="inline"
-        selectedKeys={[selectedKey]}
-        items={menuItems}
-        style={{ borderRight: 0 }}
-        onClick={({ key }) => router.push(key)}
-      />
+      {/* Menu — занимает оставшееся место */}
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        <Menu
+          theme="dark"
+          mode="inline"
+          selectedKeys={[selectedKey]}
+          items={menuItems}
+          style={{ borderRight: 0 }}
+          onClick={({ key }) => router.push(key)}
+        />
+      </div>
 
+      {/* Footer — тема и выход, прижаты к низу */}
       <div style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
         padding: '12px 0',
         borderTop: '1px solid rgba(255,255,255,0.1)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         gap: 8,
+        flexShrink: 0,
       }}>
         <Tooltip title={isDark ? 'Светлая тема' : 'Тёмная тема'} placement="right">
           <Button type="text" icon={<BulbOutlined />} onClick={toggle} style={{ color: '#fff' }} />
