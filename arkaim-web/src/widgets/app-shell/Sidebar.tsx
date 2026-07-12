@@ -98,7 +98,7 @@ export function Sidebar({ collapsed, onCollapse, selectedKey }: SidebarProps) {
       width={220}
       collapsedWidth={60}
       style={{
-        background: isDark ? '#141414' : '#001529',
+        background: '#001529',
         height: '100vh',
         position: 'fixed',
         left: 0,
