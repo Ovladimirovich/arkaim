@@ -145,36 +145,54 @@ function ThemesByGenre({ genome, isLoading }: { genome?: GenomeData; isLoading: 
 }
 
 function ValuesTab({ genome, isLoading }: { genome?: GenomeData; isLoading: boolean }) {
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState<'name' | 'description'>('name');
+
   if (isLoading) return <div style={{ textAlign: 'center', padding: 48 }}><Spin size="large" /></div>;
   if (!genome?.values || genome.values.length === 0) return <Empty description="Ценности не определены" />;
 
   const icons: Record<string, any> = { 'мудрость': <StarOutlined />, 'любовь': <HeartOutlined />, 'сила': <ThunderboltOutlined />, 'добра': <StarOutlined />, 'истина': <EyeOutlined /> };
   const colors: Record<string, string> = { 'мудрость': '#fbbf24', 'любовь': '#f87171', 'сила': '#60a5fa', 'добра': '#34d399', 'истина': '#a78bfa' };
 
+  const filtered = genome.values
+    .filter(v => !search || v.name.toLowerCase().includes(search.toLowerCase()) || (v.description || '').toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => (a[sortBy] || '').localeCompare(b[sortBy] || ''));
+
   return (
-    <Row gutter={[12, 12]}>
-      {genome.values.map((value, i) => {
-        const key = Object.keys(icons).find(k => value.name.toLowerCase().includes(k)) || '';
-        const color = colors[key] || '#94a3b8';
-        return (
-          <Col xs={24} sm={12} md={8} key={i}>
-            <div style={{ padding: '16px', background: '#1e293b', border: '1px solid #334155', borderTop: `3px solid ${color}`, borderRadius: 10, height: '100%' }}>
-              <div style={{ display: 'flex', alignItems: 'start', gap: 12 }}>
-                <div style={{ fontSize: 24, color, flexShrink: 0 }}>{icons[key] || <StarOutlined />}</div>
-                <div>
-                  <Text style={{ color: '#e2e8f0', fontWeight: 600 }}>{value.name}</Text>
-                  {value.description && <div style={{ marginTop: 4 }}><Text style={{ fontSize: 12, color: '#94a3b8' }}>{value.description}</Text></div>}
+    <div>
+      <Space style={{ marginBottom: 16 }} wrap>
+        <Input prefix={<SearchOutlined />} placeholder="Поиск по ценностям..." value={search} onChange={e => setSearch(e.target.value)} allowClear style={{ maxWidth: 300, background: '#1e293b', borderColor: '#334155', color: '#e2e8f0' }} />
+        <Input addonBefore="Сортировка" value={sortBy === 'name' ? 'По имени' : 'По описанию'} readOnly style={{ maxWidth: 200, background: '#1e293b', borderColor: '#334155', color: '#e2e8f0', cursor: 'pointer' }}
+          onClick={() => setSortBy(sortBy === 'name' ? 'description' : 'name')} />
+      </Space>
+      <Row gutter={[12, 12]}>
+        {filtered.map((value, i) => {
+          const key = Object.keys(icons).find(k => value.name.toLowerCase().includes(k)) || '';
+          const color = colors[key] || '#94a3b8';
+          return (
+            <Col xs={24} sm={12} md={8} key={i}>
+              <div style={{ padding: '16px', background: '#1e293b', border: '1px solid #334155', borderTop: `3px solid ${color}`, borderRadius: 10, height: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'start', gap: 12 }}>
+                  <div style={{ fontSize: 24, color, flexShrink: 0 }}>{icons[key] || <StarOutlined />}</div>
+                  <div>
+                    <Text style={{ color: '#e2e8f0', fontWeight: 600 }}>{value.name}</Text>
+                    {value.description && <div style={{ marginTop: 4 }}><Text style={{ fontSize: 12, color: '#94a3b8' }}>{value.description}</Text></div>}
+                  </div>
                 </div>
               </div>
-            </div>
-          </Col>
-        );
-      })}
-    </Row>
+            </Col>
+          );
+        })}
+      </Row>
+      {filtered.length === 0 && <Empty description="Ценности не найдены" />}
+    </div>
   );
 }
 
 function WorldTab({ genome, isLoading }: { genome?: GenomeData; isLoading: boolean }) {
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState<string | null>(null);
+
   if (isLoading) return <div style={{ textAlign: 'center', padding: 48 }}><Spin size="large" /></div>;
   if (!genome) return <Empty description="Данные не загружены" />;
 
@@ -189,24 +207,44 @@ function WorldTab({ genome, isLoading }: { genome?: GenomeData; isLoading: boole
     object: { icon: <CrownOutlined />, color: '#fbbf24' },
   };
 
+  const filteredCharacters = characters.filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase()) || (c.role || '').toLowerCase().includes(search.toLowerCase()));
+  const filteredEntities = allEntities.filter(e => !typeFilter || e.type === typeFilter).filter(e => !search || e.name.toLowerCase().includes(search.toLowerCase()));
+
   const byType: Record<string, any[]> = {};
-  for (const entity of allEntities) {
+  for (const entity of filteredEntities) {
     const t = entity.type || 'other';
     if (!byType[t]) byType[t] = [];
     byType[t].push(entity);
   }
 
+  const allTypes = [...new Set(allEntities.map(e => e.type || 'other'))];
+
   return (
     <div>
-      {characters.length > 0 && (
+      <Space style={{ marginBottom: 16 }} wrap>
+        <Input prefix={<SearchOutlined />} placeholder="Поиск по персонажам и сущностям..." value={search} onChange={e => setSearch(e.target.value)} allowClear style={{ maxWidth: 350, background: '#1e293b', borderColor: '#334155', color: '#e2e8f0' }} />
+        <Space size={4} wrap>
+          <Tag style={{ cursor: 'pointer', background: !typeFilter ? '#3b82f6' : '#1e293b', color: !typeFilter ? '#fff' : '#94a3b8', borderColor: !typeFilter ? '#3b82f6' : '#334155' }} onClick={() => setTypeFilter(null)}>Все</Tag>
+          {allTypes.map(t => {
+            const config = typeConfig[t] || { icon: <BulbOutlined />, color: '#94a3b8' };
+            return (
+              <Tag key={t} style={{ cursor: 'pointer', background: typeFilter === t ? `${config.color}33` : '#1e293b', color: typeFilter === t ? config.color : '#94a3b8', borderColor: typeFilter === t ? config.color : '#334155' }} onClick={() => setTypeFilter(typeFilter === t ? null : t)}>
+                {config.icon} {t}
+              </Tag>
+            );
+          })}
+        </Space>
+      </Space>
+
+      {filteredCharacters.length > 0 && (
         <div style={{ marginBottom: 16, padding: '14px 18px', background: '#1e293b', borderRadius: 10, border: '1px solid #334155' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <TeamOutlined style={{ color: '#a78bfa' }} />
             <Text style={{ color: '#e2e8f0', fontWeight: 600 }}>Персонажи</Text>
-            <Tag style={{ background: '#334155', color: '#94a3b8', borderColor: '#475569', fontSize: 11 }}>{characters.length}</Tag>
+            <Tag style={{ background: '#334155', color: '#94a3b8', borderColor: '#475569', fontSize: 11 }}>{filteredCharacters.length}</Tag>
           </div>
           <Row gutter={[8, 8]}>
-            {characters.map((char, i) => (
+            {filteredCharacters.map((char, i) => (
               <Col xs={24} sm={12} md={8} key={char.id || i}>
                 <div style={{ padding: '10px 12px', background: '#0f172a', borderRadius: 6 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -242,7 +280,7 @@ function WorldTab({ genome, isLoading }: { genome?: GenomeData; isLoading: boole
           })}
         </Row>
       ) : (
-        <Empty description="Сущности мира не определены" />
+        <Empty description="Сущности не найдены" />
       )}
     </div>
   );
