@@ -21,6 +21,8 @@ cd arkaim-web && npx vitest run    # Тесты
 - Авторизация: Telegram бот (/login) + email регистрация + dev-режим
 - WebSocket реалтайм уведомления
 - Боковая навигация с группировкой
+- Shared компоненты: SourceBadge, ChatBubble, hooks, useStreamingChat, useSearchPanel
+- Оптимизация: кэширование genome, O(1) индексы в KnowledgeLayer
 
 ## Архитектура
 - Бэкенд: FastAPI + SQLite (runtime/, порт 8642)
@@ -105,3 +107,22 @@ cd arkaim-web && npm run dev       # Фронтенд
 cd arkaim-web && npx vitest run    # Тесты
 cd arkaim-web && npm run build     # Production сборка
 ```
+
+## Shared компоненты (`arkaim-web/src/shared/`)
+| Компонент | Файл | Назначение |
+|-----------|------|------------|
+| SourceBadge | `ui/SourceBadge.tsx` | Бейдж источника (pulse/llm/hybrid/mock) |
+| ChatBubble | `ui/ChatBubble.tsx` | Пузырь сообщения (user/assistant) |
+| StreamingBubble | `ui/ChatBubble.tsx` | Пузырь streaming-ответа |
+| useIsMobile | `lib/hooks.ts` | Хук определения мобильного |
+| useStreamingChat | `lib/useStreamingChat.ts` | Хук SSE streaming чата |
+| useSearchPanel | `lib/useSearchPanel.ts` | Generic хук поиска |
+| Markdown | `lib/markdown.tsx` | Рендер markdown |
+
+## Оптимизации производительности
+- **Genome**: `@lru_cache` для чтения JSON (1 раз вместо каждого запроса)
+- **Book text**: кэширование склеенного текста
+- **KnowledgeLayer**: dict-индексы для O(1) поиска вместо O(N) перебора
+- **Retriever**: кэш enriched_catalog.json в памяти
+- **Frontend**: MOCK_DATA исключена из production (IS_DEV guard)
+- **React Query**: staleTime увеличен до 5 минут для статических данных
