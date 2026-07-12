@@ -9,6 +9,9 @@ import httpx
 import os
 import base64
 import time
+import logging
+
+log = logging.getLogger("hermes.llm")
 
 
 class GigaChatToken:
@@ -46,6 +49,7 @@ class GigaChatToken:
         """Получить OAuth2 токен."""
         basic = base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
         scope = os.getenv("GIGACHAT_SCOPE", "GIGACHAT_API_PERS")
+        log.info("llm_oauth_start client_id=%s", client_id[:10])
         resp = await client.post(
             "https://ngw.devices.sberbank.ru:9443/api/v2/oauth",
             headers={
@@ -56,6 +60,7 @@ class GigaChatToken:
             data=f"scope={scope}",
             timeout=30.0,
         )
+        log.info("llm_oauth_response status=%d", resp.status_code)
         resp.raise_for_status()
         data = resp.json()
         self._access_token = data["access_token"]
@@ -64,6 +69,7 @@ class GigaChatToken:
             self._expires_at = expires_at_raw / 1000
         else:
             self._expires_at = float(expires_at_raw)
+        log.info("llm_oauth_ok expires_in=%d", self._expires_at - time.time())
         return self._access_token
 
 
@@ -112,6 +118,7 @@ class LLMClient:
         """
         try:
             headers = await self._get_headers()
+            log.info("llm_chat_start model=%s messages=%d", model or self.model, len(messages))
             response = await self._client.post(
                 f"{self.url}/chat/completions",
                 json={
@@ -122,6 +129,7 @@ class LLMClient:
                 },
                 headers=headers,
             )
+            log.info("llm_chat_response status=%d", response.status_code)
             response.raise_for_status()
             data = response.json()
             if "error" in data:

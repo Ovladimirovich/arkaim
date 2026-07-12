@@ -216,12 +216,14 @@ class BookVoice:
             except Exception:
                 pass
 
+        log.info("voice_speak_start query=%s reader_id=%s", query[:50], reader_id)
         log.info("voice_speak_check llm=%s type=%s", self._llm is not None, type(self._llm).__name__ if self._llm else "None")
         if self._llm:
-            log.info("voice_llm_calling")
+            log.info("voice_llm_calling query=%s", query[:50])
             is_deepen = "deepen_topic" in reader_ctx
             try:
                 context = self._pulse.build_context()
+                log.info("voice_llm_context_len=%d", len(context))
 
                 # Добавить контекст читателя, если есть
                 reader_info = ""
@@ -263,10 +265,12 @@ class BookVoice:
                     )
 
                 if self._llm and hasattr(self._llm, "chat"):
+                    log.info("voice_llm_prompt_len=%d", len(voice_prompt))
                     llm_text = await self._llm.chat([
                         {"role": "system", "content": context},
                         {"role": "user", "content": voice_prompt},
                     ])
+                    log.info("voice_llm_response_len=%d", len(llm_text))
 
                     # Identity check
                     identity = self._pulse.layers.get("identity")
@@ -315,6 +319,7 @@ class BookVoice:
                 elif "Атлантида" in last_assistant and "Атлантида" in final_text:
                     final_text = f"Возвращаясь к Атлантиде — {final_text.lower().lstrip()}"
 
+        log.info("voice_speak_end source=%s llm_used=False", response.source)
         return Utterance(
             text=final_text,
             source=response.source,
