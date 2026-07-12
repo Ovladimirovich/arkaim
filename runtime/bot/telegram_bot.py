@@ -88,6 +88,9 @@ class TelegramBot:
         self._running = True
         log.info("telegram_bot_started")
 
+        consecutive_errors = 0
+        max_consecutive_errors = 5
+
         while self._running:
             try:
                 result = await self._api("getUpdates", {
@@ -97,9 +100,19 @@ class TelegramBot:
                 })
 
                 if not result.get("ok"):
-                    log.error("telegram_get_updates_error: %s", result)
-                    await asyncio.sleep(5)
+                    error_code = result.get("error_code", 0)
+                    description = result.get("description", "unknown")
+                    # 409 = conflict (another bot instance), 401 = unauthorized
+                    if error_code in (401, 409):
+                        log.warning("telegram_bot致命 error_code=%d desc=%s — останавливаю polling", error_code, description)
+                        self._running = False
+                        break
+                    log.error("telegram_get_updates_error code=%d desc=%s", error_code, description)
+                    consecutive_errors += 1
+                    await asyncio.sleep(min(5 * consecutive_errors, 60))
                     continue
+
+                consecutive_errors = 0  # Сброс при успешном запросе
 
                 for update in result.get("result", []):
                     self._offset = update["update_id"] + 1
@@ -113,8 +126,12 @@ class TelegramBot:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                log.error("telegram_poll_error: %s", e)
-                await asyncio.sleep(5)
+                consecutive_errors += 1
+                if consecutive_errors <= 3:
+                    log.warning("telegram_poll_error (attempt %d/%d): %s", consecutive_errors, max_consecutive_errors, e)
+                elif consecutive_errors == max_consecutive_errors:
+                    log.error("telegram_poll_error: слишком много ошибок подряд, снижаю частоту polling")
+                await asyncio.sleep(min(5 * consecutive_errors, 120))
 
     def stop(self):
         """Остановить polling."""
