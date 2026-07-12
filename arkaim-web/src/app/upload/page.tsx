@@ -5,7 +5,7 @@ import { Card, Upload, Button, Select, Input, Typography, Space, message, Result
 import { UploadOutlined, InboxOutlined, CheckCircleOutlined, FileTextOutlined, ClockCircleOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
-import { ProtectedRoute, RoleGuard } from '@/shared/lib/guards';
+import { ProtectedRoute } from '@/shared/lib/guards';
 
 const { Title, Text, Paragraph } = Typography;
 const { Dragger } = Upload;
@@ -259,9 +259,7 @@ function UploadContent() {
 export default function UploadPage() {
   return (
     <ProtectedRoute>
-      <RoleGuard roles={['editor', 'admin']}>
-        <UploadContent />
-      </RoleGuard>
+      <UploadContent />
     </ProtectedRoute>
   );
 }

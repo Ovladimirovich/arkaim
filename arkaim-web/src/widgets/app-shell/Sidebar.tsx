@@ -47,7 +47,7 @@ const NAV_GROUPS = [
     label: 'Инструменты',
     items: [
       { key: '/search', icon: <SearchOutlined />, label: 'Поиск' },
-      { key: '/editor', icon: <EditOutlined />, label: 'Редактор', roles: ['editor', 'admin'] },
+      { key: '/editor', icon: <EditOutlined />, label: 'Редактор' },
       { key: '/upload', icon: <UploadOutlined />, label: 'Загрузка' },
       { key: '/visual', icon: <PictureOutlined />, label: 'Визуалы', roles: ['editor', 'admin'] },
       { key: '/api', icon: <CodeOutlined />, label: 'API' },
