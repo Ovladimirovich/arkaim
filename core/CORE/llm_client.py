@@ -1,26 +1,24 @@
 """
-LLM Client — единый интерфейс для LLM через Hermes Gateway.
+LLM Client — единый интерфейс для LLM (OpenRouter).
 
 Используется Voice для озвучки, KeeperAgent для формулировок.
-Connection pooling, HTTP/2, поддержка stream.
 """
 from typing import List, Dict, Optional, AsyncIterator
 import httpx
-from config import config
+import os
 
 
 class LLMClient:
     """
-    Клиент для LLM через Hermes Gateway.
+    Клиент для OpenRouter API.
 
-    Не хранит состояние. Каждый вызов создаёт свой HTTP-запрос.
     Voice использует этот клиент как микрофон.
     """
 
-    def __init__(self, hermes_url: Optional[str] = None, api_key: Optional[str] = None):
-        self.url = (hermes_url or config.HERMES_URL).rstrip("/")
-        self.api_key = api_key or config.HERMES_API_KEY
-        self.model = "GigaChat-Pro"
+    def __init__(self):
+        self.url = "https://openrouter.ai/api/v1"
+        self.api_key = os.getenv("OPENROUTER_API_KEY", "")
+        self.model = os.getenv("OPENROUTER_MODEL", "qwen/qwen-2.5-7b-instruct")
         limits = httpx.Limits(
             max_keepalive_connections=20,
             max_connections=100,
@@ -29,7 +27,6 @@ class LLMClient:
         self._client = httpx.AsyncClient(
             timeout=120.0,
             limits=limits,
-            http2=True,
         )
 
     async def chat(
@@ -40,14 +37,13 @@ class LLMClient:
         max_tokens: int = 2000,
     ) -> str:
         """
-        Отправить запрос к Hermes → GigaChat.
+        Отправить запрос к OpenRouter API.
 
         Voice вызывает этот метод для формулировки ответа.
-        Pulse уже знает, что сказать. LLM только формулирует.
         """
         try:
             response = await self._client.post(
-                f"{self.url}/v1/chat",
+                f"{self.url}/chat/completions",
                 json={
                     "messages": messages,
                     "model": model or self.model,
@@ -57,6 +53,8 @@ class LLMClient:
                 headers={
                     "Authorization": f"Bearer {self.api_key}",
                     "Content-Type": "application/json",
+                    "HTTP-Referer": "https://arkaim.ru",
+                    "X-Title": "Наследие Аркаима",
                 },
             )
             response.raise_for_status()
@@ -87,7 +85,7 @@ class LLMClient:
         try:
             async with self._client.stream(
                 "POST",
-                f"{self.url}/v1/chat",
+                f"{self.url}/chat/completions",
                 json={
                     "messages": messages,
                     "model": model or self.model,
@@ -96,6 +94,8 @@ class LLMClient:
                 headers={
                     "Authorization": f"Bearer {self.api_key}",
                     "Content-Type": "application/json",
+                    "HTTP-Referer": "https://arkaim.ru",
+                    "X-Title": "Наследие Аркаима",
                 },
             ) as response:
                 response.raise_for_status()
@@ -106,14 +106,15 @@ class LLMClient:
             raise RuntimeError(f"LLM stream failed: {e}")
 
     async def health(self) -> dict:
-        """Проверка здоровья Hermes."""
+        """Проверка здоровья OpenRouter."""
         try:
             resp = await self._client.get(
-                f"{self.url}/health",
+                f"{self.url}/models",
+                headers={"Authorization": f"Bearer {self.api_key}"},
                 timeout=5.0,
             )
             if resp.status_code == 200:
-                return {"status": "ok", "provider": "gigachat"}
+                return {"status": "ok", "provider": "openrouter"}
             return {"status": "error", "detail": f"HTTP {resp.status_code}"}
         except Exception as e:
             return {"status": "error", "detail": str(e)}

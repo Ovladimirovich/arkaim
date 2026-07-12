@@ -46,6 +46,7 @@ class SharedSettings:
     PUBLIC_BASE_URL: str = os.getenv("PUBLIC_BASE_URL", "")
 
     # ── GigaChat (Сбер) ─────────────────────────────────
+    GIGACHAT_URL: str = os.getenv("GIGACHAT_URL", "https://gigachat.devices.sberbank.ru/api/v1")
     GIGACHAT_CLIENT_ID: str = os.getenv("GIGACHAT_CLIENT_ID", "")
     GIGACHAT_CLIENT_SECRET: str = os.getenv("GIGACHAT_CLIENT_SECRET", "")
     GIGACHAT_SCOPE: str = os.getenv("GIGACHAT_SCOPE", "GIGACHAT_API_PERS")
