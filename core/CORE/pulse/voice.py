@@ -23,6 +23,7 @@ class Utterance:
     llm_model: str = ""
     reader_topic: str = ""
     reader_depth: float = 0.0
+    mood: str = "neutral"
 
 
 class BookVoice:
@@ -39,6 +40,74 @@ class BookVoice:
         self._reader_pulse = ReaderAwarePulse(pulse)
         self._llm = None
         self._memory = None
+
+    def _detect_mood(self, query: str) -> str:
+        """Определить настроение вопроса."""
+        q = query.lower()
+
+        # Радость, восторг
+        joy_words = ['расскажи', 'покажи', 'интересно', 'красиво', 'прекрасно', 'восхитительно', 'волшебно']
+        if any(w in q for w in joy_words):
+            return 'joy'
+
+        # Любопытство, исследование
+        curiosity_words = ['почему', 'зачем', 'как', 'что такое', 'что значит', 'откуда', 'когда']
+        if any(w in q for w in curiosity_words):
+            return 'curiosity'
+
+        # Грусть, тоска
+        sadness_words = ['грустно', 'печально', 'одиноко', 'утрачено', 'забыто', 'погиб', 'исчез']
+        if any(w in q for w in sadness_words):
+            return 'sadness'
+
+        # Сомнение, спор
+        doubt_words = ['сомневаюсь', 'не согласен', 'но', 'однако', 'разве', 'неужели', 'вряд ли']
+        if any(w in q for w in doubt_words):
+            return 'doubt'
+
+        # Глубокий вопрос
+        deep_words = ['смысл', 'истина', 'мудрость', 'путь', 'судьба', ' предназначение', 'эволюция']
+        if any(w in q for w in deep_words):
+            return 'deep'
+
+        return 'neutral'
+
+    def _get_mood_prefix(self, mood: str) -> str:
+        """Получить эмоциональный префикс для ответа."""
+        prefixes = {
+            'joy': 'С удовольствием расскажу. ',
+            'curiosity': 'Хороший вопрос. ',
+            'sadness': 'Это действительно трогательная тема. ',
+            'doubt': 'Понимаю ваши сомнения. ',
+            'deep': 'Это глубокий вопрос. ',
+            'neutral': '',
+        }
+        return prefixes.get(mood, '')
+
+    def _get_metaphor(self, topic: str, mood: str) -> str:
+        """Получить контекстную метафору для ответа."""
+        metaphors = {
+            'joy': [
+                'Как звёзды в ночном небе, эта тема светит ярко.',
+                'Как весеннее утро, это знание озаряет путь.',
+            ],
+            'curiosity': [
+                'Как исследователь, раскрывающий тайны, давайте заглянем глубже.',
+                'Как река, несущая знания через века, эта тема течёт дальше.',
+            ],
+            'sadness': [
+                'Как осенний лист, эта история несёт в себе память.',
+                'Как тихая мелодия прошлого, эти знания звучат в тишине.',
+            ],
+            'deep': [
+                'Как корни древнего дерева, эта тема уходит глубоко.',
+                'Как океанская глубина, здесь скрыты бездонные истины.',
+            ],
+            'neutral': [''],
+        }
+        import random
+        pool = metaphors.get(mood, metaphors['neutral'])
+        return random.choice(pool) if pool else ''
 
     def set_llm(self, llm_client):
         self._llm = llm_client
@@ -104,6 +173,9 @@ class BookVoice:
         2. Если знает — Pulse возвращает ответ
         3. Voice озвучивает (LLM формулирует, если нужно)
         """
+        # Определить настроение вопроса
+        mood = self._detect_mood(query)
+
         # Спросить Pulse с учётом читателя
         response, reader_ctx = await self._reader_pulse.listen(query, reader_id)
 
@@ -114,9 +186,16 @@ class BookVoice:
             depth = dc.depth
 
         if response is None:
+            mood_responses = {
+                'joy': 'К сожалению, я не нашёл ответа на этот вопрос. Но давайте поговорим о чём-то другом — в книге много удивительных тем!',
+                'curiosity': 'Хм, этот вопрос не совсем по адресу. Может, спросите о персонажах, темах или событиях книги?',
+                'sadness': 'Не могу ответить на этот вопрос. Но если вам грустно — книга полна надежды и света. Хотите узнать о ней?',
+                'doubt': 'Понимаю сомнения, но этот вопрос не из книги. Давайте проверим — что именно вас интересует?',
+                'deep': 'Глубокий вопрос, но не из моей области. В книге есть ответы на другие глубокие вопросы.',
+                'neutral': 'Я не нахожу ответа на этот вопрос в книге. Возможно, вы хотите спросить о чём-то другом?',
+            }
             return Utterance(
-                text="Я не нахожу ответа на этот вопрос в книге. "
-                     "Возможно, вы хотите спросить о чём-то другом?",
+                text=mood_responses.get(mood, mood_responses['neutral']),
                 source="silence",
                 pulse_response=PulseResponse("", "silence", 0.0),
                 llm_used=False,
@@ -158,9 +237,19 @@ class BookVoice:
                             f"Ответь глубже, используя только факты из книги. 3-5 предложений."
                         )
                     else:
+                        mood_instruction = {
+                            'joy': 'Говори с радостью и теплотой.',
+                            'curiosity': 'Говори с интересом, как исследователь.',
+                            'sadness': 'Говори мягко, с сочувствием.',
+                            'doubt': 'Говори спокойно, уважительно проясняя.',
+                            'deep': 'Говори мудро, с глубиной.',
+                            'neutral': '',
+                        }.get(mood, '')
+
                         voice_prompt = (
                             f"Читатель спрашивает: {query}\n\n"
                             f"Я знаю из книги:\n{response.text}\n\n"
+                            f"{mood_instruction}\n"
                             f"Сформулируй ответ голосом книги. "
                             f"Не добавляй новых фактов. 2-4 предложения."
                         )
@@ -190,6 +279,7 @@ class BookVoice:
                             llm_model=getattr(self._llm, "model", "unknown"),
                             reader_topic=topic,
                             reader_depth=depth,
+                            mood=mood,
                         )
                 except Exception as e:
                     log.error("voice_llm_error %s", e)
@@ -210,4 +300,5 @@ class BookVoice:
             llm_used=False,
             reader_topic=topic,
             reader_depth=depth,
+            mood=mood,
         )

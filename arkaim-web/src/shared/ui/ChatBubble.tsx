@@ -10,6 +10,17 @@ type ChatMessage = {
   source?: string;
   time?: string;
   sourceType?: 'pulse' | 'llm' | 'hybrid' | 'mock';
+  mood?: 'joy' | 'curiosity' | 'sadness' | 'doubt' | 'deep' | 'neutral';
+  suggestion?: string;
+};
+
+const MOOD_CONFIG: Record<string, { emoji: string; color: string; label: string }> = {
+  joy: { emoji: '✨', color: '#fbbf24', label: 'Радость' },
+  curiosity: { emoji: '🔍', color: '#60a5fa', label: 'Интерес' },
+  sadness: { emoji: '🌙', color: '#a78bfa', label: 'Глубина' },
+  doubt: { emoji: '💭', color: '#94a3b8', label: 'Размышление' },
+  deep: { emoji: '🌊', color: '#34d399', label: 'Мудрость' },
+  neutral: { emoji: '', color: '', label: '' },
 };
 
 export function ChatBubble({ msg }: { msg: ChatMessage }) {
@@ -26,6 +37,8 @@ export function ChatBubble({ msg }: { msg: ChatMessage }) {
     );
   }
 
+  const moodConfig = msg.mood ? MOOD_CONFIG[msg.mood] : MOOD_CONFIG.neutral;
+
   return (
     <div style={{ display: 'flex', gap: 10 }}>
       <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #0f172a, #1e293b)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16 }}>
@@ -34,14 +47,24 @@ export function ChatBubble({ msg }: { msg: ChatMessage }) {
       <div style={{ maxWidth: '90%' }}>
         <div style={{
           background: '#1e293b',
-          border: '1px solid #334155',
+          border: `1px solid ${moodConfig.color || '#334155'}`,
           borderRadius: '2px 14px 14px 14px',
           padding: '14px 18px',
           boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
         }}>
+          {moodConfig.emoji && (
+            <div style={{ fontSize: 11, color: moodConfig.color, marginBottom: 6 }}>
+              {moodConfig.emoji} {moodConfig.label}
+            </div>
+          )}
           <div style={{ color: '#e2e8f0', fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
             <Markdown content={msg.content} />
           </div>
+          {msg.suggestion && (
+            <div style={{ marginTop: 10, padding: '8px 12px', background: '#0f172a', borderRadius: 6, borderLeft: '3px solid #3b82f6' }}>
+              <div style={{ fontSize: 12, color: '#94a3b8' }}>💡 {msg.suggestion}</div>
+            </div>
+          )}
           {msg.source && (
             <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid #334155' }}>
               <SourceBadge sourceType={msg.sourceType} />

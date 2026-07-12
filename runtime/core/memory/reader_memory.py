@@ -100,6 +100,22 @@ class ReaderMemoryStore:
 
         return await self._load_profile(reader_id)
 
+    def _decay_depth(self, depth: float, last_asked: str) -> float:
+        """Затухание глубины темы по времени."""
+        if not last_asked or depth <= 0:
+            return depth
+        try:
+            last_dt = datetime.fromisoformat(last_asked)
+            now = datetime.now(tz=timezone.utc)
+            days = (now - last_dt).days
+            if days > 30:
+                return depth * 0.2
+            elif days > 7:
+                return depth * 0.5
+            return depth
+        except Exception:
+            return depth
+
     async def _load_profile(self, reader_id: str) -> ReaderProfile | None:
         cursor = await self._conn.execute(
             "SELECT * FROM readers WHERE reader_id = ?", (reader_id,)
@@ -121,15 +137,17 @@ class ReaderMemoryStore:
             conversation_count=row["conversation_count"],
         )
 
-        # Загрузить темы
+        # Загрузить темы (с затуханием глубины)
         tc = await self._conn.execute(
             "SELECT name, depth, questions_count, last_asked, pulse_source FROM topics WHERE reader_id = ? ORDER BY depth DESC",
             (reader_id,),
         )
         for trow in await tc.fetchall():
+            # Затухание глубины по времени
+            decayed_depth = self._decay_depth(trow["depth"], trow["last_asked"] or "")
             profile.topics[trow["name"]] = TopicMemory(
                 name=trow["name"],
-                depth=trow["depth"],
+                depth=decayed_depth,
                 questions_count=trow["questions_count"],
                 last_asked=trow["last_asked"] or "",
                 pulse_source=trow["pulse_source"] or "",

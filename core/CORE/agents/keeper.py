@@ -90,13 +90,51 @@ class KeeperAgent(BaseAgent):
 
         provenance = utterance.pulse_response.provenance if self.voice and hasattr(utterance.pulse_response, "provenance") else []
 
+        # Инициатива книги — предложить уточняющий вопрос
+        suggestion = self._suggest_followup(answer_text, utterance.mood if self.voice else "neutral", layer_used)
+
         return {
             "answer": answer_text,
             "source": utterance.source if self.voice else "pulse",
             "provenance": provenance,
             "pulse_confidence": utterance.pulse_response.confidence if self.voice else 1.0,
             "llm_used": utterance.llm_used if self.voice else False,
+            "mood": utterance.mood if self.voice else "neutral",
+            "suggestion": suggestion,
         }
+
+    def _suggest_followup(self, answer: str, mood: str, source: str) -> str:
+        """Предложить уточняющий вопрос на основе ответа и настроения."""
+        import random
+
+        # Не предлагать после каждого ответа — только иногда
+        if random.random() > 0.3:
+            return ""
+
+        suggestions = {
+            'curiosity': [
+                "Хотите узнать больше об этом?",
+                "Вас интересует связь с другими темами?",
+                "Хотите сравнить с другими персонажами?",
+            ],
+            'joy': [
+                "В книге есть ещё удивительные моменты!",
+                "Хотите узнать о связанных темах?",
+                "Может, рассказать о символах?",
+            ],
+            'deep': [
+                "Хотите углубиться в эту тему?",
+                "В книге есть ещё глубокие ответы.",
+                "Может, спросите о философии книги?",
+            ],
+            'neutral': [
+                "Хотите узнать подробнее?",
+                "Есть ещё вопросы по этой теме?",
+            ],
+        }
+
+        pool = suggestions.get(mood, suggestions['neutral'])
+        return random.choice(pool) if pool else ""
 
     def _is_spam(self, text: str) -> bool:
         if not text or len(text.strip()) < 3:
