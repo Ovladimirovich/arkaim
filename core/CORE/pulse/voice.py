@@ -219,7 +219,6 @@ class BookVoice:
         log.info("voice_speak_check llm=%s type=%s", self._llm is not None, type(self._llm).__name__ if self._llm else "None")
         if self._llm:
             log.info("voice_llm_calling")
-            # Всегда используем LLM если он доступен
             is_deepen = "deepen_topic" in reader_ctx
             try:
                 context = self._pulse.build_context()
