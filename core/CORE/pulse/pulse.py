@@ -216,15 +216,15 @@ class BookPulse:
         if not self._genome_path.exists():
             return None
 
-        new_hash = hashlib.sha256(
-            self._genome_path.read_bytes()
-        ).hexdigest()[:16]
+        # Читаем один раз, хэшируем и парсим из буфера
+        raw = self._genome_path.read_bytes()
+        new_hash = hashlib.sha256(raw).hexdigest()[:16]
 
         if new_hash == self._genome_hash:
             return None
 
-        # Файл изменился — загрузить новый, сравнить
-        new_genome = json.loads(self._genome_path.read_text(encoding="utf-8"))
+        # Файл изменился — парсим те же байты, сравниваем
+        new_genome = json.loads(raw)
         diff = self._evolution.diff(self._genome, new_genome)
         return diff
 

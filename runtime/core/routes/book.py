@@ -22,20 +22,25 @@ log = logging.getLogger("hermes.routes.book")
 router = APIRouter(tags=["Book Intelligence"])
 
 
-def _load_genome(config_obj=None):
-    if config_obj is None:
-        config_obj = get_config()
-    path = config_obj.GENOME_DIR / f"GENOME_v{config_obj.GENOME_VERSION}.json"
+@lru_cache(maxsize=1)
+def _load_genome_raw() -> bytes | None:
+    """Читаем genome JSON один раз, кэшируем сырой байт."""
+    config = get_config()
+    path = config.GENOME_DIR / f"GENOME_v{config.GENOME_VERSION}.json"
     if path.exists():
-        return json.loads(path.read_text(encoding="utf-8"))
+        return path.read_bytes()
     return None
 
 
-def _load_genome_full(config_obj) -> dict:
-    path = config_obj.GENOME_DIR / f"GENOME_v{config_obj.GENOME_VERSION}.json"
-    if path.exists():
-        return json.loads(path.read_text(encoding="utf-8"))
-    return {}
+def _load_genome(config_obj=None) -> dict | None:
+    data = _load_genome_raw()
+    if data is None:
+        return None
+    return json.loads(data)
+
+
+def _load_genome_full(config_obj=None) -> dict:
+    return _load_genome(config_obj) or {}
 
 
 def _save_genome(genome: dict, config_obj):
@@ -227,11 +232,17 @@ async def get_chapter(chapter_id: str, config=Depends(get_config)):
     raise HTTPException(404, "Глава не найдена")
 
 
+@lru_cache(maxsize=1)
+def _build_full_text(config_obj=None) -> str:
+    """Склеенный текст всей книги — кэшируется один раз."""
+    chunks = _load_enriched_chunks(config_obj)
+    return "\n\n".join(ch.get("text", "") for ch in chunks)
+
+
 @router.get("/text", dependencies=[Depends(require_role("reader"))])
 async def get_book_text(offset: int = Query(0, ge=0), limit: int = Query(2000, ge=100, le=10000), config=Depends(get_config)):
     """Фрагмент текста книги с пагинацией по символам."""
-    chunks = _load_enriched_chunks(config)
-    full_text = "\n\n".join(ch.get("text", "") for ch in chunks)
+    full_text = _build_full_text(config)
     if not full_text:
         raise HTTPException(404, "Текст книги не найден")
     total = len(full_text)

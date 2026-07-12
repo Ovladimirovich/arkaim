@@ -57,6 +57,40 @@ class KnowledgeLayer(BaseLayer):
     def __init__(self, genome: dict, retriever: Any = None):
         super().__init__(genome)
         self._retriever = retriever
+        self._build_indices()
+
+    def _build_indices(self):
+        """Построить dict-индексы для O(1) поиска вместо O(N) перебора."""
+        modules = self._genome.get("modules", {})
+
+        # character_index: {lowercase_name_or_alias: character_dict}
+        self._char_index: dict[str, dict] = {}
+        for ch in modules.get("characters", []):
+            names = [ch["name"].lower()] + [a.lower() for a in ch.get("aliases", [])]
+            for name in names:
+                if len(name) > 1:
+                    self._char_index[name] = ch
+
+        # theme_index: {lowercase_name: theme_dict}
+        self._theme_index: dict[str, dict] = {}
+        for th in modules.get("themes", []):
+            self._theme_index[th["name"].lower()] = th
+
+        # symbol_index: {lowercase_name: symbol_dict}
+        self._symbol_index: dict[str, dict] = {}
+        for sym in modules.get("symbols", []):
+            self._symbol_index[sym["name"].lower()] = sym
+
+        # conflict_index: {lowercase_name: conflict_dict}
+        self._conflict_index: dict[str, dict] = {}
+        for conf in modules.get("conflicts", []):
+            self._conflict_index[conf["name"].lower()] = conf
+
+        # themes_by_keyword: предвычисленные связи тем→слова для быстрого related
+        self._theme_descriptions: list[tuple[str, str]] = [
+            (th["name"], th.get("description", "").lower())
+            for th in modules.get("themes", [])
+        ]
 
     def set_retriever(self, retriever: Any):
         self._retriever = retriever
@@ -64,122 +98,144 @@ class KnowledgeLayer(BaseLayer):
     def respond_to(self, query: str) -> Optional[PulseResponse]:
         q = query.lower()
 
-        # Персонажи
-        for ch in self._genome.get("modules", {}).get("characters", []):
+        # Персонажи — O(1) через индекс
+        matched_char = None
+        for name, ch in self._char_index.items():
+            if name in q and len(name) > 2:
+                matched_char = ch
+                break
+        if matched_char:
+            ch = matched_char
             names = [ch["name"].lower()] + [a.lower() for a in ch.get("aliases", [])]
-            if any(name in q for name in names):
-                desc = ch.get("description", "")
-                archetype = ch.get("archetype", "")
-                values = ch.get("values", [])
-                ch_type = ch.get("type", "")
-                first_ch = ch.get("first_chapter", "")
-                last_ch = ch.get("last_chapter", "")
+            desc = ch.get("description", "")
+            archetype = ch.get("archetype", "")
+            values = ch.get("values", [])
+            ch_type = ch.get("type", "")
+            first_ch = ch.get("first_chapter", "")
+            last_ch = ch.get("last_chapter", "")
 
-                text = f"{ch['name']}"
-                if archetype:
-                    text += f" — {archetype}"
-                if ch_type:
-                    text += f" ({ch_type})"
-                if desc:
-                    text += f"\n\n{desc}"
-                if values:
-                    text += f"\n\nЦенности: {', '.join(values)}"
-                if first_ch or last_ch:
-                    chapters = f"главы {first_ch}" if first_ch else ""
-                    if last_ch:
-                        chapters += f"–{last_ch}" if first_ch else f"глава {last_ch}"
-                    text += f"\nВстречается в: {chapters}"
+            text = f"{ch['name']}"
+            if archetype:
+                text += f" — {archetype}"
+            if ch_type:
+                text += f" ({ch_type})"
+            if desc:
+                text += f"\n\n{desc}"
+            if values:
+                text += f"\n\nЦенности: {', '.join(values)}"
+            if first_ch or last_ch:
+                chapters = f"главы {first_ch}" if first_ch else ""
+                if last_ch:
+                    chapters += f"–{last_ch}" if first_ch else f"глава {last_ch}"
+                text += f"\nВстречается в: {chapters}"
 
-                # Найти связанные темы
-                related_themes = []
-                for th in self._genome.get("modules", {}).get("themes", []):
-                    th_desc = th.get("description", "").lower()
-                    if any(name in th_desc for name in names if len(name) > 2):
-                        related_themes.append(th["name"])
-                if related_themes:
-                    text += f"\nСвязанные темы: {', '.join(related_themes[:5])}"
+            # Связанные темы — предвычисленные описания
+            related_themes = []
+            for th_name, th_desc in self._theme_descriptions:
+                if any(name in th_desc for name in names if len(name) > 2):
+                    related_themes.append(th_name)
+            if related_themes:
+                text += f"\nСвязанные темы: {', '.join(related_themes[:5])}"
 
-                return PulseResponse(
-                    text=text,
-                    source="knowledge:character",
-                    confidence=0.9,
-                    provenance=[{"type": "character", "name": ch["name"]}],
-                )
+            return PulseResponse(
+                text=text,
+                source="knowledge:character",
+                confidence=0.9,
+                provenance=[{"type": "character", "name": ch["name"]}],
+            )
 
-        # Темы
-        for th in self._genome.get("modules", {}).get("themes", []):
-            if th["name"].lower() in q:
-                desc = th.get("description", "")
-                strength = th.get("strength", "")
-                text = f"Тема: {th['name']}"
-                if desc:
-                    text += f"\n\n{desc}"
-                if strength:
-                    text += f"\n\nВыраженность: {strength}"
+        # Темы — O(1) через индекс
+        matched_theme = None
+        for name, th in self._theme_index.items():
+            if name in q:
+                matched_theme = th
+                break
+        if matched_theme:
+            th = matched_theme
+            desc = th.get("description", "")
+            strength = th.get("strength", "")
+            text = f"Тема: {th['name']}"
+            if desc:
+                text += f"\n\n{desc}"
+            if strength:
+                text += f"\n\nВыраженность: {strength}"
 
-                # Найти связанные конфликты
-                related_conflicts = []
-                for conf in self._genome.get("modules", {}).get("conflicts", []):
-                    if th["name"].lower() in conf.get("name", "").lower():
-                        related_conflicts.append(conf["name"])
-                if related_conflicts:
-                    text += f"\nСвязанные конфликты: {', '.join(related_conflicts[:3])}"
+            # Связанные конфликты — O(1) через индекс
+            related_conflicts = []
+            th_name_lower = th["name"].lower()
+            for conf_name, conf in self._conflict_index.items():
+                if th_name_lower in conf_name:
+                    related_conflicts.append(conf["name"])
+            if related_conflicts:
+                text += f"\nСвязанные конфликты: {', '.join(related_conflicts[:3])}"
 
-                return PulseResponse(
-                    text=text,
-                    source="knowledge:theme",
-                    confidence=0.85,
-                    provenance=[{"type": "theme", "name": th["name"]}],
-                )
+            return PulseResponse(
+                text=text,
+                source="knowledge:theme",
+                confidence=0.85,
+                provenance=[{"type": "theme", "name": th["name"]}],
+            )
 
-        # Символы
-        for sym in self._genome.get("modules", {}).get("symbols", []):
-            if sym["name"].lower() in q:
-                meaning = sym.get("meaning", "")
-                chapters = sym.get("chapters", [])
-                text = f"Символ: {sym['name']}"
-                if meaning:
-                    text += f"\n\n{meaning}"
-                if chapters:
-                    text += f"\n\nВстречается в главах: {', '.join(str(c) for c in chapters[:10])}"
+        # Символы — O(1) через индекс
+        matched_sym = None
+        for name, sym in self._symbol_index.items():
+            if name in q:
+                matched_sym = sym
+                break
+        if matched_sym:
+            sym = matched_sym
+            meaning = sym.get("meaning", "")
+            chapters = sym.get("chapters", [])
+            text = f"Символ: {sym['name']}"
+            if meaning:
+                text += f"\n\n{meaning}"
+            if chapters:
+                text += f"\n\nВстречается в главах: {', '.join(str(c) for c in chapters[:10])}"
 
-                # Найти связанные темы
-                related_themes = []
-                for th in self._genome.get("modules", {}).get("themes", []):
-                    if sym["name"].lower() in th.get("description", "").lower():
-                        related_themes.append(th["name"])
-                if related_themes:
-                    text += f"\nСвязанные темы: {', '.join(related_themes[:5])}"
+            # Связанные темы — предвычисленные описания
+            related_themes = []
+            sym_name = sym["name"].lower()
+            for th_name, th_desc in self._theme_descriptions:
+                if sym_name in th_desc:
+                    related_themes.append(th_name)
+            if related_themes:
+                text += f"\nСвязанные темы: {', '.join(related_themes[:5])}"
 
-                return PulseResponse(
-                    text=text,
-                    source="knowledge:symbol",
-                    confidence=0.85,
-                    provenance=[{"type": "symbol", "name": sym["name"]}],
-                )
+            return PulseResponse(
+                text=text,
+                source="knowledge:symbol",
+                confidence=0.85,
+                provenance=[{"type": "symbol", "name": sym["name"]}],
+            )
 
-        # Конфликты
-        for conf in self._genome.get("modules", {}).get("conflicts", []):
-            if conf["name"].lower() in q:
-                conf_type = conf.get("type", "")
-                text = f"Конфликт: {conf['name']}"
-                if conf_type:
-                    text += f"\n\nТип: {conf_type}"
+        # Конфликты — O(1) через индекс
+        matched_conf = None
+        for name, conf in self._conflict_index.items():
+            if name in q:
+                matched_conf = conf
+                break
+        if matched_conf:
+            conf = matched_conf
+            conf_type = conf.get("type", "")
+            text = f"Конфликт: {conf['name']}"
+            if conf_type:
+                text += f"\n\nТип: {conf_type}"
 
-                # Найти связанные темы
-                related_themes = []
-                for th in self._genome.get("modules", {}).get("themes", []):
-                    if any(w in conf["name"].lower() for w in th["name"].lower().split() if len(w) > 3):
-                        related_themes.append(th["name"])
-                if related_themes:
-                    text += f"\nСвязанные темы: {', '.join(related_themes[:5])}"
+            # Связанные темы — предвычисленные описания
+            related_themes = []
+            conf_words = set(w for w in conf["name"].lower().split() if len(w) > 3)
+            for th_name, _ in self._theme_descriptions:
+                if any(w in th_name.lower() for w in conf_words):
+                    related_themes.append(th_name)
+            if related_themes:
+                text += f"\nСвязанные темы: {', '.join(related_themes[:5])}"
 
-                return PulseResponse(
-                    text=text,
-                    source="knowledge:conflict",
-                    confidence=0.8,
-                    provenance=[{"type": "conflict", "name": conf["name"]}],
-                )
+            return PulseResponse(
+                text=text,
+                source="knowledge:conflict",
+                confidence=0.8,
+                provenance=[{"type": "conflict", "name": conf["name"]}],
+            )
 
         # Сущности мира
         for we in self._genome.get("world_entities", []):

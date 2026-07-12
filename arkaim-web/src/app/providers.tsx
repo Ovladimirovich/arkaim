@@ -136,7 +136,8 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30_000,
+      staleTime: 300_000, // 5 минут — статические данные (геном, главы) не перезапрашивать
+      gcTime: 600_000,    // 10 минут — держать в памяти дольше
       retry: 1,
       refetchOnWindowFocus: false,
     },

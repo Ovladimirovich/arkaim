@@ -28,11 +28,25 @@ class BookRetriever:
         self._genome = None
         self._cache_ttl = cache_ttl  # TTL кэша в секундах
         self._cache = {}  # Простой кэш: {query_hash: (timestamp, results)}
+        self._catalog_cache: list | None = None  # Кэш enriched_catalog
         self._load_genome()
 
     def _load_genome(self):
         if GENOME_PATH.exists():
             self._genome = json.loads(GENOME_PATH.read_text(encoding="utf-8"))
+
+    def _load_catalog(self) -> list:
+        """Загрузить enriched_catalog.json с кэшированием в памяти."""
+        if self._catalog_cache is not None:
+            return self._catalog_cache
+        if CATALOG_PATH.exists():
+            try:
+                self._catalog_cache = json.loads(CATALOG_PATH.read_bytes())
+            except Exception:
+                self._catalog_cache = []
+        else:
+            self._catalog_cache = []
+        return self._catalog_cache
 
     def _get_cache_key(self, query: str, n_results: int) -> str:
         """Генерирует ключ кэша для запроса."""
@@ -224,25 +238,22 @@ class BookRetriever:
         """
         results = []
 
-        # Поиск по enriched_catalog.json
-        if CATALOG_PATH.exists():
-            try:
-                catalog = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
-                query_lower = query.lower()
-                for entry in catalog:
-                    text_lower = entry.get("text", "").lower()
-                    if any(word in text_lower for word in query_lower.split() if len(word) > 3):
-                        results.append({
-                            "text": entry["text"],
-                            "metadata": {"source": "catalog", "chapter_title": entry.get("chapter_title", "")},
-                            "score": 0.6,
-                            "chapter_title": entry.get("chapter_title", ""),
-                            "themes": entry.get("themes", []),
-                            "characters": entry.get("characters", []),
-                            "symbols": entry.get("symbols", []),
-                        })
-            except Exception:
-                pass
+        # Поиск по enriched_catalog.json (кэшированному)
+        catalog = self._load_catalog()
+        if catalog:
+            query_lower = query.lower()
+            for entry in catalog:
+                text_lower = entry.get("text", "").lower()
+                if any(word in text_lower for word in query_lower.split() if len(word) > 3):
+                    results.append({
+                        "text": entry["text"],
+                        "metadata": {"source": "catalog", "chapter_title": entry.get("chapter_title", "")},
+                        "score": 0.6,
+                        "chapter_title": entry.get("chapter_title", ""),
+                        "themes": entry.get("themes", []),
+                        "characters": entry.get("characters", []),
+                        "symbols": entry.get("symbols", []),
+                    })
 
         # Дополнительный поиск по геному
         if self._genome and len(results) < n_results:

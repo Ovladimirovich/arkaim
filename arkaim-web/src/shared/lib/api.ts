@@ -23,9 +23,11 @@ class ApiError extends Error {
   }
 }
 
-// ── Mock Data (dev mode) ─────────────────────────
+// ── Mock Data (dev mode only — excluded from production bundle) ──
 
-const MOCK_DATA: Record<string, any> = {
+const IS_DEV = process.env.NODE_ENV === 'development';
+
+const MOCK_DATA: Record<string, any> = IS_DEV ? {
   '/auth/me': { user: { id: 'dev-user-001', role: 'admin', username: 'developer', display_name: 'Разработчик', provider: 'dev' } },
   '/auth/admin/users': [
     { id: '1', role: 'admin', username: 'admin', provider: 'telegram', is_active: true, display_name: 'Администратор', created_at: '2026-01-01' },
@@ -91,7 +93,7 @@ const MOCK_DATA: Record<string, any> = {
       { id: 'scene_005', title: '6. INT. ПЕЩЕРА', char_count: 480, index: 5 },
     ],
   },
-};
+} : {};
 
 function getMockData(path: string, method: string = 'GET'): any {
   // Убираем query params для поиска в MOCK_DATA
