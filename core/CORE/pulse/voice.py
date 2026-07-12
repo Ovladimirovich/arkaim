@@ -217,9 +217,10 @@ class BookVoice:
                 pass
 
         if self._llm:
-            # Если это углубление темы — LLM помогает
+            # Используем LLM когда: углубление, низкая уверенность, ИЛИ есть история диалога
             is_deepen = "deepen_topic" in reader_ctx
-            if is_deepen or response.confidence < 0.9:
+            has_dialogue = messages and len(messages) > 0
+            if is_deepen or response.confidence < 0.9 or has_dialogue:
                 try:
                     context = self._pulse.build_context()
 
@@ -300,6 +301,20 @@ class BookVoice:
             if not result["passed"]:
                 log.warning("voice_pulse_identity_violation trigger=%s", result.get("trigger", "?"))
                 final_text = "Извините, я не могу ответить на этот вопрос."
+
+        # Если есть история диалога — добавить связь с предыдущим
+        if messages and len(messages) > 0 and not final_text.startswith("Как мы"):
+            last_assistant = ""
+            for m in reversed(messages):
+                if m.get("role") == "assistant":
+                    last_assistant = m.get("content", "")[:100]
+                    break
+            if last_assistant:
+                # Простая связка с предыдущим ответом
+                if "Велик" in last_assistant and "Велик" in final_text:
+                    final_text = f"Как мы уже говорили о Великом — {final_text.lower().lstrip()}"
+                elif "Атлантида" in last_assistant and "Атлантида" in final_text:
+                    final_text = f"Возвращаясь к Атлантиде — {final_text.lower().lstrip()}"
 
         return Utterance(
             text=final_text,
