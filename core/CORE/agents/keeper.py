@@ -50,6 +50,7 @@ class KeeperAgent(BaseAgent):
             return {"answer": "", "source": "silence", "spam": True}
 
         if self.voice:
+            log.info("keeper_act voice=%s voice_llm=%s", self.voice is not None, self.voice._llm is not None if self.voice else "N/A")
             utterance = await self.voice.speak(question, reader_id=reader_id, reader_name=reader_name, messages=messages)
         else:
             response = self.pulse.listen(question)

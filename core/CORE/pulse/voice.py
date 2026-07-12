@@ -216,7 +216,9 @@ class BookVoice:
             except Exception:
                 pass
 
+        log.info("voice_speak_check llm=%s type=%s", self._llm is not None, type(self._llm).__name__ if self._llm else "None")
         if self._llm:
+            log.info("voice_llm_calling")
             # Всегда используем LLM если он доступен
             is_deepen = "deepen_topic" in reader_ctx
             try:
@@ -289,7 +291,7 @@ class BookVoice:
                         mood=mood,
                     )
             except Exception as e:
-                log.error("voice_llm_error %s", e)
+                log.error("voice_llm_error %s: %s", type(e).__name__, str(e)[:200])
 
         # Проверить response.text на identity (на случай, если Pulse вернул невалидное)
         identity = self._pulse.layers.get("identity")

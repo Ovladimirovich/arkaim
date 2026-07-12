@@ -36,13 +36,13 @@ def init_pulse(genome_path: str | Path | None = None, retriever=None) -> BookPul
     log.info("voice_llm_starting")
     try:
         from llm_client import LLMClient
-        log.info("voice_llm_imported")
+        log.info("voice_llm_imported OK")
         _llm_client = LLMClient()
-        log.info("voice_llm_created type=%s", type(_llm_client).__name__)
+        log.info("voice_llm_created OK url=%s model=%s", _llm_client.url, _llm_client.model)
         _voice.set_llm(_llm_client)
-        log.info("voice_llm_set llm=%s", _voice._llm)
+        log.info("voice_llm_set OK voice._llm=%s", type(_voice._llm).__name__)
     except Exception as e:
-        log.error("voice_llm_error %s %s", type(e).__name__, e)
+        log.error("voice_llm_error %s: %s", type(e).__name__, e)
 
     if loaded:
         log.info("pulse_initialized version=%s", _pulse.state.genome_version)
