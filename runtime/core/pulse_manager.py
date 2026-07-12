@@ -33,13 +33,16 @@ def init_pulse(genome_path: str | Path | None = None, retriever=None) -> BookPul
     _voice.set_reader_memory(_reader_memory)
 
     # Подключить LLM как микрофон для Voice
+    log.info("voice_llm_starting")
     try:
         from llm_client import LLMClient
+        log.info("voice_llm_imported")
         _llm_client = LLMClient()
+        log.info("voice_llm_created type=%s", type(_llm_client).__name__)
         _voice.set_llm(_llm_client)
-        log.info("voice_llm_connected")
+        log.info("voice_llm_set llm=%s", _voice._llm)
     except Exception as e:
-        log.warning("voice_llm_not_connected %s", e)
+        log.error("voice_llm_error %s %s", type(e).__name__, e)
 
     if loaded:
         log.info("pulse_initialized version=%s", _pulse.state.genome_version)
@@ -59,6 +62,14 @@ def get_voice() -> BookVoice:
     if _voice is None:
         _pulse = get_pulse()
         _voice = BookVoice(_pulse)
+        # Подключить LLM к новому Voice
+        try:
+            from llm_client import LLMClient
+            _llm_client = LLMClient()
+            _voice.set_llm(_llm_client)
+            log.info("voice_created_fresh_with_llm")
+        except Exception as e:
+            log.warning("voice_created_fresh_no_llm %s", e)
     return _voice
 
 
