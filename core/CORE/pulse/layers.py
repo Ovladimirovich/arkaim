@@ -98,6 +98,66 @@ class KnowledgeLayer(BaseLayer):
     def respond_to(self, query: str) -> Optional[PulseResponse]:
         q = query.lower()
 
+        # Общие вопросы — вернуть сводку из генома
+        general_theme_patterns = ['какие темы', 'темы книги', 'о чем книга', 'содержание', 'о чем идет речь', 'раскрывает тем', 'тематик']
+        general_char_patterns = ['какие персонаж', 'персонажи книги', 'герои книги', 'кто в книге']
+        general_value_patterns = ['какие ценности', 'ценности книги', 'нравственные']
+        general_world_patterns = ['где происходит', 'мир книги', 'локации', 'места действия']
+
+        if any(p in q for p in general_theme_patterns):
+            themes = self._genome.get("modules", {}).get("themes", [])
+            if themes:
+                parts = [f"• {th['name']}" + (f" — {th['description']}" if th.get('description') else "") for th in themes]
+                text = f"Основные темы книги «Наследие Аркаима»:\n\n" + "\n".join(parts)
+                return PulseResponse(
+                    text=text,
+                    source="knowledge:themes_summary",
+                    confidence=0.95,
+                    provenance=[{"type": "themes_summary", "count": len(themes)}],
+                )
+
+        if any(p in q for p in general_char_patterns):
+            chars = self._genome.get("modules", {}).get("characters", [])
+            if chars:
+                parts = [f"• {ch['name']}" + (f" — {ch.get('archetype', '')}" if ch.get('archetype') else "") + (f". {ch['description'][:100]}..." if ch.get('description') else "") for ch in chars[:10]]
+                text = f"Персонажи книги:\n\n" + "\n".join(parts)
+                return PulseResponse(
+                    text=text,
+                    source="knowledge:characters_summary",
+                    confidence=0.9,
+                    provenance=[{"type": "characters_summary", "count": len(chars)}],
+                )
+
+        if any(p in q for p in general_value_patterns):
+            values = self._genome.get("modules", {}).get("values", [])
+            if values:
+                parts = [f"• {v['name']}" + (f" — {v['description']}" if v.get('description') else "") for v in values]
+                text = f"Ценности книги:\n\n" + "\n".join(parts)
+                return PulseResponse(
+                    text=text,
+                    source="knowledge:values_summary",
+                    confidence=0.9,
+                    provenance=[{"type": "values_summary", "count": len(values)}],
+                )
+
+        if any(p in q for p in general_world_patterns):
+            entities = self._genome.get("world_entities", [])
+            if entities:
+                by_type: dict[str, list] = {}
+                for e in entities:
+                    t = e.get("type", "other")
+                    if t not in by_type:
+                        by_type[t] = []
+                    by_type[t].append(e["name"])
+                parts = [f"• {t}: {', '.join(names)}" for t, names in by_type.items()]
+                text = f"Мир книги:\n\n" + "\n".join(parts)
+                return PulseResponse(
+                    text=text,
+                    source="knowledge:world_summary",
+                    confidence=0.9,
+                    provenance=[{"type": "world_summary", "count": len(entities)}],
+                )
+
         # Персонажи — O(1) через индекс
         matched_char = None
         for name, ch in self._char_index.items():
