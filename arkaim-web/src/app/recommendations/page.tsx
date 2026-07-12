@@ -83,7 +83,7 @@ function RecommendedTopics({ genome, profile }: { genome?: GenomeData; profile?:
                   </Tag>
                 </div>
                 {theme.description && (
-                  <Text type="secondary" style={{ fontSize: 11 }} ellipsis={{ rows: 2 }}>{theme.description}</Text>
+                  <Text type="secondary" style={{ fontSize: 11, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{theme.description}</Text>
                 )}
                 <Button type="link" size="small" style={{ padding: 0, fontSize: 12 }}>
                   Спросить <ArrowRightOutlined />

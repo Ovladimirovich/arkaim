@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Typography, Row, Col, Tabs, List, Empty, Spin, Space, Input, Button, Tag, Form, Select, InputNumber, Modal, message, Descriptions, Popconfirm, Divider } from 'antd';
+import { Card, Typography, Row, Col, Tabs, List, Empty, Spin, Space, Input, Button, Tag, Form, Select, InputNumber, Modal, message, Descriptions, Popconfirm, Divider, Avatar } from 'antd';
 import { EditOutlined, PlusOutlined, DeleteOutlined, SaveOutlined, BookOutlined, TeamOutlined, EnvironmentOutlined, BulbOutlined, AudioOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';

@@ -59,7 +59,7 @@ export function DashboardPanel() {
 
   if (statsLoading) return <Spin size="large" />;
 
-  const activeInvites = invites?.filter((i: any) => i.is_active && i.use_count < i.max_uses).length || 0;
+  const activeInvites = (invites ?? []).filter((i: any) => i.is_active && i.use_count < i.max_uses).length || 0;
   const pendingSuggestions = suggestions?.suggestions?.filter((s: Suggestion) => s.status === 'pending').length || 0;
 
   return (
@@ -73,12 +73,12 @@ export function DashboardPanel() {
         </Col>
         <Col xs={12} sm={6}>
           <Card size="small">
-            <Statistic title="Активных сессий" value={sessions?.length ?? 0} prefix={<TeamOutlined />} />
+            <Statistic title="Активных сессий" value={(sessions ?? []).length} prefix={<TeamOutlined />} />
           </Card>
         </Col>
         <Col xs={12} sm={6}>
           <Card size="small">
-            <Statistic title="API-ключей" value={apiKeys?.filter((k: any) => k.is_active).length ?? 0} prefix={<KeyOutlined />} />
+            <Statistic title="API-ключей" value={(apiKeys ?? []).filter((k: any) => k.is_active).length} prefix={<KeyOutlined />} />
           </Card>
         </Col>
         <Col xs={12} sm={6}>
@@ -128,7 +128,7 @@ export function DashboardPanel() {
         </Col>
         <Col xs={24} lg={12}>
           <Card title="Последние инвайты" size="small">
-            {invites && invites.length > 0 ? (
+            {Array.isArray(invites) && invites.length > 0 ? (
               <List
                 size="small"
                 dataSource={invites.slice(0, 5)}

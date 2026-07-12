@@ -174,6 +174,13 @@ function ChatContent() {
 
   const newSession = () => { setMessages([]); setInput(''); localStorage.removeItem(SESSION_KEY); };
 
+  const selectTopic = (topicName: string) => {
+    setMessages([]);
+    setInput('');
+    localStorage.removeItem(SESSION_KEY);
+    setTimeout(() => sendMessage(`Расскажи о теме «${topicName}»`), 100);
+  };
+
   // Sidebar content
   const sidebarContent = (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -201,9 +208,14 @@ function ChatContent() {
       </Card>
 
       <Card size="small" title={<><BookOutlined /> Темы</>}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-          {genome?.themes?.slice(0, 8).map((t, i) => (
-            <Tooltip key={i} title={t.description}><Tag style={{ marginBottom: 0, cursor: 'default', fontSize: 11 }}>{t.name}</Tag></Tooltip>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {genome?.themes?.slice(0, 12).map((t, i) => (
+            <Tooltip key={i} title={t.description}>
+              <Tag
+                onClick={() => selectTopic(t.name)}
+                style={{ marginBottom: 0, cursor: 'pointer', fontSize: 11, background: '#334155', color: '#e2e8f0', borderColor: '#475569' }}
+              >{t.name}</Tag>
+            </Tooltip>
           ))}
         </div>
       </Card>
@@ -211,12 +223,15 @@ function ChatContent() {
       {profile?.topics && profile.topics.length > 0 && (
         <Card size="small" title="Мои темы">
           {profile.topics.slice(0, 5).map((t, i) => (
-            <div key={i} style={{ marginBottom: 6 }}>
+            <div key={i} style={{ marginBottom: 6, cursor: 'pointer', padding: '4px 0', borderRadius: 4, transition: 'background 0.2s' }}
+              onClick={() => selectTopic(t.name)}
+              onMouseEnter={e => (e.currentTarget.style.background = '#334155')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 2 }}>
-                <span>{t.name}</span><Text type="secondary">{Math.round(t.depth * 100)}%</Text>
+                <span style={{ color: '#e2e8f0' }}>{t.name}</span><Text style={{ color: '#94a3b8', fontSize: 11 }}>{Math.round(t.depth * 100)}%</Text>
               </div>
               <Progress percent={Math.round(t.depth * 100)} size="small" showInfo={false}
-                strokeColor={t.depth > 0.7 ? '#52c41a' : t.depth > 0.4 ? '#1890ff' : '#d9d9d9'} />
+                strokeColor={t.depth > 0.7 ? '#52c41a' : t.depth > 0.4 ? '#3b82f6' : '#475569'} />
             </div>
           ))}
         </Card>
@@ -267,23 +282,23 @@ function ChatContent() {
         </div>
 
         {/* Messages */}
-        <Card size="small" style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }} bodyStyle={{ flex: 1, overflow: 'auto', padding: '12px' }}>
+        <div style={{ flex: 1, overflow: 'auto', background: '#0f172a', borderRadius: 10, padding: 16, border: '1px solid #1e293b' }}>
           {messages.length === 0 && (
             <div style={{ padding: '2rem 0', textAlign: 'center' }}>
               <div style={{ fontSize: '3rem', marginBottom: 16 }}>𓃉</div>
               <Title level={4} style={{ marginBottom: 8 }}>Задайте вопрос книге</Title>
-              <Text type="secondary" style={{ display: 'block', marginBottom: 24, maxWidth: 400, margin: '0 auto 24px' }}>
+              <Text style={{ display: 'block', marginBottom: 24, maxWidth: 400, margin: '0 auto 24px', color: '#94a3b8', fontSize: 14 }}>
                 Книга ответит на основе своего содержания, тем и знаний
               </Text>
               {recentQuestions.length > 0 && (
                 <div style={{ marginBottom: 16, maxWidth: 500, margin: '0 auto 16px' }}>
-                  <Text type="secondary" style={{ fontSize: 12 }}><HistoryOutlined /> Недавние вопросы:</Text>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 8 }}>
+                  <Text style={{ fontSize: 12, color: '#94a3b8' }}><HistoryOutlined /> Недавние вопросы:</Text>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
                     {recentQuestions.map((item, i) => (
                       <div key={i} onClick={() => sendMessage(item.content)}
-                        style={{ padding: '6px 12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, cursor: 'pointer', fontSize: 13, textAlign: 'left', transition: 'border-color 0.2s' }}
-                        onMouseEnter={e => (e.currentTarget.style.borderColor = '#2563eb')}
-                        onMouseLeave={e => (e.currentTarget.style.borderColor = '#e2e8f0')}>
+                        style={{ padding: '10px 14px', background: '#1e293b', border: '1px solid #334155', borderRadius: 8, cursor: 'pointer', fontSize: 13, textAlign: 'left', color: '#e2e8f0', transition: 'border-color 0.2s' }}
+                        onMouseEnter={e => (e.currentTarget.style.borderColor = '#3b82f6')}
+                        onMouseLeave={e => (e.currentTarget.style.borderColor = '#334155')}>
                         {item.content}
                       </div>
                     ))}
@@ -291,13 +306,13 @@ function ChatContent() {
                 </div>
               )}
               <div style={{ maxWidth: 500, margin: '0 auto' }}>
-                <Text type="secondary" style={{ fontSize: 12 }}><BulbOutlined /> Попробуйте спросить:</Text>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 8 }}>
+                <Text style={{ fontSize: 12, color: '#94a3b8' }}><BulbOutlined /> Попробуйте спросить:</Text>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
                   {EXAMPLE_QUESTIONS.map((q, i) => (
                     <div key={i} onClick={() => sendMessage(q)}
-                      style={{ padding: '6px 12px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, cursor: 'pointer', fontSize: 13, textAlign: 'left', transition: 'border-color 0.2s' }}
-                      onMouseEnter={e => (e.currentTarget.style.borderColor = '#2563eb')}
-                      onMouseLeave={e => (e.currentTarget.style.borderColor = '#e2e8f0')}>
+                      style={{ padding: '10px 14px', background: '#1e293b', border: '1px solid #334155', borderRadius: 8, cursor: 'pointer', fontSize: 13, textAlign: 'left', color: '#e2e8f0', transition: 'border-color 0.2s' }}
+                      onMouseEnter={e => (e.currentTarget.style.borderColor = '#3b82f6')}
+                      onMouseLeave={e => (e.currentTarget.style.borderColor = '#334155')}>
                       {q}
                     </div>
                   ))}
@@ -307,49 +322,60 @@ function ChatContent() {
           )}
 
           {messages.map((msg, i) => (
-            <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 12, flexDirection: msg.role === 'user' ? 'row-reverse' : 'row' }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-                background: msg.role === 'assistant' ? '#1e293b' : '#dbeafe',
-                color: msg.role === 'assistant' ? '#fff' : '#2563eb',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14,
-              }}>
-                {msg.role === 'assistant' ? <RobotOutlined /> : <UserOutlined />}
-              </div>
-              <div style={{ maxWidth: '75%' }}>
-                <Card size="small" style={{
-                  background: msg.role === 'assistant' ? '#f8fafc' : '#eff6ff', border: 'none',
-                  borderRadius: msg.role === 'assistant' ? '2px 12px 12px 12px' : '12px 2px 12px 12px',
-                }}>
-                  {msg.role === 'assistant' ? <Markdown content={msg.content} /> : <Text>{msg.content}</Text>}
-                  <SourceBadge sourceType={msg.sourceType} />
-                </Card>
-                {msg.time && <Text type="secondary" style={{ fontSize: 10, marginTop: 2, display: 'block', textAlign: msg.role === 'user' ? 'right' : 'left' }}>{msg.time}</Text>}
-              </div>
+            <div key={i} style={{ marginBottom: 16 }}>
+              {msg.role === 'user' ? (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                  <div style={{ maxWidth: '50%', minWidth: 120, background: '#2563eb', color: '#fff', padding: '10px 14px', borderRadius: '14px 2px 14px 14px', fontSize: 14, lineHeight: 1.6 }}>
+                    {msg.content}
+                  </div>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#dbeafe', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <UserOutlined />
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: 10, flex: 1 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #0f172a, #1e293b)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <BookOutlined />
+                  </div>
+                  <div style={{ flex: 1, background: '#1e293b', border: '1px solid #334155', borderRadius: '2px 14px 14px 14px', padding: '12px 16px', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+                    <div style={{ color: '#e2e8f0', fontSize: 14, lineHeight: 1.7 }}>
+                      <Markdown content={msg.content} />
+                    </div>
+                    <SourceBadge sourceType={msg.sourceType} />
+                    {msg.time && <div style={{ fontSize: 11, color: '#64748b', marginTop: 3, paddingLeft: 4 }}>{msg.time}</div>}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
 
           {sending && streamingText && (
-            <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#1e293b', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}><RobotOutlined /></div>
-              <Card size="small" style={{ background: '#f8fafc', border: 'none', borderRadius: '2px 12px 12px 12px', maxWidth: '75%' }}>
-                <Markdown content={streamingText} />
-                <Text type="secondary" style={{ fontSize: 10 }}>▌</Text>
-              </Card>
+            <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #0f172a, #1e293b)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <BookOutlined />
+              </div>
+              <div style={{ flex: 1, background: '#1e293b', border: '1px solid #334155', borderRadius: '2px 14px 14px 14px', padding: '12px 16px', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+                <div style={{ color: '#e2e8f0', fontSize: 14, lineHeight: 1.7 }}>
+                  <Markdown content={streamingText} />
+                  <span style={{ color: '#3b82f6' }}>▌</span>
+                </div>
+              </div>
             </div>
           )}
 
           {sending && !streamingText && (
-            <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#1e293b', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}><RobotOutlined /></div>
-              <Card size="small" style={{ background: '#f8fafc', border: 'none', borderRadius: '2px 12px 12px 12px' }}>
-                <Spin size="small" /> <Text type="secondary" style={{ fontSize: 12 }}>Думаю...</Text>
-              </Card>
+            <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #0f172a, #1e293b)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <BookOutlined />
+              </div>
+              <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '2px 14px 14px 14px', padding: '12px 16px', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+                <Space><Spin size="small" /><Text style={{ color: '#94a3b8', fontSize: 13 }}>Думаю...</Text></Space>
+              </div>
             </div>
           )}
 
           <div ref={messagesEndRef} />
-        </Card>
+        </div>
 
         {/* Input */}
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>

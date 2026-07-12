@@ -7,6 +7,7 @@ import {
   ReadOutlined,
   EditOutlined,
   UserOutlined,
+  VideoCameraOutlined,
   HistoryOutlined,
   UploadOutlined,
   PictureOutlined,
@@ -28,7 +29,7 @@ import {
   MenuUnfoldOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/app/providers';
 import { useTheme } from '@/app/providers';
 import { useWsContext } from '@/shared/lib/ws-hooks';
@@ -43,6 +44,7 @@ const NAV_GROUPS = [
       { key: '/ask', icon: <QuestionCircleOutlined />, label: 'Задать вопрос' },
       { key: '/book', icon: <BookOutlined />, label: 'Чат с книгой' },
       { key: '/reading', icon: <FileTextOutlined />, label: 'Чтение' },
+      { key: '/screenplay', icon: <VideoCameraOutlined />, label: 'Сценарий' },
       { key: '/library', icon: <ReadOutlined />, label: 'Библиотека' },
       { key: '/genres', icon: <TagsOutlined />, label: 'Жанры' },
       { key: '/visual-view', icon: <EyeOutlined />, label: 'Визуал' },
@@ -108,6 +110,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { isDark, toggle } = useTheme();
   const { connected, lastEvent } = useWsContext();
   const pathname = usePathname();
+  const router = useRouter();
   const isMobile = useIsMobile();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -193,6 +196,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           selectedKeys={[selectedKey]}
           items={menuItems}
           style={{ borderRight: 0 }}
+          onClick={({ key }) => router.push(key)}
         />
 
         {/* Footer */}
@@ -268,7 +272,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Page content */}
-        <Content style={{ padding: '1.5rem', maxWidth: 1200, margin: '0 auto', width: '100%' }}>
+        <Content style={{ padding: '1.5rem', width: '100%' }}>
           {children}
         </Content>
       </Layout>

@@ -131,7 +131,7 @@ function AskContent() {
   const hasHistory = messages.length > 0;
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
       {/* Header */}
       {!hasHistory && (
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
@@ -155,26 +155,32 @@ function AskContent() {
         {messages.length === 0 ? (
           /* Popular questions */
           <div>
-            <Text type="secondary" style={{ fontSize: 12, marginBottom: 12, display: 'block' }}>
+            <Text style={{ fontSize: 13, marginBottom: 16, display: 'block', color: '#94a3b8' }}>
               <BulbOutlined /> Популярные вопросы:
             </Text>
-            <Row gutter={[8, 8]}>
+            <Row gutter={[12, 12]}>
               {POPULAR_QUESTIONS.map((item, i) => (
                 <Col xs={24} sm={12} key={i}>
                   <div
                     onClick={() => sendMessage(item.q)}
                     style={{
-                      padding: '10px 14px', background: '#f8fafc', border: '1px solid #e2e8f0',
-                      borderRadius: 8, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      padding: '14px 18px',
+                      background: '#1e293b',
+                      border: '1px solid #334155',
+                      borderRadius: 10,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
                       transition: 'all 0.2s',
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#2563eb'; e.currentTarget.style.background = '#eff6ff'; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = '#f8fafc'; }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#3b82f6'; e.currentTarget.style.background = '#253349'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#334155'; e.currentTarget.style.background = '#1e293b'; }}
                   >
-                    <Text style={{ fontSize: 13 }}>{item.q}</Text>
-                    <Space size={4}>
-                      <Tag style={{ fontSize: 10, margin: 0 }}>{item.tag}</Tag>
-                      <ArrowRightOutlined style={{ color: '#999', fontSize: 10 }} />
+                    <Text style={{ fontSize: 14, color: '#e2e8f0' }}>{item.q}</Text>
+                    <Space size={6}>
+                      <Tag style={{ fontSize: 10, margin: 0, background: '#334155', color: '#93c5fd', borderColor: '#475569' }}>{item.tag}</Tag>
+                      <ArrowRightOutlined style={{ color: '#64748b', fontSize: 11 }} />
                     </Space>
                   </div>
                 </Col>
@@ -185,55 +191,77 @@ function AskContent() {
           /* Conversation */
           <div>
             {messages.map((msg, i) => (
-              <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 16, flexDirection: msg.role === 'user' ? 'row-reverse' : 'row' }}>
-                <div style={{
-                  width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-                  background: msg.role === 'assistant' ? 'linear-gradient(135deg, #1e293b, #334155)' : '#dbeafe',
-                  color: msg.role === 'assistant' ? '#fff' : '#2563eb',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
-                }}>
-                  {msg.role === 'assistant' ? <RobotOutlined /> : <UserOutlined />}
-                </div>
-                <div style={{ maxWidth: '80%' }}>
-                  <Card size="small" style={{
-                    background: msg.role === 'assistant' ? '#f8fafc' : '#eff6ff',
-                    border: 'none',
-                    borderRadius: msg.role === 'assistant' ? '2px 14px 14px 14px' : '14px 2px 14px 14px',
-                  }}>
-                    {msg.role === 'assistant' ? <Markdown content={msg.content} /> : <Text>{msg.content}</Text>}
-                    <SourceBadge sourceType={msg.sourceType} />
-                  </Card>
-                  {msg.time && (
-                    <Text type="secondary" style={{ fontSize: 10, marginTop: 2, display: 'block', textAlign: msg.role === 'user' ? 'right' : 'left' }}>
-                      {msg.time}
-                    </Text>
-                  )}
-                </div>
+              <div key={i} style={{ marginBottom: 20 }}>
+                {msg.role === 'user' ? (
+                  /* Вопрос пользователя — справа */
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                    <div style={{ maxWidth: '50%', minWidth: 150, background: '#2563eb', color: '#fff', padding: '12px 16px', borderRadius: '14px 2px 14px 14px', fontSize: 14, lineHeight: 1.6 }}>
+                      {msg.content}
+                    </div>
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#dbeafe', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <UserOutlined />
+                    </div>
+                  </div>
+                ) : (
+                  /* Ответ книги — слева */
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #0f172a, #1e293b)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16 }}>
+                      <BookOutlined />
+                    </div>
+                    <div style={{ maxWidth: '90%' }}>
+                      <div style={{
+                        background: '#1e293b',
+                        border: '1px solid #334155',
+                        borderRadius: '2px 14px 14px 14px',
+                        padding: '14px 18px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                      }}>
+                        <div style={{ color: '#e2e8f0', fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                          <Markdown content={msg.content} />
+                        </div>
+                        {msg.source && (
+                          <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid #334155' }}>
+                            <SourceBadge sourceType={msg.sourceType} />
+                          </div>
+                        )}
+                      </div>
+                      {msg.time && (
+                        <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4, paddingLeft: 4 }}>
+                          {msg.time}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
 
             {/* Streaming */}
             {sending && streamingText && (
-              <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #1e293b, #334155)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>
-                  <RobotOutlined />
+              <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #0f172a, #1e293b)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <BookOutlined />
                 </div>
-                <Card size="small" style={{ background: '#f8fafc', border: 'none', borderRadius: '2px 14px 14px 14px', maxWidth: '80%' }}>
-                  <Markdown content={streamingText} />
-                  <Text type="secondary" style={{ fontSize: 12, animation: 'blink 1s infinite' }}>▌</Text>
-                </Card>
+                <div style={{ maxWidth: '80%' }}>
+                  <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '2px 14px 14px 14px', padding: '14px 18px', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+                    <div style={{ color: '#e2e8f0', fontSize: 14, lineHeight: 1.7 }}>
+                      <Markdown content={streamingText} />
+                      <span style={{ color: '#3b82f6', animation: 'blink 1s infinite' }}>▌</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
             {/* Typing */}
             {sending && !streamingText && (
-              <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #1e293b, #334155)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>
-                  <RobotOutlined />
+              <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #0f172a, #1e293b)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <BookOutlined />
                 </div>
-                <Card size="small" style={{ background: '#f8fafc', border: 'none', borderRadius: '2px 14px 14px 14px' }}>
-                  <Space><Spin size="small" /><Text type="secondary" style={{ fontSize: 12 }}>Думаю...</Text></Space>
-                </Card>
+                <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '2px 14px 14px 14px', padding: '14px 18px', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+                  <Space><Spin size="small" /><Text style={{ color: '#94a3b8', fontSize: 13 }}>Думаю...</Text></Space>
+                </div>
               </div>
             )}
 

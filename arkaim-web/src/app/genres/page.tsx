@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Typography, Row, Col, Tag, Tabs, Empty, Spin, Space, Input, Progress, Divider, List, Tooltip, Badge } from 'antd';
+import { useRouter } from 'next/navigation';
+import { Typography, Row, Col, Tag, Tabs, Empty, Spin, Space, Input, Badge, List, Tooltip } from 'antd';
 import { BookOutlined, SearchOutlined, BulbOutlined, HeartOutlined, StarOutlined, ThunderboltOutlined, FireOutlined, EyeOutlined, TeamOutlined, EnvironmentOutlined, CrownOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
 import { ProtectedRoute } from '@/shared/lib/guards';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 type GenomeData = {
   themes: Array<{ name: string; description?: string }>;
@@ -17,14 +18,13 @@ type GenomeData = {
   author_intent: Record<string, unknown>;
 };
 
-// Жанровые категории
 const GENRE_CATEGORIES = [
-  { key: 'mythology', title: 'Мифология', icon: <ThunderboltOutlined />, color: '#7c3aed', bg: '#f5f3ff', desc: 'Древние мифы и легенды', keywords: ['миф', 'легенда', 'бог', 'божество', 'ритуал', 'обряд', 'древний', 'предание'] },
-  { key: 'history', title: 'История', icon: <BookOutlined />, color: '#2563eb', bg: '#eff6ff', desc: 'Исторические события и личности', keywords: ['история', 'век', 'эпоха', 'царь', 'князь', 'битва', 'древний', 'цивилизация'] },
-  { key: 'philosophy', title: 'Философия', icon: <EyeOutlined />, color: '#059669', bg: '#ecfdf5', desc: 'Размышления о смысле жизни', keywords: ['философия', 'смысл', 'истина', 'мудрость', 'познание', 'бытие', 'сознание'] },
-  { key: 'adventure', title: 'Приключения', icon: <FireOutlined />, color: '#dc2626', bg: '#fef2f2', desc: 'Путешествия и открытия', keywords: ['приключение', 'путешествие', 'поиск', 'открытие', 'экспедиция', 'путь'] },
-  { key: 'mystery', title: 'Тайна', icon: <BulbOutlined />, color: '#6366f1', bg: '#eef2ff', desc: 'Загадки и тайны', keywords: ['тайна', 'загадка', 'секрет', 'загадочный', 'неизвестный', 'пророчество'] },
-  { key: 'spirituality', title: 'Духовность', icon: <StarOutlined />, color: '#d97706', bg: '#fffbeb', desc: 'Духовные практики и учения', keywords: ['духовность', 'медитация', 'осознанность', 'просветление', 'карма', 'учение'] },
+  { key: 'mythology', title: 'Мифология', icon: <ThunderboltOutlined />, color: '#a78bfa', keywords: ['миф', 'легенда', 'бог', 'божество', 'ритуал', 'обряд', 'древний', 'предание'] },
+  { key: 'history', title: 'История', icon: <BookOutlined />, color: '#60a5fa', keywords: ['история', 'век', 'эпоха', 'царь', 'князь', 'битва', 'древний', 'цивилизация'] },
+  { key: 'philosophy', title: 'Философия', icon: <EyeOutlined />, color: '#34d399', keywords: ['философия', 'смысл', 'истина', 'мудрость', 'познание', 'бытие', 'сознание'] },
+  { key: 'adventure', title: 'Приключения', icon: <FireOutlined />, color: '#f87171', keywords: ['приключение', 'путешествие', 'поиск', 'открытие', 'экспедиция', 'путь'] },
+  { key: 'mystery', title: 'Тайна', icon: <BulbOutlined />, color: '#818cf8', keywords: ['тайна', 'загадка', 'секрет', 'загадочный', 'неизвестный', 'пророчество'] },
+  { key: 'spirituality', title: 'Духовность', icon: <StarOutlined />, color: '#fbbf24', keywords: ['духовность', 'медитация', 'осознанность', 'просветление', 'карма', 'учение'] },
 ];
 
 function detectGenre(name: string, description?: string): string[] {
@@ -37,11 +37,10 @@ function detectGenre(name: string, description?: string): string[] {
   return genres;
 }
 
-// ── Themes by Genre ──────────────────────────────────
-
 function ThemesByGenre({ genome, isLoading }: { genome?: GenomeData; isLoading: boolean }) {
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const router = useRouter();
 
   if (isLoading) return <div style={{ textAlign: 'center', padding: 48 }}><Spin size="large" /></div>;
   if (!genome) return <Empty description="Данные не загружены" />;
@@ -66,45 +65,52 @@ function ThemesByGenre({ genome, isLoading }: { genome?: GenomeData; isLoading: 
 
   return (
     <div>
-      <Input prefix={<SearchOutlined />} placeholder="Поиск по темам..." value={search} onChange={e => setSearch(e.target.value)} allowClear style={{ marginBottom: 16, maxWidth: 400 }} />
+      <Input prefix={<SearchOutlined />} placeholder="Поиск по темам..." value={search} onChange={e => setSearch(e.target.value)} allowClear style={{ marginBottom: 16, maxWidth: 400, background: '#1e293b', borderColor: '#334155', color: '#e2e8f0' }} />
 
-      {/* Genre selector */}
-      <Row gutter={[12, 12]} style={{ marginBottom: 24 }}>
+      <Row gutter={[10, 10]} style={{ marginBottom: 24 }}>
         {GENRE_CATEGORIES.map(genre => {
           const count = (genreThemes[genre.key] || []).length;
           const isActive = selectedGenre === genre.key;
           return (
             <Col xs={12} sm={8} lg={4} key={genre.key}>
-              <div onClick={() => setSelectedGenre(isActive ? null : genre.key)} style={{ padding: '12px 8px', borderRadius: 8, background: isActive ? genre.bg : '#fafafa', border: `2px solid ${isActive ? genre.color : 'transparent'}`, cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s' }}>
-                <div style={{ color: genre.color, fontSize: 24, marginBottom: 4 }}>{genre.icon}</div>
-                <Text strong style={{ fontSize: 12 }}>{genre.title}</Text>
-                <div><Badge count={count} style={{ backgroundColor: count > 0 ? genre.color : '#d9d9d9' }} size="small" /></div>
+              <div onClick={() => setSelectedGenre(isActive ? null : genre.key)}
+                style={{ padding: '14px 8px', borderRadius: 10, background: isActive ? `${genre.color}22` : '#1e293b', border: `2px solid ${isActive ? genre.color : '#334155'}`, cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s' }}>
+                <div style={{ color: genre.color, fontSize: 22, marginBottom: 6 }}>{genre.icon}</div>
+                <Text style={{ fontSize: 12, color: '#e2e8f0' }}>{genre.title}</Text>
+                <div style={{ marginTop: 4 }}><Badge count={count} style={{ backgroundColor: count > 0 ? genre.color : '#475569' }} size="small" /></div>
               </div>
             </Col>
           );
         })}
       </Row>
 
-      {/* Selected genre detail */}
       {selectedGenre && selectedCat && (
-        <Card size="small" style={{ marginBottom: 16, borderLeft: `3px solid ${selectedCat.color}` }} title={<Space>{selectedCat.icon} {selectedCat.title}</Space>} extra={<Tag>{filteredThemes.length} тем</Tag>}>
-          <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 12 }}>{selectedCat.desc}</Text>
+        <div style={{ marginBottom: 16, padding: '14px 18px', background: '#1e293b', border: `1px solid ${selectedCat.color}44`, borderLeft: `3px solid ${selectedCat.color}`, borderRadius: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <span style={{ color: selectedCat.color }}>{selectedCat.icon}</span>
+            <Text style={{ color: '#e2e8f0', fontWeight: 600 }}>{selectedCat.title}</Text>
+            <Tag style={{ background: '#334155', color: '#94a3b8', borderColor: '#475569', fontSize: 11 }}>{filteredThemes.length} тем</Tag>
+          </div>
           <Row gutter={[8, 8]}>
             {filteredThemes.map((theme, i) => (
               <Col xs={24} sm={12} md={8} key={i}>
-                <div style={{ padding: '8px 12px', background: '#f8fafc', borderRadius: 6, borderLeft: `2px solid ${selectedCat.color}` }}>
-                  <Text strong style={{ fontSize: 13 }}>{theme.name}</Text>
-                  {theme.description && <div><Text type="secondary" style={{ fontSize: 11 }}>{theme.description}</Text></div>}
+                <div style={{ padding: '10px 12px', background: '#0f172a', borderRadius: 6, borderLeft: `2px solid ${selectedCat.color}` }}>
+                  <Text style={{ fontSize: 13, color: '#e2e8f0' }}>{theme.name}</Text>
+                  {theme.description && <div style={{ marginTop: 2 }}><Text style={{ fontSize: 11, color: '#94a3b8' }}>{theme.description}</Text></div>}
                 </div>
               </Col>
             ))}
           </Row>
-        </Card>
+        </div>
       )}
 
-      {/* All themes */}
       {!selectedGenre && (
-        <Card title={<><BookOutlined /> Все темы</>} extra={<Tag>{filteredThemes.length}</Tag>}>
+        <div style={{ padding: '14px 18px', background: '#1e293b', borderRadius: 10, border: '1px solid #334155' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <BookOutlined style={{ color: '#60a5fa' }} />
+            <Text style={{ color: '#e2e8f0', fontWeight: 600 }}>Все темы</Text>
+            <Tag style={{ background: '#334155', color: '#94a3b8', borderColor: '#475569', fontSize: 11 }}>{filteredThemes.length}</Tag>
+          </div>
           {filteredThemes.length === 0 ? <Empty description="Темы не найдены" /> : (
             <Row gutter={[8, 8]}>
               {filteredThemes.map((theme, i) => {
@@ -112,13 +118,16 @@ function ThemesByGenre({ genome, isLoading }: { genome?: GenomeData; isLoading: 
                 return (
                   <Col xs={24} sm={12} md={8} key={i}>
                     <Tooltip title={theme.description}>
-                      <div style={{ padding: '8px 12px', background: '#f8fafc', borderRadius: 6, cursor: 'default' }}>
-                        <Text strong style={{ fontSize: 13 }}>{theme.name}</Text>
+                      <div onClick={() => router.push(`/book?topic=${encodeURIComponent(theme.name)}`)}
+                        style={{ padding: '10px 12px', background: '#0f172a', borderRadius: 6, border: '1px solid #1e293b', cursor: 'pointer', transition: 'border-color 0.2s' }}
+                        onMouseEnter={e => (e.currentTarget.style.borderColor = '#3b82f6')}
+                        onMouseLeave={e => (e.currentTarget.style.borderColor = '#1e293b')}>
+                        <Text style={{ fontSize: 13, color: '#e2e8f0' }}>{theme.name}</Text>
                         {genres.length > 0 && (
-                          <div style={{ marginTop: 4 }}>
+                          <div style={{ marginTop: 4, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                             {genres.map(g => {
                               const cat = GENRE_CATEGORIES.find(c => c.key === g);
-                              return cat ? <Tag key={g} style={{ fontSize: 10, margin: 0, marginRight: 4, color: cat.color, borderColor: cat.color }}>{cat.title}</Tag> : null;
+                              return cat ? <Tag key={g} style={{ fontSize: 10, margin: 0, background: `${cat.color}22`, color: cat.color, borderColor: `${cat.color}44` }}>{cat.title}</Tag> : null;
                             })}
                           </div>
                         )}
@@ -129,44 +138,41 @@ function ThemesByGenre({ genome, isLoading }: { genome?: GenomeData; isLoading: 
               })}
             </Row>
           )}
-        </Card>
+        </div>
       )}
     </div>
   );
 }
-
-// ── Values Tab ──────────────────────────────────
 
 function ValuesTab({ genome, isLoading }: { genome?: GenomeData; isLoading: boolean }) {
   if (isLoading) return <div style={{ textAlign: 'center', padding: 48 }}><Spin size="large" /></div>;
   if (!genome?.values || genome.values.length === 0) return <Empty description="Ценности не определены" />;
 
   const icons: Record<string, any> = { 'мудрость': <StarOutlined />, 'любовь': <HeartOutlined />, 'сила': <ThunderboltOutlined />, 'добра': <StarOutlined />, 'истина': <EyeOutlined /> };
-  const colors: Record<string, string> = { 'мудрость': '#d97706', 'любовь': '#dc2626', 'сила': '#2563eb', 'добра': '#059669', 'истина': '#7c3aed' };
+  const colors: Record<string, string> = { 'мудрость': '#fbbf24', 'любовь': '#f87171', 'сила': '#60a5fa', 'добра': '#34d399', 'истина': '#a78bfa' };
 
   return (
     <Row gutter={[12, 12]}>
       {genome.values.map((value, i) => {
         const key = Object.keys(icons).find(k => value.name.toLowerCase().includes(k)) || '';
+        const color = colors[key] || '#94a3b8';
         return (
           <Col xs={24} sm={12} md={8} key={i}>
-            <Card size="small" hoverable style={{ height: '100%', borderTop: `3px solid ${colors[key] || '#6b7280'}` }}>
-              <Space align="start">
-                <div style={{ fontSize: 24, color: colors[key] || '#6b7280' }}>{icons[key] || <StarOutlined />}</div>
+            <div style={{ padding: '16px', background: '#1e293b', border: '1px solid #334155', borderTop: `3px solid ${color}`, borderRadius: 10, height: '100%' }}>
+              <div style={{ display: 'flex', alignItems: 'start', gap: 12 }}>
+                <div style={{ fontSize: 24, color, flexShrink: 0 }}>{icons[key] || <StarOutlined />}</div>
                 <div>
-                  <Text strong>{value.name}</Text>
-                  {value.description && <div><Text type="secondary" style={{ fontSize: 12 }}>{value.description}</Text></div>}
+                  <Text style={{ color: '#e2e8f0', fontWeight: 600 }}>{value.name}</Text>
+                  {value.description && <div style={{ marginTop: 4 }}><Text style={{ fontSize: 12, color: '#94a3b8' }}>{value.description}</Text></div>}
                 </div>
-              </Space>
-            </Card>
+              </div>
+            </div>
           </Col>
         );
       })}
     </Row>
   );
 }
-
-// ── World Tab ──────────────────────────────────
 
 function WorldTab({ genome, isLoading }: { genome?: GenomeData; isLoading: boolean }) {
   if (isLoading) return <div style={{ textAlign: 'center', padding: 48 }}><Spin size="large" /></div>;
@@ -176,11 +182,11 @@ function WorldTab({ genome, isLoading }: { genome?: GenomeData; isLoading: boole
   const characters = genome.characters || [];
 
   const typeConfig: Record<string, { icon: any; color: string }> = {
-    location: { icon: <EnvironmentOutlined />, color: '#2563eb' },
-    character: { icon: <TeamOutlined />, color: '#7c3aed' },
-    event: { icon: <ThunderboltOutlined />, color: '#dc2626' },
-    concept: { icon: <BulbOutlined />, color: '#059669' },
-    object: { icon: <CrownOutlined />, color: '#d97706' },
+    location: { icon: <EnvironmentOutlined />, color: '#60a5fa' },
+    character: { icon: <TeamOutlined />, color: '#a78bfa' },
+    event: { icon: <ThunderboltOutlined />, color: '#f87171' },
+    concept: { icon: <BulbOutlined />, color: '#34d399' },
+    object: { icon: <CrownOutlined />, color: '#fbbf24' },
   };
 
   const byType: Record<string, any[]> = {};
@@ -192,35 +198,45 @@ function WorldTab({ genome, isLoading }: { genome?: GenomeData; isLoading: boole
 
   return (
     <div>
-      {/* Characters from genome */}
       {characters.length > 0 && (
-        <Card title={<><TeamOutlined /> Персонажи</>} extra={<Tag>{characters.length}</Tag>} style={{ marginBottom: 16 }}>
+        <div style={{ marginBottom: 16, padding: '14px 18px', background: '#1e293b', borderRadius: 10, border: '1px solid #334155' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <TeamOutlined style={{ color: '#a78bfa' }} />
+            <Text style={{ color: '#e2e8f0', fontWeight: 600 }}>Персонажи</Text>
+            <Tag style={{ background: '#334155', color: '#94a3b8', borderColor: '#475569', fontSize: 11 }}>{characters.length}</Tag>
+          </div>
           <Row gutter={[8, 8]}>
             {characters.map((char, i) => (
               <Col xs={24} sm={12} md={8} key={char.id || i}>
-                <div style={{ padding: '8px 12px', background: '#f8fafc', borderRadius: 6 }}>
-                  <Text strong style={{ fontSize: 13 }}>{char.name}</Text>
-                  {char.role && <Tag color="blue" style={{ fontSize: 10, marginLeft: 8 }}>{char.role}</Tag>}
-                  {char.description && <div><Text type="secondary" style={{ fontSize: 11 }}>{char.description}</Text></div>}
+                <div style={{ padding: '10px 12px', background: '#0f172a', borderRadius: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Text style={{ fontSize: 13, color: '#e2e8f0', fontWeight: 500 }}>{char.name}</Text>
+                    {char.role && <Tag style={{ fontSize: 10, background: '#3b82f622', color: '#60a5fa', borderColor: '#3b82f644' }}>{char.role}</Tag>}
+                  </div>
+                  {char.description && <div style={{ marginTop: 4 }}><Text style={{ fontSize: 11, color: '#94a3b8' }}>{char.description}</Text></div>}
                 </div>
               </Col>
             ))}
           </Row>
-        </Card>
+        </div>
       )}
 
-      {/* World entities */}
       {Object.keys(byType).length > 0 ? (
-        <Row gutter={[16, 16]}>
+        <Row gutter={[12, 12]}>
           {Object.entries(byType).map(([type, entities]) => {
-            const config = typeConfig[type] || { icon: <BulbOutlined />, color: '#6b7280' };
+            const config = typeConfig[type] || { icon: <BulbOutlined />, color: '#94a3b8' };
             return (
               <Col xs={24} sm={12} lg={8} key={type}>
-                <Card size="small" title={<Space>{config.icon} <Tag color={config.color}>{type}</Tag> <Text style={{ fontSize: 13 }}>{entities.length}</Text></Space>}>
+                <div style={{ padding: '14px 18px', background: '#1e293b', borderRadius: 10, border: '1px solid #334155' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                    <span style={{ color: config.color }}>{config.icon}</span>
+                    <Tag style={{ background: `${config.color}22`, color: config.color, borderColor: `${config.color}44` }}>{type}</Tag>
+                    <Text style={{ fontSize: 12, color: '#94a3b8' }}>{entities.length}</Text>
+                  </div>
                   <List size="small" dataSource={entities} renderItem={(item: any) => (
-                    <List.Item style={{ padding: '4px 0' }}><Text style={{ fontSize: 13 }}>{item.name}</Text></List.Item>
+                    <List.Item style={{ padding: '4px 0', borderBottom: '1px solid #1e293b' }}><Text style={{ fontSize: 13, color: '#e2e8f0' }}>{item.name}</Text></List.Item>
                   )} />
-                </Card>
+                </div>
               </Col>
             );
           })}
@@ -231,8 +247,6 @@ function WorldTab({ genome, isLoading }: { genome?: GenomeData; isLoading: boole
     </div>
   );
 }
-
-// ── Main Page ──────────────────────────────────
 
 function GenresContent() {
   const { data: genome, isLoading } = useQuery({
@@ -251,16 +265,34 @@ function GenresContent() {
   ];
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+    <div>
       <div style={{ marginBottom: 16 }}>
-        <Title level={2} style={{ marginBottom: 4 }}>Жанры</Title>
-        <Text type="secondary">Темы, ценности и мир книги «Наследие Аркаима» по категориям</Text>
+        <Text style={{ fontSize: 20, fontWeight: 700, color: '#e2e8f0' }}>Жанры</Text>
+        <div style={{ marginTop: 4 }}><Text style={{ fontSize: 14, color: '#94a3b8' }}>Темы, ценности и мир книги «Наследие Аркаима» по категориям</Text></div>
       </div>
 
       <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
-        <Col xs={8}><Card size="small" hoverable><div style={{ textAlign: 'center' }}><BookOutlined style={{ fontSize: 20, color: '#2563eb' }} /><div><Text strong style={{ fontSize: 18 }}>{themeCount}</Text></div><Text type="secondary" style={{ fontSize: 11 }}>тем</Text></div></Card></Col>
-        <Col xs={8}><Card size="small" hoverable><div style={{ textAlign: 'center' }}><StarOutlined style={{ fontSize: 20, color: '#d97706' }} /><div><Text strong style={{ fontSize: 18 }}>{valueCount}</Text></div><Text type="secondary" style={{ fontSize: 11 }}>ценностей</Text></div></Card></Col>
-        <Col xs={8}><Card size="small" hoverable><div style={{ textAlign: 'center' }}><EyeOutlined style={{ fontSize: 20, color: '#7c3aed' }} /><div><Text strong style={{ fontSize: 18 }}>{entityCount}</Text></div><Text type="secondary" style={{ fontSize: 11 }}>сущностей</Text></div></Card></Col>
+        <Col xs={8}>
+          <div style={{ padding: '16px', background: '#1e293b', borderRadius: 10, border: '1px solid #334155', textAlign: 'center' }}>
+            <BookOutlined style={{ fontSize: 20, color: '#60a5fa' }} />
+            <div style={{ marginTop: 6 }}><Text style={{ fontSize: 22, fontWeight: 700, color: '#e2e8f0' }}>{themeCount}</Text></div>
+            <Text style={{ fontSize: 11, color: '#94a3b8' }}>тем</Text>
+          </div>
+        </Col>
+        <Col xs={8}>
+          <div style={{ padding: '16px', background: '#1e293b', borderRadius: 10, border: '1px solid #334155', textAlign: 'center' }}>
+            <StarOutlined style={{ fontSize: 20, color: '#fbbf24' }} />
+            <div style={{ marginTop: 6 }}><Text style={{ fontSize: 22, fontWeight: 700, color: '#e2e8f0' }}>{valueCount}</Text></div>
+            <Text style={{ fontSize: 11, color: '#94a3b8' }}>ценностей</Text>
+          </div>
+        </Col>
+        <Col xs={8}>
+          <div style={{ padding: '16px', background: '#1e293b', borderRadius: 10, border: '1px solid #334155', textAlign: 'center' }}>
+            <EyeOutlined style={{ fontSize: 20, color: '#a78bfa' }} />
+            <div style={{ marginTop: 6 }}><Text style={{ fontSize: 22, fontWeight: 700, color: '#e2e8f0' }}>{entityCount}</Text></div>
+            <Text style={{ fontSize: 11, color: '#94a3b8' }}>сущностей</Text>
+          </div>
+        </Col>
       </Row>
 
       <Tabs items={items} />

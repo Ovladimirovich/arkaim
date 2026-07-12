@@ -9,6 +9,17 @@ import { ProtectedRoute } from '@/shared/lib/guards';
 
 const { Title, Text, Paragraph } = Typography;
 
+type ChapterMeta = {
+  id: string;
+  title: string;
+  char_count: number;
+  index: number;
+};
+
+type ChapterFull = ChapterMeta & {
+  content: string;
+};
+
 type GenomeData = {
   themes: Array<{ name: string; description?: string }>;
   characters: Array<{ id: string; name: string; role?: string; description?: string }>;
@@ -16,74 +27,6 @@ type GenomeData = {
   world_entities: Array<{ id: string; name: string; type?: string }>;
   author_intent: Record<string, unknown>;
 };
-
-type LayersData = {
-  knowledge_layer: string;
-  meaning_layer: string;
-  identity_layer: string;
-  mission_layer: string;
-};
-
-type ChapterContent = {
-  title: string;
-  content: string;
-  themes?: string[];
-  characters?: string[];
-  location?: string;
-};
-
-// Примеры контента глав (в реальном приложении загружаются из API)
-const SAMPLE_CHAPTERS: ChapterContent[] = [
-  {
-    title: 'Пролог: Пробуждение',
-    content: `Древние стены Аркаима хранят в себе память тысячелетий. Каждый камень, каждая трещина — это страница забытой истории, которая ждёт своего читателя.
-
-Велик стоял на краю обрыва, глядя на равнину, раскинувшуюся внизу. Закатное солнце окрашивало горизонт в цвета, которые современный человек давно разучился видеть — не оранжевый и не красный, а нечто большее, нечто, что затрагивало самые глубокие струны души.
-
-«Память — это не то, что мы храним», — произнёс он, обращаясь к невидимому слушателю. — «Память — это то, что хранит нас.»
-
-Эти слова стали началом великого пути — пути, который приведёт читателя сквозь слои времени, через забытые цивилизации и потерянные знания, к самому сердцу того, что значит быть человеком.`,
-    themes: ['Память предков', 'Духовная эволюция'],
-    characters: ['Велик'],
-    location: 'Аркаим',
-  },
-  {
-    title: 'Глава I: Наследие Учения',
-    content: `Каждая великая традиция начинается с одного вопроса — «Зачем?». Не «как», не «что», а именно «зачем». Этот вопрос — ключ, который открывает двери в мир, где прошлое и будущее переплетаются в единую ткань бытия.
-
-Наследие — это не то, что оставляют после себя. Наследие — это то, что живёт внутри нас, передаётся из поколения в поколение, обогащаясь новыми смыслами и оттенками.
-
-Велик понимал это лучше других. Его знания weren't just information — they were living wisdom, capable of transforming anyone, кто был готов её принять.`,
-    themes: ['Наследие Учения', 'Мудрость'],
-    characters: ['Велик'],
-  },
-  {
-    title: 'Глава II: Кали Юга и Сати Юга',
-    content: `Миф о четырёх югах — это не просто древняя космогония. Это зеркало, в котором каждая эпоха видит себя. Кали Юга — эпоха раздора и забвения — описана в текстах с такой точностью, что современный читатель невольно узнаёт в ней себя.
-
-Но за тьмой всегда скрывается свет. Сати Юга — золотой век — ждёт своего пробуждения. И пробуждение это начинается не с глобальных перемен, а с маленького, почти незаметного шага внутри каждого из нас.`,
-    themes: ['Кали Юга и Сати Юга', 'Духовная эволюция'],
-    characters: [],
-  },
-  {
-    title: 'Глава III: Память предков',
-    content: `Мы носим в себе миллионы жизней. Каждый наш предок оставил свой след — в генах, в обычаях, в глубинных инстинктах, которые мы не всегда понимаем.
-
-Память предков — это не метафора. Это реальность, доступная каждому, кто готов замедлиться и прислушаться. В тишине, между мыслями, можно услышать голоса тех, кто жил до нас — не как призраки, а как мудрые наставники, чей опыт продолжает жить в нашей крови.`,
-    themes: ['Память предков', 'Традиции'],
-    characters: [],
-  },
-  {
-    title: 'Глава IV: Духовная эволюция',
-    content: `Эволюция — не линейный процесс. Это спираль, которая виток за витком поднимается всё выше, охватывая новые горизонты понимания.
-
-Духовная эволюция — это не отказ от мира, а углубление в него. Это способность видеть за видимым невидимое, за случайным — закономерное, за временным — вечное.
-
-Каждый вопрос, который мы задаём книге, каждый ответ, который мы получаем — это шаг на пути эволюции нашего сознания.`,
-    themes: ['Духовная эволюция', 'Сознание'],
-    characters: [],
-  },
-];
 
 const FONT_SIZES = [
   { label: 'Маленький', value: 14 },
@@ -94,19 +37,10 @@ const FONT_SIZES = [
 
 // ── Reading Content ──────────────────────────────
 
-function ReadingView({ chapter, fontSize }: { chapter: ChapterContent; fontSize: number }) {
+function ReadingView({ chapter, fontSize }: { chapter: ChapterFull; fontSize: number }) {
   return (
     <div style={{ maxWidth: 700, margin: '0 auto' }}>
       <Title level={2} style={{ marginBottom: 24, textAlign: 'center', lineHeight: 1.4 }}>{chapter.title}</Title>
-
-      {/* Meta */}
-      <div style={{ textAlign: 'center', marginBottom: 32 }}>
-        <Space size={8} wrap>
-          {chapter.themes?.map((t, i) => <Tag key={i} color="purple">{t}</Tag>)}
-          {chapter.characters?.map((c, i) => <Tag key={i} color="blue">{c}</Tag>)}
-          {chapter.location && <Tag color="orange">{chapter.location}</Tag>}
-        </Space>
-      </div>
 
       <Divider />
 
@@ -137,29 +71,52 @@ function ReadingContent() {
   const [showToc, setShowToc] = useState(true);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  const { data: genome, isLoading } = useQuery({
-    queryKey: ['genome-full'],
-    queryFn: () => api.get<GenomeData>('/book/genome'),
+  // Загрузка списка глав
+  const { data: chaptersData, isLoading: chaptersLoading } = useQuery({
+    queryKey: ['chapters'],
+    queryFn: () => api.get<{ ok: boolean; data: ChapterMeta[]; total: number }>('/book/chapters'),
   });
 
-  const chapter = SAMPLE_CHAPTERS[chapterIndex];
+  const chapters: ChapterMeta[] = chaptersData?.data || [];
+  const currentChapter = chapters[chapterIndex];
+
+  // Загрузка контента текущей главы
+  const { data: chapterData, isLoading: chapterLoading } = useQuery({
+    queryKey: ['chapter', currentChapter?.id],
+    queryFn: () => api.get<{ ok: boolean; data: ChapterFull }>(`/book/chapters/${currentChapter?.id}`),
+    enabled: !!currentChapter?.id,
+  });
+
+  const chapterContent: ChapterFull | undefined = chapterData?.data;
 
   useEffect(() => {
     contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }, [chapterIndex]);
 
   const prevChapter = () => { if (chapterIndex > 0) setChapterIndex(chapterIndex - 1); };
-  const nextChapter = () => { if (chapterIndex < SAMPLE_CHAPTERS.length - 1) setChapterIndex(chapterIndex + 1); };
+  const nextChapter = () => { if (chapterIndex < chapters.length - 1) setChapterIndex(chapterIndex + 1); };
+
+  if (chaptersLoading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
+        <Spin size="large" tip="Загрузка содержания..." />
+      </div>
+    );
+  }
+
+  if (chapters.length === 0) {
+    return <Empty description="Содержание книги не найдено" />;
+  }
 
   return (
     <div style={{ display: 'flex', gap: '1rem', height: 'calc(100vh - 100px)' }}>
       {/* Table of Contents */}
       {showToc && (
         <div style={{ width: 260, flexShrink: 0, overflow: 'auto' }}>
-          <Card size="small" title={<><BookOutlined /> Содержание</>} style={{ marginBottom: 8 }}>
+          <Card size="small" title={<><BookOutlined /> Содержание</>} extra={<Tag>{chapters.length}</Tag>} style={{ marginBottom: 8 }}>
             <List
               size="small"
-              dataSource={SAMPLE_CHAPTERS}
+              dataSource={chapters}
               renderItem={(item, i) => (
                 <List.Item
                   style={{ cursor: 'pointer', background: i === chapterIndex ? '#eff6ff' : undefined, borderRadius: 4, padding: '6px 8px' }}
@@ -168,19 +125,13 @@ function ReadingContent() {
                   <Text style={{ fontSize: 12, color: i === chapterIndex ? '#2563eb' : undefined }}>
                     {i + 1}. {item.title}
                   </Text>
+                  <Text type="secondary" style={{ fontSize: 10, marginLeft: 'auto' }}>
+                    {Math.round(item.char_count / 1000)}k
+                  </Text>
                 </List.Item>
               )}
             />
           </Card>
-
-          {/* Chapter themes */}
-          {chapter.themes && chapter.themes.length > 0 && (
-            <Card size="small" title="Темы главы" style={{ marginBottom: 8 }}>
-              <Space wrap>
-                {chapter.themes.map((t, i) => <Tag key={i} color="purple" style={{ fontSize: 11 }}>{t}</Tag>)}
-              </Space>
-            </Card>
-          )}
 
           {/* Quick links */}
           <Card size="small" title="Навигация">
@@ -215,7 +166,13 @@ function ReadingContent() {
 
         {/* Content area */}
         <Card size="small" ref={contentRef} style={{ flex: 1, overflow: 'auto' }} bodyStyle={{ padding: '24px 32px' }}>
-          <ReadingView chapter={chapter} fontSize={fontSize} />
+          {chapterLoading ? (
+            <div style={{ textAlign: 'center', padding: 48 }}><Spin /></div>
+          ) : chapterContent ? (
+            <ReadingView chapter={chapterContent} fontSize={fontSize} />
+          ) : (
+            <Empty description="Глава не найдена" />
+          )}
         </Card>
 
         {/* Chapter navigation */}
@@ -224,9 +181,9 @@ function ReadingContent() {
             Предыдущая
           </Button>
           <Text type="secondary" style={{ fontSize: 12 }}>
-            {chapterIndex + 1} / {SAMPLE_CHAPTERS.length}
+            {chapterIndex + 1} / {chapters.length}
           </Text>
-          <Button onClick={nextChapter} disabled={chapterIndex === SAMPLE_CHAPTERS.length - 1}>
+          <Button onClick={nextChapter} disabled={chapterIndex === chapters.length - 1}>
             Следующая <RightOutlined />
           </Button>
         </div>

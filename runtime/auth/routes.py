@@ -96,7 +96,7 @@ async def telegram_login_token(request: Request):
         provider_user_id=telegram_data["provider_user_id"],
         username=telegram_data.get("username"),
         display_name=telegram_data.get("display_name"),
-        role="reader",
+        role=telegram_data.get("role", "reader"),
     )
     jwt_token = create_access_token(
         subject=user["id"],
@@ -134,7 +134,8 @@ async def dev_generate_token(request: Request):
     telegram_user_id = body.get("telegram_user_id", "dev-test-user")
     username = body.get("username", "dev_user")
     display_name = body.get("display_name", "Dev User")
-    token = generate_login_token(telegram_user_id, username, display_name)
+    role = body.get("role", "admin")
+    token = generate_login_token(telegram_user_id, username, display_name, role=role)
     return {"token": token, "login_url": f"/auth/login?token={token}"}
 
 

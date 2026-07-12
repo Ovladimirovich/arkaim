@@ -18,6 +18,8 @@ class WsClient {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private token: string | null = null;
   private connected = false;
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 3;
 
   connect(token?: string) {
     if (typeof window === 'undefined') return;
@@ -30,6 +32,7 @@ class WsClient {
 
     this.ws.onopen = () => {
       this.connected = true;
+      this.reconnectAttempts = 0;
       this.emit('_connected', {});
     };
 
@@ -56,6 +59,7 @@ class WsClient {
     this.ws?.close();
     this.ws = null;
     this.connected = false;
+    this.reconnectAttempts = 0;
   }
 
   on(event: WsEvent, handler: WsHandler) {
@@ -69,7 +73,9 @@ class WsClient {
   }
 
   private scheduleReconnect() {
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) return;
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+    this.reconnectAttempts++;
     this.reconnectTimer = setTimeout(() => this.connect(), 5000);
   }
 

@@ -122,17 +122,20 @@ class BookVoice:
                 llm_used=False,
             )
 
-        # Записать взаимодействие в память
+        # Записать взаимодействие в память (с fallback при ошибке БД)
         if self._memory and reader_id:
-            provenance = response.provenance if hasattr(response, "provenance") else []
-            await self._reader_pulse.record(
-                reader_id=reader_id,
-                question=query,
-                answer=response.text,
-                topic=topic or response.source.split(":")[-1],
-                pulse_source=response.source,
-                provenance=provenance,
-            )
+            try:
+                provenance = response.provenance if hasattr(response, "provenance") else []
+                await self._reader_pulse.record(
+                    reader_id=reader_id,
+                    question=query,
+                    answer=response.text,
+                    topic=topic or response.source.split(":")[-1],
+                    pulse_source=response.source,
+                    provenance=provenance,
+                )
+            except Exception:
+                pass
 
         if self._llm:
             # Если это углубление темы — LLM помогает

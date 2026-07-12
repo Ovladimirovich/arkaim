@@ -5,7 +5,7 @@ from auth.rbac import require_role, get_current_user
 from core.dto.responses import ReaderProfileResponse, ReaderContextResponse, ReaderStatsResponse
 from core.adc_deps import get_reader_memory
 
-router = APIRouter(tags=["Reader Memory"])
+router = APIRouter(prefix="/reader", tags=["Reader Memory"])
 
 
 @router.get("/profile", response_model=ReaderProfileResponse, dependencies=[Depends(require_role("reader"))])

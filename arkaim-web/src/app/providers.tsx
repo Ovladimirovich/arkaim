@@ -52,6 +52,7 @@ type User = {
   username?: string;
   display_name?: string;
   provider: string;
+  is_active?: boolean;
 };
 
 type AuthContextType = {
@@ -75,40 +76,45 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Пытаемся получить реального пользователя через /auth/me
-    // Если cookie есть — бэкенд вернёт пользователя
-    // Если нет — fallback на mock user (dev mode)
-    fetch('/auth/me', { credentials: 'same-origin' })
-      .then(async (resp) => {
-        if (resp.ok) {
-          const data = await resp.json();
-          if (data.user) {
-            setUser(data.user);
-            setLoading(false);
-            return;
+    const DEV_USER: User = {
+      id: 'dev-user-001',
+      role: 'admin',
+      username: 'developer',
+      display_name: 'Разработчик',
+      provider: 'dev',
+    };
+
+    const hasCookie = document.cookie.split(';').some(c => c.trim().startsWith('arkaim_session='));
+
+    const initWithCookie = () => {
+      fetch('/auth/me', { credentials: 'same-origin' })
+        .then(async (resp) => {
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data.user) { setUser(data.user); setLoading(false); return; }
           }
-        }
-        // Нет реальной сессии — dev mode mock
-        setUser({
-          id: 'dev-user-001',
-          role: 'admin',
-          username: 'developer',
-          display_name: 'Разработчик',
-          provider: 'dev',
-        });
-        setLoading(false);
-      })
-      .catch(() => {
-        // Ошибка сети — dev mode mock
-        setUser({
-          id: 'dev-user-001',
-          role: 'admin',
-          username: 'developer',
-          display_name: 'Разработчик',
-          provider: 'dev',
-        });
-        setLoading(false);
-      });
+          setUser(DEV_USER);
+          setLoading(false);
+        })
+        .catch(() => { setUser(DEV_USER); setLoading(false); });
+    };
+
+    if (hasCookie) {
+      initWithCookie();
+    } else {
+      // Dev mode: автоматически получаем JWT-cookie через dev-login
+      fetch('/api/auth/dev-login', { method: 'POST' })
+        .then(resp => resp.ok ? resp.json() : null)
+        .then(data => {
+          if (data?.ok && data.user) {
+            setUser({ ...data.user, provider: data.user.provider || 'dev' });
+          } else {
+            setUser(DEV_USER);
+          }
+          setLoading(false);
+        })
+        .catch(() => { setUser(DEV_USER); setLoading(false); });
+    }
   }, []);
 
   const login = () => { window.location.href = '/login'; };

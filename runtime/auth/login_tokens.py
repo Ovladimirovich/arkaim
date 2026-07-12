@@ -18,6 +18,7 @@ def generate_login_token(
     telegram_user_id: str,
     username: Optional[str] = None,
     display_name: Optional[str] = None,
+    role: str = "reader",
 ) -> str:
     """Генерирует одноразовый токен для входа."""
     token = secrets.token_urlsafe(32)
@@ -25,6 +26,7 @@ def generate_login_token(
         "telegram_user_id": telegram_user_id,
         "username": username,
         "display_name": display_name,
+        "role": role,
         "created_at": time.time(),
     }
     return token
@@ -45,6 +47,7 @@ def verify_login_token(token: str) -> Optional[dict]:
         "provider_user_id": data["telegram_user_id"],
         "username": data.get("username"),
         "display_name": data.get("display_name"),
+        "role": data.get("role", "reader"),
     }
 
 

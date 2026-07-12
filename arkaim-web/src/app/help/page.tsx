@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Card, Typography, Row, Col, Tag, Tabs, List, Space, Button, Divider, Alert } from 'antd';
-import { BookOutlined, MessageOutlined, ReadOutlined, SearchOutlined, UserOutlined, TrophyOutlined, HistoryOutlined, DollarOutlined, RiseOutlined, BellOutlined, CodeOutlined, SettingOutlined, UploadOutlined, PictureOutlined, EditOutlined, EyeOutlined, LoginOutlined, QuestionCircleOutlined, ThunderboltOutlined, StarOutlined, BulbOutlined, KeyboardOutlined } from '@ant-design/icons';
+import { BookOutlined, MessageOutlined, ReadOutlined, SearchOutlined, UserOutlined, TrophyOutlined, HistoryOutlined, DollarOutlined, RiseOutlined, BellOutlined, CodeOutlined, SettingOutlined, UploadOutlined, PictureOutlined, EditOutlined, EyeOutlined, LoginOutlined, QuestionCircleOutlined, ThunderboltOutlined, StarOutlined, BulbOutlined, KeyOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 
 const { Title, Text, Paragraph } = Typography;
@@ -171,7 +171,7 @@ function HelpContent() {
     },
     {
       key: 'shortcuts',
-      label: <><KeyboardOutlined /> Горячие клавиши</>,
+      label: <><KeyOutlined /> Горячие клавиши</>,
       children: (
         <Card>
           <List
@@ -209,7 +209,7 @@ function HelpContent() {
       <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
         <Col xs={8}><Card size="small" hoverable><div style={{ textAlign: 'center' }}><BookOutlined style={{ fontSize: 20, color: '#2563eb' }} /><div><Text strong style={{ fontSize: 18 }}>{allPages.length}</Text></div><Text type="secondary" style={{ fontSize: 11 }}>страниц</Text></div></Card></Col>
         <Col xs={8}><Card size="small" hoverable><div style={{ textAlign: 'center' }}><ThunderboltOutlined style={{ fontSize: 20, color: '#7c3aed' }} /><div><Text strong style={{ fontSize: 18 }}>{PAGES.length}</Text></div><Text type="secondary" style={{ fontSize: 11 }}>категорий</Text></div></Card></Col>
-        <Col xs={8}><Card size="small" hoverable><div style={{ textAlign: 'center' }}><KeyboardOutlined style={{ fontSize: 20, color: '#059669' }} /><div><Text strong style={{ fontSize: 18 }}>{SHORTCUTS.length}</Text></div><Text type="secondary" style={{ fontSize: 11 }}>команд</Text></div></Card></Col>
+        <Col xs={8}><Card size="small" hoverable><div style={{ textAlign: 'center' }}><KeyOutlined style={{ fontSize: 20, color: '#059669' }} /><div><Text strong style={{ fontSize: 18 }}>{SHORTCUTS.length}</Text></div><Text type="secondary" style={{ fontSize: 11 }}>команд</Text></div></Card></Col>
       </Row>
 
       <Tabs items={categoryItems} />

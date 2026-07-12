@@ -71,13 +71,34 @@ class KnowledgeLayer(BaseLayer):
                 desc = ch.get("description", "")
                 archetype = ch.get("archetype", "")
                 values = ch.get("values", [])
+                ch_type = ch.get("type", "")
+                first_ch = ch.get("first_chapter", "")
+                last_ch = ch.get("last_chapter", "")
+
                 text = f"{ch['name']}"
                 if archetype:
                     text += f" — {archetype}"
+                if ch_type:
+                    text += f" ({ch_type})"
                 if desc:
-                    text += f". {desc}"
+                    text += f"\n\n{desc}"
                 if values:
-                    text += f". Ценности: {', '.join(values)}"
+                    text += f"\n\nЦенности: {', '.join(values)}"
+                if first_ch or last_ch:
+                    chapters = f"главы {first_ch}" if first_ch else ""
+                    if last_ch:
+                        chapters += f"–{last_ch}" if first_ch else f"глава {last_ch}"
+                    text += f"\nВстречается в: {chapters}"
+
+                # Найти связанные темы
+                related_themes = []
+                for th in self._genome.get("modules", {}).get("themes", []):
+                    th_desc = th.get("description", "").lower()
+                    if any(name in th_desc for name in names if len(name) > 2):
+                        related_themes.append(th["name"])
+                if related_themes:
+                    text += f"\nСвязанные темы: {', '.join(related_themes[:5])}"
+
                 return PulseResponse(
                     text=text,
                     source="knowledge:character",
@@ -89,9 +110,21 @@ class KnowledgeLayer(BaseLayer):
         for th in self._genome.get("modules", {}).get("themes", []):
             if th["name"].lower() in q:
                 desc = th.get("description", "")
+                strength = th.get("strength", "")
                 text = f"Тема: {th['name']}"
                 if desc:
-                    text += f" — {desc}"
+                    text += f"\n\n{desc}"
+                if strength:
+                    text += f"\n\nВыраженность: {strength}"
+
+                # Найти связанные конфликты
+                related_conflicts = []
+                for conf in self._genome.get("modules", {}).get("conflicts", []):
+                    if th["name"].lower() in conf.get("name", "").lower():
+                        related_conflicts.append(conf["name"])
+                if related_conflicts:
+                    text += f"\nСвязанные конфликты: {', '.join(related_conflicts[:3])}"
+
                 return PulseResponse(
                     text=text,
                     source="knowledge:theme",
@@ -103,9 +136,21 @@ class KnowledgeLayer(BaseLayer):
         for sym in self._genome.get("modules", {}).get("symbols", []):
             if sym["name"].lower() in q:
                 meaning = sym.get("meaning", "")
+                chapters = sym.get("chapters", [])
                 text = f"Символ: {sym['name']}"
                 if meaning:
-                    text += f" — {meaning}"
+                    text += f"\n\n{meaning}"
+                if chapters:
+                    text += f"\n\nВстречается в главах: {', '.join(str(c) for c in chapters[:10])}"
+
+                # Найти связанные темы
+                related_themes = []
+                for th in self._genome.get("modules", {}).get("themes", []):
+                    if sym["name"].lower() in th.get("description", "").lower():
+                        related_themes.append(th["name"])
+                if related_themes:
+                    text += f"\nСвязанные темы: {', '.join(related_themes[:5])}"
+
                 return PulseResponse(
                     text=text,
                     source="knowledge:symbol",
@@ -116,7 +161,19 @@ class KnowledgeLayer(BaseLayer):
         # Конфликты
         for conf in self._genome.get("modules", {}).get("conflicts", []):
             if conf["name"].lower() in q:
-                text = f"Конфликт: {conf['name']} ({conf.get('type', '')})"
+                conf_type = conf.get("type", "")
+                text = f"Конфликт: {conf['name']}"
+                if conf_type:
+                    text += f"\n\nТип: {conf_type}"
+
+                # Найти связанные темы
+                related_themes = []
+                for th in self._genome.get("modules", {}).get("themes", []):
+                    if any(w in conf["name"].lower() for w in th["name"].lower().split() if len(w) > 3):
+                        related_themes.append(th["name"])
+                if related_themes:
+                    text += f"\nСвязанные темы: {', '.join(related_themes[:5])}"
+
                 return PulseResponse(
                     text=text,
                     source="knowledge:conflict",
@@ -148,63 +205,87 @@ class KnowledgeLayer(BaseLayer):
             if len(query_words) < 2:
                 single = q.strip().lower()
                 for entry in catalog:
-                    entry_set = {w.lower() for w in re.findall(r"\w{3,}", entry.get("text", ""))}
-                    if single in entry_set:
-                        excerpt = entry["text"][:800]
+                    text_lower = entry.get("text", "").lower()
+                    if single in text_lower:
+                        excerpt = entry["text"][:1500]
                         chapter = entry.get("chapter", "")
+                        themes = entry.get("themes", [])
                         meta = f" (глава: {chapter})" if chapter else ""
+                        text = f"Из книги{meta}:\n\n{excerpt}"
+                        if themes:
+                            text += f"\n\nТемы: {', '.join(themes[:5])}"
                         return PulseResponse(
-                            text=f"Из книги{meta}:\n{excerpt}",
+                            text=text,
                             source="knowledge:catalog_text",
                             confidence=0.7,
                             provenance=[{"type": "catalog_text", "source": entry.get("source", "book")}],
                         )
                 return None
 
-            best_score = 0.0
-            best_entry = None
+            # Собрать лучшие совпадения
+            scored = []
             for idx, entry in enumerate(catalog):
                 if idx >= 500:
                     break
                 text = entry.get("text", "")
                 if not text:
                     continue
-                entry_words = {w.lower() for w in re.findall(r"\w{3,}", text)}
-                if not entry_words:
-                    continue
-                intersection = query_words & entry_words
-                union = query_words | entry_words
-                score = len(intersection) / max(len(union), 1)
-                if score > best_score:
-                    best_score = score
-                    best_entry = entry
-            if best_entry and best_score >= 0.15:
-                excerpt = best_entry["text"][:800]
-                source_name = best_entry.get("source", "book")
-                chapter = best_entry.get("chapter", "")
-                meta = f" (глава: {chapter})" if chapter else ""
+                text_lower = text.lower()
+                hits = sum(1 for w in query_words if w in text_lower)
+                score = hits / len(query_words) if query_words else 0.0
+                if score >= 0.3:
+                    scored.append((score, entry))
+
+            scored.sort(key=lambda x: x[0], reverse=True)
+
+            if scored:
+                # Объединить до 3 лучших фрагментов
+                parts = []
+                for score, entry in scored[:3]:
+                    excerpt = entry["text"][:1000]
+                    chapter = entry.get("chapter", "")
+                    themes = entry.get("themes", [])
+                    meta = f" (глава: {chapter})" if chapter else ""
+                    part = f"[{meta.strip('()')}]\n{excerpt}"
+                    if themes:
+                        part += f"\nТемы: {', '.join(themes[:3])}"
+                    parts.append(part)
+
+                combined = "\n\n---\n\n".join(parts)
+                best_score = scored[0][0]
                 return PulseResponse(
-                    text=f"Из книги{meta}:\n{excerpt}",
+                    text=f"Из книги:\n\n{combined}",
                     source="knowledge:catalog_text",
                     confidence=min(best_score + 0.3, 0.95),
-                    provenance=[{"type": "catalog_text", "source": source_name}],
+                    provenance=[{"type": "catalog_text", "source": scored[0][1].get("source", "book")}],
                 )
 
         # Поиск через ChromaDB retriever (если подключён)
         if self._retriever:
             try:
-                rag_results = self._retriever.search(query, n_results=3)
+                rag_results = self._retriever.search(query, n_results=5)
                 if rag_results:
-                    best = rag_results[0]
-                    text = best.get("text", "")[:800]
-                    score = best.get("score", 0.5)
-                    source = best.get("metadata", {}).get("source", "rag")
-                    chapter = best.get("chapter_title", "")
-                    meta = f" (глава: {chapter})" if chapter else ""
+                    # Объединить до 3 лучших результатов
+                    parts = []
+                    for res in rag_results[:3]:
+                        text = res.get("text", "")[:800]
+                        source = res.get("metadata", {}).get("source", "rag")
+                        chapter = res.get("chapter_title", "")
+                        if text:
+                            label = f"[{source}"
+                            if chapter:
+                                label += f", {chapter}"
+                            label += "]"
+                            parts.append(f"{label}\n{text}")
+
+                    combined = "\n\n---\n\n".join(parts)
+                    best_score = rag_results[0].get("score", 0.5)
+                    source = rag_results[0].get("metadata", {}).get("source", "rag")
+
                     return PulseResponse(
-                        text=f"Из книги{meta}:\n{text}",
+                        text=f"Из книги:\n\n{combined}",
                         source=f"knowledge:rag:{source}",
-                        confidence=min(score + 0.2, 0.95),
+                        confidence=min(best_score + 0.2, 0.95),
                         provenance=[{"type": "rag_search", "source": source}],
                     )
             except Exception:

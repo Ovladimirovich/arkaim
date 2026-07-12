@@ -43,10 +43,10 @@ export function StatsPanel() {
         <Card><Statistic title="Админов" value={stats?.users?.by_role?.admin ?? 0} /></Card>
       </Col>
       <Col span={6}>
-        <Card><Statistic title="Активных сессий" value={sessions?.length ?? 0} prefix={<TeamOutlined />} /></Card>
+        <Card><Statistic title="Активных сессий" value={(sessions ?? []).length} prefix={<TeamOutlined />} /></Card>
       </Col>
       <Col span={6}>
-        <Card><Statistic title="API-ключей" value={apiKeys?.filter((k: any) => k.is_active).length ?? 0} prefix={<KeyOutlined />} /></Card>
+        <Card><Statistic title="API-ключей" value={(apiKeys ?? []).filter((k: any) => k.is_active).length} prefix={<KeyOutlined />} /></Card>
       </Col>
       <Col span={6}>
         <Card><Statistic title="Трендовых тем" value={stats?.presence?.trending_topics ?? 0} /></Card>

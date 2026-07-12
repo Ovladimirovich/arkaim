@@ -64,8 +64,11 @@ class ReaderAwarePulse:
         if not reader_id or not self._memory:
             return self._pulse.listen(query), reader_ctx
 
-        # Получить профиль читателя
-        profile = await self._memory.get_or_create(reader_id)
+        # Получить профиль читателя (с fallback при ошибке БД)
+        try:
+            profile = await self._memory.get_or_create(reader_id)
+        except Exception:
+            return self._pulse.listen(query), reader_ctx
 
         # Проверить, не запрос ли это на углубление
         if self._is_deepen_request(query) and profile.last_topic:
