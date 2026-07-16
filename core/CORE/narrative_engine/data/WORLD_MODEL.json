@@ -1,0 +1,861 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2026-07-16T05:21:59.984025+00:00",
+  "epochs": [
+    {
+      "id": "pre_arkaim",
+      "name": "Pre-Arkaim",
+      "name_ru": "До Аркаима",
+      "order": 0,
+      "description": "Эпоха до основания Аркаима — время скитаний и поиска.",
+      "source_level": "SYSTEM_INTERPRETATION",
+      "provenance": []
+    },
+    {
+      "id": "кали_юга_и_сати_юга",
+      "name": "Кали Юга и Сати Юга",
+      "name_ru": "Кали Юга и Сати Юга",
+      "description": "Цикличность эпох",
+      "order": 1,
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "satya_yuga",
+      "name": "Satya Yuga",
+      "name_ru": "Сатья Юга (Золотой век)",
+      "order": 1,
+      "description": "Золотой век — время высшего духовного развития и гармонии.",
+      "source_level": "SYSTEM_INTERPRETATION",
+      "provenance": []
+    },
+    {
+      "id": "переходная_эпоха",
+      "name": "Переходная эпоха",
+      "name_ru": "Переходная эпоха",
+      "description": "Время смены старого и отжившего, совпадающее с космическими сроками и законами.",
+      "order": 2,
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "treta_yuga",
+      "name": "Treta Yuga",
+      "name_ru": "Трета Юга (Серебряный век)",
+      "order": 2,
+      "description": "Серебряный век — начало деградации, появление первых конфликтов.",
+      "source_level": "SYSTEM_INTERPRETATION",
+      "provenance": []
+    },
+    {
+      "id": "эволюция_человека",
+      "name": "Эволюция человека",
+      "name_ru": "Эволюция человека",
+      "description": "Процесс развития человеческих цивилизаций, сопровождающийся сменой эпох и культур.",
+      "order": 3,
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "dvapara_yuga",
+      "name": "Dvapara Yuga",
+      "name_ru": "Двапара Юга (Бронзовый век)",
+      "order": 3,
+      "description": "Бронзовый век — усиление разделения, утрата единства.",
+      "source_level": "SYSTEM_INTERPRETATION",
+      "provenance": []
+    },
+    {
+      "id": "кали_юга",
+      "name": "Кали Юга",
+      "name_ru": "Кали Юга",
+      "description": "Тёмная эпоха, наступающая после завершения прошлых культурных циклов, требующая духовной стойкости и подготовки.",
+      "order": 4,
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "kali_yuga",
+      "name": "Kali Yuga",
+      "name_ru": "Кали Юга (Тёмный век)",
+      "order": 4,
+      "description": "Тёмный век — время испытаний и поиска пути回家.",
+      "source_level": "SYSTEM_INTERPRETATION",
+      "provenance": []
+    },
+    {
+      "id": "переход_к_новой_эре_(кали_юга)",
+      "name": "Переход к новой эре (Кали Юга)",
+      "name_ru": "Переход к новой эре (Кали Юга)",
+      "description": "Описываются изменения планетарного масштаба, переход к новому этапу эволюции человечества, характеризующемуся трудностями, страхом и дезориентацией.",
+      "order": 5,
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "arkaim_era",
+      "name": "Arkaim Era",
+      "name_ru": "Эпоха Аркаима",
+      "order": 5,
+      "description": "Эпоха расцвета Аркаима — центра духовного знания.",
+      "source_level": "SYSTEM_INTERPRETATION",
+      "provenance": []
+    },
+    {
+      "id": "эпоха_кали_юги",
+      "name": "Эпоха Кали Юги",
+      "name_ru": "Эпоха Кали Юги",
+      "description": "Период глубокого духовного упадка человечества, характеризующийся усилением материализма, деградацией моральных ценностей и блокировкой человеческого сознания.",
+      "order": 6,
+      "source_level": "CANON",
+      "provenance": []
+    }
+  ],
+  "locations": [
+    {
+      "id": "гиперборея",
+      "name": "Гиперборея",
+      "name_ru": "Гиперборея",
+      "type": "other",
+      "description": "Северная прародина, хранящая духовные истины",
+      "epochs_present": [],
+      "related_entities": [
+        "Наставники",
+        "Аркаим"
+      ],
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "атлантида",
+      "name": "Атлантида",
+      "name_ru": "Атлантида",
+      "type": "other",
+      "description": "Цивилизация на пороге материального тупика",
+      "epochs_present": [],
+      "related_entities": [
+        "Велик"
+      ],
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "аркаим",
+      "name": "Аркаим",
+      "name_ru": "Аркаим",
+      "type": "region",
+      "description": "Священное место, хранящее память о Гиперборее",
+      "epochs_present": [],
+      "related_entities": [
+        "Страна Городов",
+        "Гиперборея"
+      ],
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "наставники",
+      "name": "Наставники",
+      "name_ru": "Наставники",
+      "type": "other",
+      "description": "Мудрецы, проводники, обладающие скрытыми знаниями",
+      "epochs_present": [],
+      "related_entities": [
+        "Учителя Человечества",
+        "Гиперборея"
+      ],
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "учителя_человечества",
+      "name": "Учителя Человечества",
+      "name_ru": "Учителя Человечества",
+      "type": "other",
+      "description": "Высшие сущности, источник Учения",
+      "epochs_present": [],
+      "related_entities": [
+        "Наставники",
+        "Иерархия Света"
+      ],
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "кали_юга",
+      "name": "Кали Юга",
+      "name_ru": "Кали Юга",
+      "type": "other",
+      "description": "Тёмная эпоха упадка и деградации",
+      "epochs_present": [],
+      "related_entities": [
+        "Сати Юга",
+        "Циклы"
+      ],
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "сати_юга",
+      "name": "Сати Юга",
+      "name_ru": "Сати Юга",
+      "type": "other",
+      "description": "Эпоха возрождения и духовного подъёма",
+      "epochs_present": [],
+      "related_entities": [
+        "Кали Юга",
+        "Циклы"
+      ],
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "hyperborea",
+      "name": "Hyperborea",
+      "name_ru": "Гиперборея",
+      "type": "region",
+      "description": "Земля предков — прародина человечества.",
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "arkaim",
+      "name": "Arkaim",
+      "name_ru": "Аркаим",
+      "type": "sacred_site",
+      "description": "Древний город-крепость, центр духовного знания.",
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "tmutarakan",
+      "name": "Tmutarakan",
+      "name_ru": "Тмутаракань",
+      "type": "city",
+      "description": "Древний город на берегу моря.",
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "sumer",
+      "name": "Sumer",
+      "name_ru": "Шумер",
+      "type": "region",
+      "description": "Колыбель цивилизации.",
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "india",
+      "name": "India",
+      "name_ru": "Индия",
+      "type": "region",
+      "description": "Земля древних риши и ведической традиции.",
+      "source_level": "CANON",
+      "provenance": []
+    }
+  ],
+  "civilizations": [
+    {
+      "id": "гиперборея",
+      "name": "Гиперборея",
+      "name_ru": "Гиперборея",
+      "description": "Северная прародина, хранящая духовные истины",
+      "epochs": [],
+      "values": [
+        "знание",
+        "гармония",
+        "служение"
+      ],
+      "technologies": [],
+      "religion_ids": [],
+      "related_locations": [
+        "Наставники",
+        "Аркаим"
+      ],
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "атлантида",
+      "name": "Атлантида",
+      "name_ru": "Атлантида",
+      "description": "Цивилизация на пороге материального тупика",
+      "epochs": [],
+      "values": [
+        "технологии",
+        "власть"
+      ],
+      "technologies": [],
+      "religion_ids": [],
+      "related_locations": [
+        "Велик"
+      ],
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "hyperborean",
+      "name": "Hyperborean",
+      "name_ru": "Гиперборейцы",
+      "description": "Древнейшая цивилизация — хранители изначального знания.",
+      "source_level": "SYSTEM_INTERPRETATION",
+      "provenance": []
+    },
+    {
+      "id": "vedic",
+      "name": "Vedic",
+      "name_ru": "Ведическая",
+      "description": "Цивилизация, основанная на ведическом знании.",
+      "source_level": "SYSTEM_INTERPRETATION",
+      "provenance": []
+    }
+  ],
+  "technologies": [
+    {
+      "id": "energy_harmony",
+      "name": "Energy Harmony",
+      "name_ru": "Гармония энергий",
+      "description": "Способность чувствовать и направлять энергии природы.",
+      "source_level": "SYSTEM_INTERPRETATION",
+      "provenance": []
+    },
+    {
+      "id": "crystal_tech",
+      "name": "Crystal Technology",
+      "name_ru": "Кристальная технология",
+      "description": "Использование кристаллов для хранения и передачи информации.",
+      "source_level": "SYSTEM_INTERPRETATION",
+      "provenance": []
+    },
+    {
+      "id": "stone_architecture",
+      "name": "Stone Architecture",
+      "name_ru": "Каменное зодчество",
+      "description": "Строительство каменных сооружений и городов.",
+      "source_level": "SYSTEM_INTERPRETATION",
+      "provenance": []
+    }
+  ],
+  "religions": [
+    {
+      "id": "vedic_tradition",
+      "name": "Vedic Tradition",
+      "name_ru": "Ведическая традиция",
+      "description": "Древнейшая духовная традиция, основанная на ведах.",
+      "epochs": [
+        "satya_yuga",
+        "treta_yuga"
+      ],
+      "practices": [
+        "meditation",
+        "ritual",
+        "study"
+      ],
+      "key_figures": [],
+      "source_level": "SYSTEM_INTERPRETATION",
+      "provenance": []
+    },
+    {
+      "id": "hyperborean_cult",
+      "name": "Hyperborean Cult",
+      "name_ru": "Гиперборейский культ",
+      "description": "Культ Солнца и огня у гиперборейцев.",
+      "epochs": [
+        "satya_yuga"
+      ],
+      "practices": [
+        "fire_ritual",
+        "sun_worship"
+      ],
+      "key_figures": [],
+      "source_level": "SYSTEM_INTERPRETATION",
+      "provenance": []
+    }
+  ],
+  "characters_living": {
+    "satya_yuga": [
+      {
+        "character_name": "Влад",
+        "epoch": "satya_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 1-999",
+        "source_level": "SYSTEM_INTERPRETATION"
+      },
+      {
+        "character_name": "Вера",
+        "epoch": "satya_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 1-999",
+        "source_level": "SYSTEM_INTERPRETATION"
+      },
+      {
+        "character_name": "Архат",
+        "epoch": "satya_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 2-9",
+        "source_level": "SYSTEM_INTERPRETATION"
+      },
+      {
+        "character_name": "Ученики (плеяда)",
+        "epoch": "satya_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 1-999",
+        "source_level": "SYSTEM_INTERPRETATION"
+      },
+      {
+        "character_name": "Велик",
+        "epoch": "satya_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 2-17",
+        "source_level": "SYSTEM_INTERPRETATION"
+      },
+      {
+        "character_name": "Учитель",
+        "epoch": "satya_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 3-13",
+        "source_level": "SYSTEM_INTERPRETATION"
+      },
+      {
+        "character_name": "Гипербореи (Неизвестный лидер группы)",
+        "epoch": "satya_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 1-999",
+        "source_level": "SYSTEM_INTERPRETATION"
+      },
+      {
+        "character_name": "Мирослав (Славный)",
+        "epoch": "satya_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 1-999",
+        "source_level": "SYSTEM_INTERPRETATION"
+      },
+      {
+        "character_name": "Владислав (Влад)",
+        "epoch": "satya_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 1-999",
+        "source_level": "SYSTEM_INTERPRETATION"
+      },
+      {
+        "character_name": "Вероника (Вера)",
+        "epoch": "satya_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 1-999",
+        "source_level": "SYSTEM_INTERPRETATION"
+      },
+      {
+        "character_name": "Световит",
+        "epoch": "satya_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 5-13",
+        "source_level": "SYSTEM_INTERPRETATION"
+      },
+      {
+        "character_name": "Славный",
+        "epoch": "satya_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 5-14",
+        "source_level": "SYSTEM_INTERPRETATION"
+      },
+      {
+        "character_name": "Мирослав",
+        "epoch": "satya_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 5-6",
+        "source_level": "SYSTEM_INTERPRETATION"
+      },
+      {
+        "character_name": "Велиусмус (Великосвет)",
+        "epoch": "satya_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 1-999",
+        "source_level": "SYSTEM_INTERPRETATION"
+      },
+      {
+        "character_name": "Учитель Человечества",
+        "epoch": "satya_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 1-999",
+        "source_level": "SYSTEM_INTERPRETATION"
+      },
+      {
+        "character_name": "Наставники",
+        "epoch": "satya_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 5-14",
+        "source_level": "SYSTEM_INTERPRETATION"
+      },
+      {
+        "character_name": "Мост между мирами",
+        "epoch": "satya_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 1-999",
+        "source_level": "SYSTEM_INTERPRETATION"
+      },
+      {
+        "character_name": "Староста",
+        "epoch": "satya_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 1-999",
+        "source_level": "SYSTEM_INTERPRETATION"
+      },
+      {
+        "character_name": "Велик (Велиусмус)",
+        "epoch": "satya_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 1-999",
+        "source_level": "SYSTEM_INTERPRETATION"
+      },
+      {
+        "character_name": "Гипербореи",
+        "epoch": "satya_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 3-16",
+        "source_level": "SYSTEM_INTERPRETATION"
+      }
+    ],
+    "treta_yuga": [
+      {
+        "character_name": "Святослав",
+        "epoch": "treta_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 6-6",
+        "source_level": "SYSTEM_INTERPRETATION"
+      },
+      {
+        "character_name": "Любомир",
+        "epoch": "treta_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 6-6",
+        "source_level": "SYSTEM_INTERPRETATION"
+      },
+      {
+        "character_name": "Яснобор",
+        "epoch": "treta_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 10-11",
+        "source_level": "SYSTEM_INTERPRETATION"
+      },
+      {
+        "character_name": "Коловед",
+        "epoch": "treta_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 10-11",
+        "source_level": "SYSTEM_INTERPRETATION"
+      },
+      {
+        "character_name": "Радомир",
+        "epoch": "treta_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 11-11",
+        "source_level": "SYSTEM_INTERPRETATION"
+      },
+      {
+        "character_name": "Посредник",
+        "epoch": "treta_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 8-13",
+        "source_level": "SYSTEM_INTERPRETATION"
+      }
+    ],
+    "dvapara_yuga": [
+      {
+        "character_name": "Учителя Истины",
+        "epoch": "dvapara_yuga",
+        "location_id": null,
+        "status": "alive",
+        "notes": "Персонаж из глав 16-16",
+        "source_level": "SYSTEM_INTERPRETATION"
+      }
+    ]
+  },
+  "canonical_events": [
+    {
+      "id": "event_000",
+      "title": "Глава о Часть 0",
+      "title_ru": "Глава о Часть 0",
+      "description": "",
+      "epoch": "unknown",
+      "location_id": null,
+      "characters_involved": [],
+      "chapter": 0,
+      "order_in_epoch": 0,
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "event_001",
+      "title": "Пролог",
+      "title_ru": "Пролог",
+      "description": "",
+      "epoch": "unknown",
+      "location_id": null,
+      "characters_involved": [],
+      "chapter": 1,
+      "order_in_epoch": 1,
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "event_002",
+      "title": "Глава о Часть 2",
+      "title_ru": "Глава о Часть 2",
+      "description": "",
+      "epoch": "unknown",
+      "location_id": null,
+      "characters_involved": [],
+      "chapter": 2,
+      "order_in_epoch": 2,
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "event_003",
+      "title": "Глава о Часть 3",
+      "title_ru": "Глава о Часть 3",
+      "description": "",
+      "epoch": "unknown",
+      "location_id": null,
+      "characters_involved": [],
+      "chapter": 3,
+      "order_in_epoch": 3,
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "event_004",
+      "title": "Глава о Часть 4",
+      "title_ru": "Глава о Часть 4",
+      "description": "",
+      "epoch": "unknown",
+      "location_id": null,
+      "characters_involved": [],
+      "chapter": 4,
+      "order_in_epoch": 4,
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "event_005",
+      "title": "Глава о Часть 5",
+      "title_ru": "Глава о Часть 5",
+      "description": "",
+      "epoch": "unknown",
+      "location_id": null,
+      "characters_involved": [],
+      "chapter": 5,
+      "order_in_epoch": 5,
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "event_006",
+      "title": "Глава о Часть 6",
+      "title_ru": "Глава о Часть 6",
+      "description": "",
+      "epoch": "unknown",
+      "location_id": null,
+      "characters_involved": [],
+      "chapter": 6,
+      "order_in_epoch": 6,
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "event_007",
+      "title": "Глава о Часть 7",
+      "title_ru": "Глава о Часть 7",
+      "description": "",
+      "epoch": "unknown",
+      "location_id": null,
+      "characters_involved": [],
+      "chapter": 7,
+      "order_in_epoch": 7,
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "event_008",
+      "title": "Глава о Часть 8",
+      "title_ru": "Глава о Часть 8",
+      "description": "",
+      "epoch": "unknown",
+      "location_id": null,
+      "characters_involved": [],
+      "chapter": 8,
+      "order_in_epoch": 8,
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "event_009",
+      "title": "Глава о Часть 9",
+      "title_ru": "Глава о Часть 9",
+      "description": "",
+      "epoch": "unknown",
+      "location_id": null,
+      "characters_involved": [],
+      "chapter": 9,
+      "order_in_epoch": 9,
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "event_010",
+      "title": "Глава о Часть 10",
+      "title_ru": "Глава о Часть 10",
+      "description": "",
+      "epoch": "unknown",
+      "location_id": null,
+      "characters_involved": [],
+      "chapter": 10,
+      "order_in_epoch": 10,
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "event_011",
+      "title": "Глава о Часть 11",
+      "title_ru": "Глава о Часть 11",
+      "description": "",
+      "epoch": "unknown",
+      "location_id": null,
+      "characters_involved": [],
+      "chapter": 11,
+      "order_in_epoch": 11,
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "event_012",
+      "title": "Глава о Часть 12",
+      "title_ru": "Глава о Часть 12",
+      "description": "",
+      "epoch": "unknown",
+      "location_id": null,
+      "characters_involved": [],
+      "chapter": 12,
+      "order_in_epoch": 12,
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "event_013",
+      "title": "Глава о Часть 13",
+      "title_ru": "Глава о Часть 13",
+      "description": "",
+      "epoch": "unknown",
+      "location_id": null,
+      "characters_involved": [],
+      "chapter": 13,
+      "order_in_epoch": 13,
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "event_014",
+      "title": "Глава о Часть 14",
+      "title_ru": "Глава о Часть 14",
+      "description": "",
+      "epoch": "unknown",
+      "location_id": null,
+      "characters_involved": [],
+      "chapter": 14,
+      "order_in_epoch": 14,
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "event_015",
+      "title": "Глава о Часть 15",
+      "title_ru": "Глава о Часть 15",
+      "description": "",
+      "epoch": "unknown",
+      "location_id": null,
+      "characters_involved": [],
+      "chapter": 15,
+      "order_in_epoch": 15,
+      "source_level": "CANON",
+      "provenance": []
+    },
+    {
+      "id": "event_016",
+      "title": "Эпилог",
+      "title_ru": "Эпилог",
+      "description": "",
+      "epoch": "unknown",
+      "location_id": null,
+      "characters_involved": [],
+      "chapter": 16,
+      "order_in_epoch": 16,
+      "source_level": "CANON",
+      "provenance": []
+    }
+  ],
+  "causal_rules": [
+    {
+      "id": "rule_no_tech_before_epoch",
+      "description": "Технологии эпохи не могут появиться раньше своего времени",
+      "rule_type": "exclusion",
+      "condition": "technologies must match epoch",
+      "related_events": [],
+      "related_characters": [],
+      "source_level": "SYSTEM_INTERPRETATION"
+    },
+    {
+      "id": "rule_no_future_knowledge",
+      "description": "Персонаж не может знать о событиях, которые ещё не произошли",
+      "rule_type": "exclusion",
+      "condition": "character knowledge must not exceed current epoch",
+      "related_events": [],
+      "related_characters": [],
+      "source_level": "SYSTEM_INTERPRETATION"
+    },
+    {
+      "id": "rule_geographic_consistency",
+      "description": "Персонаж не может быть одновременно в двух удалённых локациях",
+      "rule_type": "exclusion",
+      "condition": "character location must be single at any time",
+      "related_events": [],
+      "related_characters": [],
+      "source_level": "SYSTEM_INTERPRETATION"
+    },
+    {
+      "id": "rule_causal_chain",
+      "description": "Следствия не могут предшествовать причинам",
+      "rule_type": "dependency",
+      "condition": "effects must follow causes in timeline",
+      "related_events": [],
+      "related_characters": [],
+      "source_level": "SYSTEM_INTERPRETATION"
+    }
+  ]
+}
