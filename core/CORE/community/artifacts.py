@@ -1,4 +1,4 @@
-"""
+﻿"""
 artifacts — коллекция артефактов читателей.
 
 Читатели делятся находками: археология, легенды, символы.
@@ -58,7 +58,7 @@ class ArtifactStore:
     def _load(self):
         if self._file.exists():
             try:
-                data = json.loads(self._file.read_text(encoding="utf-8"))
+                data = json.loads(self._file.read_text(encoding="utf-8-sig"))
                 self._items = [Artifact.from_dict(d) for d in data]
             except Exception as e:
                 log.error("artifacts_load_error error=%s", e)
@@ -175,3 +175,4 @@ class ArtifactStore:
             "approved": sum(1 for a in self._items if a.status == "approved"),
             "categories": categories,
         }
+

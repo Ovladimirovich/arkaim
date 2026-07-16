@@ -1,4 +1,4 @@
-"""
+﻿"""
 interpretations — интерпретации читателей.
 
 Читатели делятся своим пониманием книги.
@@ -52,7 +52,7 @@ class InterpretationStore:
     def _load(self):
         if self._file.exists():
             try:
-                data = json.loads(self._file.read_text(encoding="utf-8"))
+                data = json.loads(self._file.read_text(encoding="utf-8-sig"))
                 self._items = [Interpretation.from_dict(d) for d in data]
             except Exception as e:
                 log.error("interpretations_load_error error=%s", e)
@@ -154,3 +154,4 @@ class InterpretationStore:
             "approved": approved,
             "rejected": rejected,
         }
+
