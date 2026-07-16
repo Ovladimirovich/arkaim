@@ -1,4 +1,4 @@
-import logging
+﻿import logging
 from datetime import timedelta
 from html import escape as html_escape
 from pathlib import Path
@@ -136,7 +136,7 @@ async def dev_generate_token(request: Request):
     display_name = body.get("display_name", "Dev User")
     role = body.get("role", "admin")
     token = generate_login_token(telegram_user_id, username, display_name, role=role)
-    return {"token": token, "login_url": f"/auth/login?token={token}"}
+    return {"token": token, "login_url": f"/login?token={token}"}
 
 
 @router.get("/google")
@@ -537,3 +537,4 @@ async def accept_invite(token: str, request: Request):
     await user_store.set_role(user["user_id"], invite["role"])
     log.info("invite_accepted user_id=%s role=%s invite_id=%s", user["user_id"], invite["role"], invite["id"])
     return {"ok": True, "role": invite["role"]}
+

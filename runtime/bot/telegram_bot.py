@@ -56,7 +56,7 @@ class TelegramBot:
                 username=username,
                 display_name=display_name,
             )
-            login_url = f"{self.public_base_url}/auth/login?token={token}"
+            login_url = f"{self.public_base_url}/login?token={token}"
 
             await self.send_message(chat_id,
                 f"🔐 <b>Вход в «Наследие Аркаима»</b>\n\n"
@@ -151,12 +151,13 @@ def init_bot():
     """Инициализировать бота из env."""
     global _bot
     bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "")
-    public_base_url = os.getenv("PUBLIC_BASE_URL", "http://localhost:3000")
+    # Ссылка для входа должна вести на фронтенд, не на бэкенд
+    frontend_url = os.getenv("FRONTEND_URL", "") or os.getenv("PUBLIC_BASE_URL", "http://localhost:3000")
 
     if not bot_token:
         log.warning("telegram_bot_not_configured: TELEGRAM_BOT_TOKEN не задан")
         return None
 
-    _bot = TelegramBot(bot_token=bot_token, public_base_url=public_base_url)
-    log.info("telegram_bot_initialized base_url=%s", public_base_url)
+    _bot = TelegramBot(bot_token=bot_token, public_base_url=frontend_url)
+    log.info("telegram_bot_initialized base_url=%s", frontend_url)
     return _bot
