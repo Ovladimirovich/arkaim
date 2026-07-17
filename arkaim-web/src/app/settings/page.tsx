@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
-import { Card, Typography, Form, Input, Switch, Button, Select, Divider, Space, message, Tabs, List, Tag, Popconfirm, Row, Col, Descriptions, Avatar, Alert } from 'antd';
-import { UserOutlined, BellOutlined, LockOutlined, BgColorsOutlined, DeleteOutlined, KeyOutlined, SaveOutlined, SafetyOutlined, LinkOutlined, GlobalOutlined } from '@ant-design/icons';
+import { Card, Typography, Form, Input, Switch, Button, Select, Divider, Space, message, Tabs, List, Tag, Popconfirm, Row, Col, Descriptions, Alert } from 'antd';
+import { UserOutlined, BellOutlined, LockOutlined, BgColorsOutlined, DeleteOutlined, KeyOutlined, SaveOutlined, SafetyOutlined, GlobalOutlined, CommentOutlined, LikeOutlined, TeamOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
 import { useAuth, useTheme } from '@/app/providers';
@@ -14,23 +14,17 @@ const { Title, Text, Paragraph } = Typography;
 
 function AccountSettings() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [form] = Form.useForm();
-  const [saving, setSaving] = useState(false);
 
-  const handleSave = async () => {
-    try {
-      const values = await form.validateFields();
-      setSaving(true);
-      // Сохраняем в localStorage (т.к. бэкенд не имеет эндпоинта обновления профиля)
-      const saved = JSON.parse(localStorage.getItem('settings_account') || '{}');
-      localStorage.setItem('settings_account', JSON.stringify({ ...saved, ...values }));
-      message.success('Настройки аккаунта сохранены');
-    } catch {
-      message.error('Заполните обязательные поля');
-    } finally {
-      setSaving(false);
-    }
-  };
+  const updateMutation = useMutation({
+    mutationFn: (values: { display_name: string }) =>
+      api.post('/auth/update-profile', values),
+    onSuccess: () => {
+      message.success('Профиль обновлён');
+      queryClient.invalidateQueries({ queryKey: ['auth-user'] });
+    },
+  });
 
   return (
     <Card title={<><UserOutlined /> Аккаунт</>}>
@@ -41,6 +35,7 @@ function AccountSettings() {
           username: user?.username || '',
           display_name: user?.display_name || '',
         }}
+        onFinish={(values) => updateMutation.mutate(values)}
       >
         <Row gutter={16}>
           <Col xs={24} sm={12}>
@@ -67,7 +62,7 @@ function AccountSettings() {
         </Form.Item>
 
         <Form.Item>
-          <Button type="primary" icon={<SaveOutlined />} onClick={handleSave} loading={saving}>
+          <Button type="primary" icon={<SaveOutlined />} htmlType="submit" loading={updateMutation.isPending}>
             Сохранить
           </Button>
         </Form.Item>
@@ -145,61 +140,111 @@ function LanguageSettings() {
 // ── Notification Settings ──────────────────────────────
 
 function NotificationSettings() {
-  const [emailEnabled, setEmailEnabled] = useState(() => {
+  const getSetting = (key: string, defaultValue: boolean) => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('settings_notifications');
-      return saved ? JSON.parse(saved).emailEnabled : true;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed[key] !== undefined ? parsed[key] : defaultValue;
+      }
     }
-    return true;
-  });
-  const [pushEnabled, setPushEnabled] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('settings_notifications');
-      return saved ? JSON.parse(saved).pushEnabled : false;
-    }
-    return false;
-  });
-  const [weeklyDigest, setWeeklyDigest] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('settings_notifications');
-      return saved ? JSON.parse(saved).weeklyDigest : true;
-    }
-    return true;
-  });
-  const [chatNotifications, setChatNotifications] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('settings_notifications');
-      return saved ? JSON.parse(saved).chatNotifications : true;
-    }
-    return true;
-  });
+    return defaultValue;
+  };
+
+  const [emailEnabled, setEmailEnabled] = useState(() => getSetting('emailEnabled', true));
+  const [pushEnabled, setPushEnabled] = useState(() => getSetting('pushEnabled', false));
+  const [weeklyDigest, setWeeklyDigest] = useState(() => getSetting('weeklyDigest', true));
+  const [chatNotifications, setChatNotifications] = useState(() => getSetting('chatNotifications', true));
+
+  // Community notification settings
+  const [commentLiked, setCommentLiked] = useState(() => getSetting('commentLiked', true));
+  const [commentAdded, setCommentAdded] = useState(() => getSetting('commentAdded', true));
+  const [interpretationApproved, setInterpretationApproved] = useState(() => getSetting('interpretationApproved', true));
+  const [interpretationRejected, setInterpretationRejected] = useState(() => getSetting('interpretationRejected', true));
+  const [artifactApproved, setArtifactApproved] = useState(() => getSetting('artifactApproved', true));
+  const [artifactRejected, setArtifactRejected] = useState(() => getSetting('artifactRejected', true));
+  const [moderationQueue, setModerationQueue] = useState(() => getSetting('moderationQueue', true));
 
   const handleSave = () => {
     localStorage.setItem('settings_notifications', JSON.stringify({
       emailEnabled, pushEnabled, weeklyDigest, chatNotifications,
+      commentLiked, commentAdded,
+      interpretationApproved, interpretationRejected,
+      artifactApproved, artifactRejected,
+      moderationQueue,
     }));
     message.success('Настройки уведомлений сохранены');
   };
 
   return (
     <Card title={<><BellOutlined /> Уведомления</>}>
-      <Form layout="vertical">
-        <Form.Item label="Email-уведомления" extra="Получать уведомления на email">
-          <Switch checked={emailEnabled} onChange={setEmailEnabled} />
-        </Form.Item>
-        <Form.Item label="Push-уведомления" extra="Получать push-уведомления в приложении">
-          <Switch checked={pushEnabled} onChange={setPushEnabled} />
-        </Form.Item>
-        <Form.Item label="Уведомления о чате" extra="Уведомления о новых ответах книги">
-          <Switch checked={chatNotifications} onChange={setChatNotifications} />
-        </Form.Item>
-        <Form.Item label="Еженедельный дайджест" extra="Сводка активности за неделю">
-          <Switch checked={weeklyDigest} onChange={setWeeklyDigest} />
-        </Form.Item>
-        <Form.Item>
-          <Button type="primary" icon={<SaveOutlined />} onClick={handleSave}>Сохранить</Button>
-        </Form.Item>
-      </Form>
+      <Tabs
+        items={[
+          {
+            key: 'general',
+            label: 'Общие',
+            children: (
+              <Form layout="vertical">
+                <Form.Item label="Email-уведомления" extra="Получать уведомления на email">
+                  <Switch checked={emailEnabled} onChange={setEmailEnabled} />
+                </Form.Item>
+                <Form.Item label="Push-уведомления" extra="Получать push-уведомления в приложении">
+                  <Switch checked={pushEnabled} onChange={setPushEnabled} />
+                </Form.Item>
+                <Form.Item label="Уведомления о чате" extra="Уведомления о новых ответах книги">
+                  <Switch checked={chatNotifications} onChange={setChatNotifications} />
+                </Form.Item>
+                <Form.Item label="Еженедельный дайджест" extra="Сводка активности за неделю">
+                  <Switch checked={weeklyDigest} onChange={setWeeklyDigest} />
+                </Form.Item>
+              </Form>
+            ),
+          },
+          {
+            key: 'community',
+            label: <><TeamOutlined /> Сообщество</>,
+            children: (
+              <Form layout="vertical">
+                <Paragraph type="secondary" style={{ marginBottom: 16 }}>
+                  Настройте уведомления о активности в сообществе
+                </Paragraph>
+
+                <Divider plain><CommentOutlined /> Комментарии</Divider>
+                <Form.Item label="Лайк на комментарий" extra="Когда кто-то поставил лайк вашему комментарию">
+                  <Switch checked={commentLiked} onChange={setCommentLiked} />
+                </Form.Item>
+                <Form.Item label="Новый комментарий" extra="Когда кто-то прокомментировал вашу интерпретацию или артефакт">
+                  <Switch checked={commentAdded} onChange={setCommentAdded} />
+                </Form.Item>
+
+                <Divider plain><LikeOutlined /> Интерпретации</Divider>
+                <Form.Item label="Интерпретация одобрена" extra="Когда ваша интерпретация прошла модерацию">
+                  <Switch checked={interpretationApproved} onChange={setInterpretationApproved} />
+                </Form.Item>
+                <Form.Item label="Интерпретация отклонена" extra="Когда ваша интерпретация не прошла модерацию">
+                  <Switch checked={interpretationRejected} onChange={setInterpretationRejected} />
+                </Form.Item>
+
+                <Divider plain><TeamOutlined /> Артефакты</Divider>
+                <Form.Item label="Артефакт одобрен" extra="Когда ваш артефакт прошёл модерацию">
+                  <Switch checked={artifactApproved} onChange={setArtifactApproved} />
+                </Form.Item>
+                <Form.Item label="Артефакт отклонён" extra="Когда ваш артефакт не прошёл модерацию">
+                  <Switch checked={artifactRejected} onChange={setArtifactRejected} />
+                </Form.Item>
+
+                <Divider plain><LockOutlined /> Модерация</Divider>
+                <Form.Item label="Очередь модерации" extra="Уведомления о новыхATERIAL на модерацию (для модераторов)">
+                  <Switch checked={moderationQueue} onChange={setModerationQueue} />
+                </Form.Item>
+              </Form>
+            ),
+          },
+        ]}
+      />
+      <Form.Item style={{ marginTop: 16 }}>
+        <Button type="primary" icon={<SaveOutlined />} onClick={handleSave}>Сохранить</Button>
+      </Form.Item>
     </Card>
   );
 }
@@ -325,30 +370,24 @@ function SecuritySettings() {
 // ── Privacy Settings ──────────────────────────────
 
 function PrivacySettings() {
-  const [showProfile, setShowProfile] = useState(() => {
+  const getSetting = (key: string, defaultValue: boolean) => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('settings_privacy');
-      return saved ? JSON.parse(saved).showProfile : true;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed[key] !== undefined ? parsed[key] : defaultValue;
+      }
     }
-    return true;
-  });
-  const [showHistory, setShowHistory] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('settings_privacy');
-      return saved ? JSON.parse(saved).showHistory : true;
-    }
-    return true;
-  });
-  const [showTopics, setShowTopics] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('settings_privacy');
-      return saved ? JSON.parse(saved).showTopics !== false : true;
-    }
-    return true;
-  });
+    return defaultValue;
+  };
+
+  const [showProfile, setShowProfile] = useState(() => getSetting('showProfile', true));
+  const [showHistory, setShowHistory] = useState(() => getSetting('showHistory', true));
+  const [showTopics, setShowTopics] = useState(() => getSetting('showTopics', true));
+  const [showActivity, setShowActivity] = useState(() => getSetting('showActivity', true));
 
   const handleSave = () => {
-    localStorage.setItem('settings_privacy', JSON.stringify({ showProfile, showHistory, showTopics }));
+    localStorage.setItem('settings_privacy', JSON.stringify({ showProfile, showHistory, showTopics, showActivity }));
     message.success('Настройки конфиденциальности сохранены');
   };
 
@@ -363,6 +402,9 @@ function PrivacySettings() {
         </Form.Item>
         <Form.Item label="Показывать изученные темы" extra="Темы будут видны в профиле">
           <Switch checked={showTopics} onChange={setShowTopics} />
+        </Form.Item>
+        <Form.Item label="Показывать активность в сообществе" extra="Ваша активность (лайки, комментарии) будет видна другим">
+          <Switch checked={showActivity} onChange={setShowActivity} />
         </Form.Item>
         <Form.Item>
           <Button type="primary" icon={<SaveOutlined />} onClick={handleSave}>Сохранить</Button>
@@ -403,3 +445,4 @@ export default function SettingsPage() {
     </ProtectedRoute>
   );
 }
+
