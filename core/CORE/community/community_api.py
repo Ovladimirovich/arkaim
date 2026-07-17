@@ -1,4 +1,4 @@
-"""Community API — FastAPI routes для интерпретаций, артефактов, комментариев и уведомлений."""
+﻿"""Community API — FastAPI routes для интерпретаций, артефактов, комментариев и уведомлений."""
 
 import json
 import logging
@@ -83,7 +83,7 @@ class ArtifactRequest(BaseModel):
 @router.get("/interpretations")
 async def list_interpretations(
     status: str | None = None,
-    sort: str = Query("newest", regex="^(newest|oldest|popular)$"),
+    sort: str = Query("newest", pattern="^(newest|oldest|popular)$"),
     limit: int = Query(50, ge=1, le=200),
 ):
     """Получить список интерпретаций."""
@@ -220,7 +220,7 @@ async def interpretation_stats():
 async def list_artifacts(
     status: str | None = None,
     category: str | None = None,
-    sort: str = Query("newest", regex="^(newest|oldest|popular)$"),
+    sort: str = Query("newest", pattern="^(newest|oldest|popular)$"),
     limit: int = Query(50, ge=1, le=200),
 ):
     """Получить список артефактов."""
@@ -433,7 +433,7 @@ async def delete_comment(comment_id: str, user: dict = Depends(require_role("adm
 @router.get("/search")
 async def search_community(
     q: str = Query(..., min_length=2),
-    type: str = Query("all", regex="^(all|interpretations|artifacts)$"),
+    type: str = Query("all", pattern="^(all|interpretations|artifacts)$"),
     limit: int = Query(20, ge=1, le=100),
 ):
     """Поиск по интерпретациям и артефактам."""
@@ -578,3 +578,4 @@ async def get_timeline():
         {"year": "Настоящее", "title": "Аркаим открыт", "type": "event"},
     ]
     return {"events": timeline}
+
