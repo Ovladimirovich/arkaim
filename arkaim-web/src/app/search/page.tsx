@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { Card, Typography, Input, Tabs, Table, Tag, Space, Empty, Spin, List, Button, Select, Row, Col, Statistic } from 'antd';
-import { SearchOutlined, DatabaseOutlined, BookOutlined, FileTextOutlined, ReloadOutlined } from '@ant-design/icons';
+import { useState } from 'react';
+import { Card, Typography, Input, Tabs, Table, Tag, Space, Empty, Spin, List, Button, Row, Col, Badge } from 'antd';
+import { SearchOutlined, DatabaseOutlined, BookOutlined, FileTextOutlined, TeamOutlined, BulbOutlined, GlobalOutlined, CommentOutlined, LikeOutlined } from '@ant-design/icons';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
 import { ProtectedRoute } from '@/shared/lib/guards';
 
@@ -30,6 +31,177 @@ type EntityResult = {
   type?: string;
   resolved?: string;
 };
+
+type Interpretation = {
+  id: string;
+  reader_name: string;
+  text: string;
+  themes: string[];
+  characters: string[];
+  likes: number;
+  created_at: string;
+};
+
+type Artifact = {
+  id: string;
+  reader_name: string;
+  title: string;
+  description: string;
+  category: string;
+  related_themes: string[];
+  location: string;
+  likes: number;
+  created_at: string;
+};
+
+// ── Global Search Panel ──────────────────────────
+
+function GlobalSearchPanel() {
+  const [query, setQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const { data: knowledgeData, isLoading: knowledgeLoading } = useQuery({
+    queryKey: ['search-knowledge', searchQuery],
+    queryFn: () => api.post<{ results: SearchResult[] }>('/book/os/search', { query: searchQuery, n_results: 5 }),
+    enabled: searchQuery.length >= 2,
+  });
+
+  const { data: communityData, isLoading: communityLoading } = useQuery({
+    queryKey: ['search-community', searchQuery],
+    queryFn: () => api.get<{ interpretations: Interpretation[]; artifacts: Artifact[]; total: number }>(`/book/community/search?q=${encodeURIComponent(searchQuery)}&limit=5`),
+    enabled: searchQuery.length >= 2,
+  });
+
+  const isLoading = knowledgeLoading || communityLoading;
+  const knowledgeResults = knowledgeData?.results || [];
+  const interpretations = communityData?.interpretations || [];
+  const artifacts = communityData?.artifacts || [];
+  const totalResults = knowledgeResults.length + interpretations.length + artifacts.length;
+
+  const handleSearch = (value: string) => {
+    if (value.trim().length >= 2) {
+      setSearchQuery(value.trim());
+    }
+  };
+
+  return (
+    <div>
+      <Search
+        placeholder="Поиск по всему — знания, факты, интерпретации, артефакты..."
+        enterButton={<><SearchOutlined /> Найти</>}
+        size="large"
+        loading={isLoading}
+        value={query}
+        onChange={e => setQuery(e.target.value)}
+        onSearch={handleSearch}
+        style={{ marginBottom: 16 }}
+      />
+
+      {searchQuery && !isLoading && (
+        <Tag color="blue" style={{ marginBottom: 16 }}>Найдено: {totalResults} результатов</Tag>
+      )}
+
+      {isLoading ? (
+        <div style={{ textAlign: 'center', padding: 48 }}><Spin /></div>
+      ) : totalResults > 0 ? (
+        <Row gutter={[16, 16]}>
+          {/* Knowledge */}
+          {knowledgeResults.length > 0 && (
+            <Col xs={24} lg={12}>
+              <Card title={<><BookOutlined /> Знания ({knowledgeResults.length})</>} size="small">
+                <List
+                  size="small"
+                  dataSource={knowledgeResults}
+                  renderItem={(item: SearchResult) => (
+                    <List.Item>
+                      <List.Item.Meta
+                        title={
+                          <Space>
+                            <Tag color={item.score > 0.7 ? 'green' : item.score > 0.4 ? 'blue' : 'default'}>
+                              {(item.score * 100).toFixed(0)}%
+                            </Tag>
+                            <Text ellipsis style={{ maxWidth: 300 }}>{item.text.substring(0, 80)}...</Text>
+                          </Space>
+                        }
+                        description={<Text type="secondary" style={{ fontSize: 11 }}>{item.metadata?.doc_id || ''}</Text>}
+                      />
+                    </List.Item>
+                  )}
+                />
+              </Card>
+            </Col>
+          )}
+
+          {/* Interpretations */}
+          {interpretations.length > 0 && (
+            <Col xs={24} lg={12}>
+              <Card title={<><BulbOutlined /> Интерпретации ({interpretations.length})</>} size="small">
+                <List
+                  size="small"
+                  dataSource={interpretations}
+                  renderItem={(item: Interpretation) => (
+                    <List.Item>
+                      <List.Item.Meta
+                        title={
+                          <Space>
+                            <Text strong>{item.reader_name}</Text>
+                            <LikeOutlined /> {item.likes}
+                          </Space>
+                        }
+                        description={
+                          <div>
+                            <Text ellipsis style={{ fontSize: 12 }}>{item.text.substring(0, 100)}...</Text>
+                            <br />
+                            <Space wrap style={{ marginTop: 4 }}>
+                              {item.themes.slice(0, 3).map((t, i) => <Tag key={i} style={{ fontSize: 10 }}>{t}</Tag>)}
+                            </Space>
+                          </div>
+                        }
+                      />
+                    </List.Item>
+                  )}
+                />
+              </Card>
+            </Col>
+          )}
+
+          {/* Artifacts */}
+          {artifacts.length > 0 && (
+            <Col xs={24} lg={12}>
+              <Card title={<><DatabaseOutlined /> Артефакты ({artifacts.length})</>} size="small">
+                <List
+                  size="small"
+                  dataSource={artifacts}
+                  renderItem={(item: Artifact) => (
+                    <List.Item>
+                      <List.Item.Meta
+                        title={
+                          <Space>
+                            <Tag color={item.category === 'archaeology' ? 'brown' : 'blue'}>{item.category}</Tag>
+                            <Text strong>{item.title}</Text>
+                            <LikeOutlined /> {item.likes}
+                          </Space>
+                        }
+                        description={
+                          <div>
+                            <Text ellipsis style={{ fontSize: 12 }}>{item.description.substring(0, 100)}...</Text>
+                            {item.location && <Text type="secondary" style={{ fontSize: 11 }}> · {item.location}</Text>}
+                          </div>
+                        }
+                      />
+                    </List.Item>
+                  )}
+                />
+              </Card>
+            </Col>
+          )}
+        </Row>
+      ) : searchQuery ? (
+        <Empty description="Ничего не найдено" />
+      ) : null}
+    </div>
+  );
+}
 
 // ── Knowledge Search Panel ──────────────────────────
 
@@ -92,6 +264,102 @@ function KnowledgeSearchPanel() {
       ) : results.length > 0 ? (
         <Table columns={columns} dataSource={results} rowKey="id" size="small" pagination={{ pageSize: 10 }} />
       ) : searched ? (
+        <Empty description="Ничего не найдено" />
+      ) : null}
+    </div>
+  );
+}
+
+// ── Community Search Panel ──────────────────────────
+
+function CommunitySearchPanel() {
+  const [query, setQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['community-search-tab', searchQuery],
+    queryFn: () => api.get<{ interpretations: Interpretation[]; artifacts: Artifact[]; total: number }>(`/book/community/search?q=${encodeURIComponent(searchQuery)}&limit=20`),
+    enabled: searchQuery.length >= 2,
+  });
+
+  const interpretations = data?.interpretations || [];
+  const artifacts = data?.artifacts || [];
+
+  const handleSearch = (value: string) => {
+    if (value.trim().length >= 2) {
+      setSearchQuery(value.trim());
+    }
+  };
+
+  return (
+    <div>
+      <Search
+        placeholder="Поиск по интерпретациям и артефактам сообщества..."
+        enterButton="Найти"
+        size="large"
+        loading={isLoading}
+        value={query}
+        onChange={e => setQuery(e.target.value)}
+        onSearch={handleSearch}
+        style={{ marginBottom: 16 }}
+      />
+
+      {isLoading ? (
+        <div style={{ textAlign: 'center', padding: 48 }}><Spin /></div>
+      ) : (interpretations.length + artifacts.length) > 0 ? (
+        <Tabs
+          items={[
+            {
+              key: 'interpretations',
+              label: <><BulbOutlined /> Интерпретации ({interpretations.length})</>,
+              children: (
+                <List
+                  dataSource={interpretations}
+                  renderItem={(item: Interpretation) => (
+                    <Card size="small" style={{ marginBottom: 8 }}>
+                      <Space direction="vertical" size={2} style={{ width: '100%' }}>
+                        <Space>
+                          <Text strong>{item.reader_name}</Text>
+                          <LikeOutlined /> {item.likes}
+                        </Space>
+                        <Text>{item.text}</Text>
+                        <Space wrap>
+                          {item.themes.map((t, i) => <Tag key={i}>{t}</Tag>)}
+                          {item.characters.map((c, i) => <Tag key={i} color="blue">{c}</Tag>)}
+                        </Space>
+                      </Space>
+                    </Card>
+                  )}
+                />
+              ),
+            },
+            {
+              key: 'artifacts',
+              label: <><DatabaseOutlined /> Артефакты ({artifacts.length})</>,
+              children: (
+                <List
+                  dataSource={artifacts}
+                  renderItem={(item: Artifact) => (
+                    <Card size="small" style={{ marginBottom: 8 }} title={item.title}>
+                      <Space direction="vertical" size={2} style={{ width: '100%' }}>
+                        <Space>
+                          <Tag color={item.category === 'archaeology' ? 'brown' : 'blue'}>{item.category}</Tag>
+                          <Text type="secondary">{item.location}</Text>
+                          <LikeOutlined /> {item.likes}
+                        </Space>
+                        <Text>{item.description}</Text>
+                        <Space wrap>
+                          {item.related_themes.map((t, i) => <Tag key={i}>{t}</Tag>)}
+                        </Space>
+                      </Space>
+                    </Card>
+                  )}
+                />
+              ),
+            },
+          ]}
+        />
+      ) : searchQuery ? (
         <Empty description="Ничего не найдено" />
       ) : null}
     </div>
@@ -279,7 +547,9 @@ function GraphSearchPanel() {
 
 function SearchContent() {
   const items = [
+    { key: 'global', label: <><GlobalOutlined /> Везде</>, children: <GlobalSearchPanel /> },
     { key: 'knowledge', label: <><BookOutlined /> Знания</>, children: <KnowledgeSearchPanel /> },
+    { key: 'community', label: <><TeamOutlined /> Сообщество</>, children: <CommunitySearchPanel /> },
     { key: 'facts', label: <><FileTextOutlined /> Факты</>, children: <FactsSearchPanel /> },
     { key: 'entities', label: <><DatabaseOutlined /> Сущности</>, children: <EntitiesSearchPanel /> },
     { key: 'graph', label: 'Граф', children: <GraphSearchPanel /> },
@@ -289,9 +559,9 @@ function SearchContent() {
     <div style={{ maxWidth: 1000, margin: '0 auto' }}>
       <Title level={2}><SearchOutlined /> Поиск</Title>
       <Paragraph type="secondary">
-        Ищите информацию в базе знаний книги «Наследие Аркаима» — знания, факты, сущности, связи.
+        Ищите информацию в базе знаний книги «Наследие Аркаима» — знания, факты, сущности, связи, интерпретации и артефакты сообщества.
       </Paragraph>
-      <Tabs items={items} />
+      <Tabs items={items} defaultActiveKey="global" />
     </div>
   );
 }
