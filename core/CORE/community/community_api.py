@@ -1,4 +1,4 @@
-"""Community API — FastAPI routes для интерпретаций и артефактов читателей."""
+"""Community API — FastAPI routes для интерпретаций, артефактов и комментариев."""
 
 import json
 import logging
@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 from auth.rbac import require_role
 from community.interpretations import InterpretationStore
 from community.artifacts import ArtifactStore
+from community.comments import CommentStore
 
 log = logging.getLogger("hermes.community_api")
 
@@ -18,6 +19,7 @@ router = APIRouter(prefix="/book/community", tags=["Community"])
 # Stores (инициализируются при первом запросе)
 _interp_store: InterpretationStore | None = None
 _artifact_store: ArtifactStore | None = None
+_comment_store: CommentStore | None = None
 
 
 def _get_interp_store() -> InterpretationStore:
@@ -34,7 +36,18 @@ def _get_artifact_store() -> ArtifactStore:
     return _artifact_store
 
 
+def _get_comment_store() -> CommentStore:
+    global _comment_store
+    if _comment_store is None:
+        _comment_store = CommentStore()
+    return _comment_store
+
+
 # ── Request models ──────────────────────────────────────
+
+
+class CommentRequest(BaseModel):
+    text: str
 
 
 class InterpretationRequest(BaseModel):
@@ -260,6 +273,104 @@ async def artifact_stats():
     """Статистика артефактов."""
     store = _get_artifact_store()
     return store.get_stats()
+
+
+# ── Комментарии ──────────────────────────────────────────────
+
+
+@router.get("/comments/{parent_type}/{parent_id}")
+async def get_comments(parent_type: str, parent_id: str):
+    """Получить комментарии к элементу (interpretation/artifact)."""
+    if parent_type not in ("interpretation", "artifact"):
+        raise HTTPException(400, "parent_type должен быть interpretation или artifact")
+    store = _get_comment_store()
+    comments = await store.get_for_parent(parent_id)
+    return {
+        "comments": [c.to_dict() for c in comments],
+        "count": len(comments),
+    }
+
+
+@router.post("/comments/{parent_type}/{parent_id}")
+async def add_comment(
+    parent_type: str,
+    parent_id: str,
+    request: CommentRequest,
+    user: dict = Depends(require_role("reader")),
+):
+    """Добавить комментарий к интерпретации или артефакту."""
+    if parent_type not in ("interpretation", "artifact"):
+        raise HTTPException(400, "parent_type должен быть interpretation или artifact")
+    store = _get_comment_store()
+    comment = await store.add(
+        parent_id=parent_id,
+        parent_type=parent_type,
+        reader_id=user["user_id"],
+        reader_name=user.get("display_name") or user.get("username", ""),
+        text=request.text,
+    )
+    return {"ok": True, "comment": comment.to_dict()}
+
+
+@router.post("/comments/{comment_id}/like")
+async def like_comment(comment_id: str):
+    """Поставить лайк комментарию."""
+    store = _get_comment_store()
+    ok = await store.like(comment_id)
+    if not ok:
+        raise HTTPException(404, "Комментарий не найден")
+    return {"ok": True}
+
+
+@router.delete("/comments/{comment_id}")
+async def delete_comment(comment_id: str, user: dict = Depends(require_role("admin"))):
+    """Удалить комментарий (admin)."""
+    store = _get_comment_store()
+    ok = await store.delete(comment_id)
+    if not ok:
+        raise HTTPException(404, "Комментарий не найден")
+    return {"ok": True}
+
+
+# ── Поиск ──────────────────────────────────────────────────────
+
+
+@router.get("/search")
+async def search_community(
+    q: str = Query(..., min_length=2),
+    type: str = Query("all", regex="^(all|interpretations|artifacts)$"),
+    limit: int = Query(20, ge=1, le=100),
+):
+    """Поиск по интерпретациям и артефактам."""
+    results = {"interpretations": [], "artifacts": []}
+    q_lower = q.lower()
+
+    if type in ("all", "interpretations"):
+        interp_store = _get_interp_store()
+        all_interps = await interp_store.get_all(status="approved")
+        matched = [
+            i for i in all_interps
+            if q_lower in i.text.lower()
+            or any(q_lower in t.lower() for t in i.themes)
+            or any(q_lower in c.lower() for c in i.characters)
+        ]
+        results["interpretations"] = [i.to_dict() for i in matched[:limit]]
+
+    if type in ("all", "artifacts"):
+        artifact_store = _get_artifact_store()
+        all_artifacts = await artifact_store.get_all(status="approved")
+        matched = [
+            a for a in all_artifacts
+            if q_lower in a.title.lower()
+            or q_lower in a.description.lower()
+            or q_lower in a.connection_to_book.lower()
+            or any(q_lower in t.lower() for t in a.related_themes)
+            or q_lower in a.location.lower()
+        ]
+        results["artifacts"] = [a.to_dict() for a in matched[:limit]]
+
+    results["total"] = len(results["interpretations"]) + len(results["artifacts"])
+    return results
 
 
 # ── Knowledge Expansion ──────────────────────────────────────

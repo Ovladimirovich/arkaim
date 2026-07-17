@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { Card, Typography, List, Button, Space, Tag, Input, Form, Select, message, Empty, Statistic, Row, Col } from 'antd';
-import { SearchOutlined, PlusOutlined, UserOutlined, LinkOutlined, EnvironmentOutlined } from '@ant-design/icons';
+import { SearchOutlined, PlusOutlined, UserOutlined, LinkOutlined, EnvironmentOutlined, CommentOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
 import { ProtectedRoute } from '@/shared/lib/guards';
+import { Comments } from '@/shared/ui/Comments';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -102,6 +103,7 @@ function ArtifactsContent() {
   const [showForm, setShowForm] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [sort, setSort] = useState<string>('newest');
+  const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -126,6 +128,18 @@ function ArtifactsContent() {
   });
 
   const artifacts = data?.artifacts || [];
+
+  const toggleComments = (id: string) => {
+    setExpandedComments(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto' }}>
@@ -193,9 +207,21 @@ function ArtifactsContent() {
                       Источник
                     </Button>
                   )}
-                  <Button size="small" onClick={() => likeMutation.mutate(item.id)}>
-                    👍 {item.likes}
-                  </Button>
+                  <Space>
+                    <Button size="small" onClick={() => likeMutation.mutate(item.id)}>
+                      👍 {item.likes}
+                    </Button>
+                    <Button
+                      size="small"
+                      icon={<CommentOutlined />}
+                      onClick={() => toggleComments(item.id)}
+                    >
+                      {expandedComments.has(item.id) ? 'Скрыть' : 'Комментарии'}
+                    </Button>
+                  </Space>
+                  {expandedComments.has(item.id) && (
+                    <Comments parentType="artifact" parentId={item.id} />
+                  )}
                 </Space>
               </Card>
             );

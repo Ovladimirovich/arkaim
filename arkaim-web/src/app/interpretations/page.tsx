@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { Card, Typography, List, Button, Space, Tag, Input, Form, message, Empty, Statistic, Row, Col, Select } from 'antd';
-import { BulbOutlined, LikeOutlined, PlusOutlined, UserOutlined, SortAscendingOutlined } from '@ant-design/icons';
+import { BulbOutlined, LikeOutlined, PlusOutlined, UserOutlined, CommentOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
 import { ProtectedRoute } from '@/shared/lib/guards';
+import { Comments } from '@/shared/ui/Comments';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -63,6 +64,7 @@ function InterpretationForm({ onClose }: { onClose: () => void }) {
 function InterpretationsContent() {
   const [showForm, setShowForm] = useState(false);
   const [sort, setSort] = useState<string>('newest');
+  const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -81,6 +83,18 @@ function InterpretationsContent() {
   });
 
   const interpretations = data?.interpretations || [];
+
+  const toggleComments = (id: string) => {
+    setExpandedComments(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto' }}>
@@ -129,9 +143,21 @@ function InterpretationsContent() {
                   {item.themes.map((t, i) => <Tag key={i}>{t}</Tag>)}
                   {item.characters.map((c, i) => <Tag key={i} color="blue">{c}</Tag>)}
                 </Space>
-                <Button size="small" icon={<LikeOutlined />} onClick={() => likeMutation.mutate(item.id)}>
-                  {item.likes}
-                </Button>
+                <Space>
+                  <Button size="small" icon={<LikeOutlined />} onClick={() => likeMutation.mutate(item.id)}>
+                    {item.likes}
+                  </Button>
+                  <Button
+                    size="small"
+                    icon={<CommentOutlined />}
+                    onClick={() => toggleComments(item.id)}
+                  >
+                    {expandedComments.has(item.id) ? 'Скрыть' : 'Комментарии'}
+                  </Button>
+                </Space>
+                {expandedComments.has(item.id) && (
+                  <Comments parentType="interpretation" parentId={item.id} />
+                )}
               </Space>
             </Card>
           )}
