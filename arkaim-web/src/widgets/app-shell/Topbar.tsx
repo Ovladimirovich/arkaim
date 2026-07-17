@@ -1,10 +1,10 @@
 'use client';
 
-import { Button, Space, Typography, Badge, Tooltip } from 'antd';
-import { MenuFoldOutlined, MenuUnfoldOutlined, BellOutlined, BulbOutlined, LogoutOutlined } from '@ant-design/icons';
+import { Button, Space, Typography, Tooltip } from 'antd';
+import { MenuFoldOutlined, MenuUnfoldOutlined, BulbOutlined, LogoutOutlined } from '@ant-design/icons';
 import { useAuth, useTheme } from '@/app/providers';
 import { useWsContext } from '@/shared/lib/ws-hooks';
-import { useState, useEffect, useCallback } from 'react';
+import { NotificationBell } from '@/shared/ui/NotificationBell';
 
 const { Text } = Typography;
 
@@ -16,17 +16,7 @@ type TopbarProps = {
 export function Topbar({ collapsed, onToggleCollapse }: TopbarProps) {
   const { user, logout } = useAuth();
   const { isDark, toggle } = useTheme();
-  const { connected, lastEvent } = useWsContext();
-  const [notificationCount, setNotificationCount] = useState(0);
-
-  useEffect(() => {
-    if (!lastEvent) return;
-    if (['new_suggestion', 'your_question_answered', 'crowdfunding_milestone'].includes(lastEvent.event)) {
-      setNotificationCount(prev => prev + 1);
-    }
-  }, [lastEvent]);
-
-  const clearNotifications = useCallback(() => setNotificationCount(0), []);
+  const { connected } = useWsContext();
 
   return (
     <div style={{
@@ -54,13 +44,7 @@ export function Topbar({ collapsed, onToggleCollapse }: TopbarProps) {
             <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#52c41a' }} />
           </Tooltip>
         )}
-        <Badge count={notificationCount} size="small" offset={[-2, 2]}>
-          <Button
-            type="text"
-            icon={<BellOutlined />}
-            onClick={clearNotifications}
-          />
-        </Badge>
+        <NotificationBell />
         <Tooltip title={isDark ? 'Светлая тема' : 'Тёмная тема'}>
           <Button type="text" icon={<BulbOutlined />} onClick={toggle} />
         </Tooltip>

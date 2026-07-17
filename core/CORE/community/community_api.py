@@ -1,4 +1,4 @@
-"""Community API — FastAPI routes для интерпретаций, артефактов и комментариев."""
+"""Community API — FastAPI routes для интерпретаций, артефактов, комментариев и уведомлений."""
 
 import json
 import logging
@@ -11,6 +11,7 @@ from auth.rbac import require_role
 from community.interpretations import InterpretationStore
 from community.artifacts import ArtifactStore
 from community.comments import CommentStore
+from community.notifications import NotificationStore
 
 log = logging.getLogger("hermes.community_api")
 
@@ -20,6 +21,7 @@ router = APIRouter(prefix="/book/community", tags=["Community"])
 _interp_store: InterpretationStore | None = None
 _artifact_store: ArtifactStore | None = None
 _comment_store: CommentStore | None = None
+_notification_store: NotificationStore | None = None
 
 
 def _get_interp_store() -> InterpretationStore:
@@ -41,6 +43,13 @@ def _get_comment_store() -> CommentStore:
     if _comment_store is None:
         _comment_store = CommentStore()
     return _comment_store
+
+
+def _get_notification_store() -> NotificationStore:
+    global _notification_store
+    if _notification_store is None:
+        _notification_store = NotificationStore()
+    return _notification_store
 
 
 # ── Request models ──────────────────────────────────────
@@ -125,9 +134,22 @@ async def submit_interpretation(
 async def like_interpretation(interp_id: str):
     """Поставить лайк интерпретации."""
     store = _get_interp_store()
-    ok = await store.like(interp_id)
-    if not ok:
+    # Find the interpretation to get reader_id for notification
+    items = await store.get_all()
+    interp = next((i for i in items if i.id == interp_id), None)
+    if not interp:
         raise HTTPException(404, "Интерпретация не найдена")
+    ok = await store.like(interp_id)
+    # Create notification for the author
+    if ok and interp.reader_id:
+        notif_store = _get_notification_store()
+        await notif_store.create(
+            user_id=interp.reader_id,
+            type="comment_liked",
+            title="Вашу интерпретацию оценили",
+            message=f"Кто-то поставил лайк вашей интерпретации",
+            link="/interpretations",
+        )
     return {"ok": True}
 
 
@@ -135,9 +157,21 @@ async def like_interpretation(interp_id: str):
 async def approve_interpretation(interp_id: str, user: dict = Depends(require_role("admin"))):
     """Одобрить интерпретацию (admin)."""
     store = _get_interp_store()
-    ok = await store.approve(interp_id)
-    if not ok:
+    items = await store.get_all()
+    interp = next((i for i in items if i.id == interp_id), None)
+    if not interp:
         raise HTTPException(404, "Интерпретация не найдена")
+    ok = await store.approve(interp_id)
+    # Create notification for the author
+    if ok and interp.reader_id:
+        notif_store = _get_notification_store()
+        await notif_store.create(
+            user_id=interp.reader_id,
+            type="interpretation_approved",
+            title="Интерпретация одобрена",
+            message=f"Ваша интерпретация одобрена и опубликована",
+            link="/interpretations",
+        )
     return {"ok": True}
 
 
@@ -145,9 +179,20 @@ async def approve_interpretation(interp_id: str, user: dict = Depends(require_ro
 async def reject_interpretation(interp_id: str, user: dict = Depends(require_role("admin"))):
     """Отклонить интерпретацию (admin)."""
     store = _get_interp_store()
-    ok = await store.reject(interp_id)
-    if not ok:
+    items = await store.get_all()
+    interp = next((i for i in items if i.id == interp_id), None)
+    if not interp:
         raise HTTPException(404, "Интерпретация не найдена")
+    ok = await store.reject(interp_id)
+    if ok and interp.reader_id:
+        notif_store = _get_notification_store()
+        await notif_store.create(
+            user_id=interp.reader_id,
+            type="interpretation_rejected",
+            title="Интерпретация отклонена",
+            message=f"Ваша интерпретация не прошла модерацию",
+            link="/interpretations",
+        )
     return {"ok": True}
 
 
@@ -232,9 +277,20 @@ async def submit_artifact(
 async def like_artifact(artifact_id: str):
     """Поставить лайк артефакту."""
     store = _get_artifact_store()
-    ok = await store.like(artifact_id)
-    if not ok:
+    items = await store.get_all()
+    artifact = next((a for a in items if a.id == artifact_id), None)
+    if not artifact:
         raise HTTPException(404, "Артефакт не найден")
+    ok = await store.like(artifact_id)
+    if ok and artifact.reader_id:
+        notif_store = _get_notification_store()
+        await notif_store.create(
+            user_id=artifact.reader_id,
+            type="artifact_liked",
+            title="Ваш артефакт оценили",
+            message=f"Кто-то поставил лайк вашему артефакту «{artifact.title}»",
+            link="/artifacts",
+        )
     return {"ok": True}
 
 
@@ -242,9 +298,20 @@ async def like_artifact(artifact_id: str):
 async def approve_artifact(artifact_id: str, user: dict = Depends(require_role("admin"))):
     """Одобрить артефакт (admin)."""
     store = _get_artifact_store()
-    ok = await store.approve(artifact_id)
-    if not ok:
+    items = await store.get_all()
+    artifact = next((a for a in items if a.id == artifact_id), None)
+    if not artifact:
         raise HTTPException(404, "Артефакт не найден")
+    ok = await store.approve(artifact_id)
+    if ok and artifact.reader_id:
+        notif_store = _get_notification_store()
+        await notif_store.create(
+            user_id=artifact.reader_id,
+            type="artifact_approved",
+            title="Артефакт одобрен",
+            message=f"Ваш артефакт «{artifact.title}» одобрен и опубликован",
+            link="/artifacts",
+        )
     return {"ok": True}
 
 
@@ -252,9 +319,20 @@ async def approve_artifact(artifact_id: str, user: dict = Depends(require_role("
 async def reject_artifact(artifact_id: str, user: dict = Depends(require_role("admin"))):
     """Отклонить артефакт (admin)."""
     store = _get_artifact_store()
-    ok = await store.reject(artifact_id)
-    if not ok:
+    items = await store.get_all()
+    artifact = next((a for a in items if a.id == artifact_id), None)
+    if not artifact:
         raise HTTPException(404, "Артефакт не найден")
+    ok = await store.reject(artifact_id)
+    if ok and artifact.reader_id:
+        notif_store = _get_notification_store()
+        await notif_store.create(
+            user_id=artifact.reader_id,
+            type="artifact_rejected",
+            title="Артефакт отклонён",
+            message=f"Ваш артефакт «{artifact.title}» не прошёл модерацию",
+            link="/artifacts",
+        )
     return {"ok": True}
 
 
@@ -316,9 +394,26 @@ async def add_comment(
 async def like_comment(comment_id: str):
     """Поставить лайк комментарию."""
     store = _get_comment_store()
-    ok = await store.like(comment_id)
-    if not ok:
+    comments = []
+    for parent_type in ("interpretation", "artifact"):
+        items = await store.get_for_parent("dummy")  # Need to find by ID
+    # Find comment by ID across all
+    all_comments = []
+    for c in store._items:
+        all_comments.append(c)
+    comment = next((c for c in all_comments if c.id == comment_id), None)
+    if not comment:
         raise HTTPException(404, "Комментарий не найден")
+    ok = await store.like(comment_id)
+    if ok and comment.reader_id:
+        notif_store = _get_notification_store()
+        await notif_store.create(
+            user_id=comment.reader_id,
+            type="comment_liked",
+            title="Ваш комментарий оценили",
+            message=f"Кто-то поставил лайк вашему комментарию",
+            link=f"/{comment.parent_type}s",
+        )
     return {"ok": True}
 
 
@@ -371,6 +466,67 @@ async def search_community(
 
     results["total"] = len(results["interpretations"]) + len(results["artifacts"])
     return results
+
+
+# ── Уведомления ──────────────────────────────────────────────
+
+
+@router.get("/notifications")
+async def get_notifications(
+    unread_only: bool = False,
+    limit: int = Query(50, ge=1, le=200),
+    user: dict = Depends(require_role("reader")),
+):
+    """Получить уведомления пользователя."""
+    store = _get_notification_store()
+    items = await store.get_for_user(user["user_id"], unread_only=unread_only)
+    return {
+        "notifications": [n.to_dict() for n in items[:limit]],
+        "count": len(items),
+        "unread_count": store.get_unread_count(user["user_id"]),
+    }
+
+
+@router.get("/notifications/unread-count")
+async def get_unread_count(user: dict = Depends(require_role("reader"))):
+    """Получить количество непрочитанных уведомлений."""
+    store = _get_notification_store()
+    return {"count": store.get_unread_count(user["user_id"])}
+
+
+@router.post("/notifications/{notification_id}/read")
+async def mark_read(notification_id: str, user: dict = Depends(require_role("reader"))):
+    """Отметить уведомление как прочитанное."""
+    store = _get_notification_store()
+    ok = await store.mark_read(notification_id)
+    if not ok:
+        raise HTTPException(404, "Уведомление не найдено")
+    return {"ok": True}
+
+
+@router.post("/notifications/read-all")
+async def mark_all_read(user: dict = Depends(require_role("reader"))):
+    """Отметить все уведомления как прочитанные."""
+    store = _get_notification_store()
+    count = await store.mark_all_read(user["user_id"])
+    return {"ok": True, "marked": count}
+
+
+@router.delete("/notifications/{notification_id}")
+async def delete_notification(notification_id: str, user: dict = Depends(require_role("reader"))):
+    """Удалить уведомление."""
+    store = _get_notification_store()
+    ok = await store.delete(notification_id)
+    if not ok:
+        raise HTTPException(404, "Уведомление не найдено")
+    return {"ok": True}
+
+
+@router.get("/notifications/stats")
+async def notification_stats(user: dict = Depends(require_role("reader"))):
+    """Статистика уведомлений."""
+    store = _get_notification_store()
+    return store.get_stats()
 
 
 # ── Knowledge Expansion ──────────────────────────────────────
