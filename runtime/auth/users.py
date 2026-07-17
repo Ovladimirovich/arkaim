@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+﻿from datetime import datetime, timezone
 from pathlib import Path
 import uuid
 
@@ -150,6 +150,15 @@ class UserStore:
         await self._conn.commit()
         return cursor.rowcount > 0
 
+    async def set_display_name(self, user_id: str, display_name: str) -> bool:
+        await self._ensure_db()
+        cursor = await self._conn.execute(
+            "UPDATE users SET display_name = ?, updated_at = ? WHERE id = ?",
+            (display_name, datetime.now(tz=timezone.utc).isoformat(), user_id),
+        )
+        await self._conn.commit()
+        return cursor.rowcount > 0
+
     async def save_session(self, session_id: str, user_id: str, token_hash: str, expires_at: datetime):
         await self._ensure_db()
         now = datetime.now(tz=timezone.utc).isoformat()
@@ -207,6 +216,16 @@ class UserStore:
     async def revoke_api_key(self, key_id: str) -> bool:
         await self._ensure_db()
         cursor = await self._conn.execute("UPDATE api_keys SET is_active = 0 WHERE id = ?", (key_id,))
+        await self._conn.commit()
+        return cursor.rowcount > 0
+
+    async def revoke_api_key_for_user(self, key_id: str, user_id: str) -> bool:
+        """Отозвать API-ключ только если он принадлежит пользователю."""
+        await self._ensure_db()
+        cursor = await self._conn.execute(
+            "UPDATE api_keys SET is_active = 0 WHERE id = ? AND user_id = ?",
+            (key_id, user_id),
+        )
         await self._conn.commit()
         return cursor.rowcount > 0
 

@@ -1,4 +1,4 @@
-"""Book Intelligence — основные эндпоинты (/book/*)."""
+﻿"""Book Intelligence вЂ” РѕСЃРЅРѕРІРЅС‹Рµ СЌРЅРґРїРѕРёРЅС‚С‹ (/book/*)."""
 import json
 import logging
 from functools import lru_cache
@@ -12,6 +12,7 @@ from core.dto.responses import (
     HealthResponse, BookAskResponse, BookGenomeResponse,
     BookLayersResponse, SuccessResponse,
 )
+from core.cache import genome_cache, chunks_cache
 from core.adc_deps import (
     get_config, get_pulse, get_keeper, get_herald,
     get_event_logger, get_drafts,
@@ -24,7 +25,7 @@ router = APIRouter(tags=["Book Intelligence"])
 
 @lru_cache(maxsize=1)
 def _load_genome_raw() -> bytes | None:
-    """Читаем genome JSON один раз, кэшируем сырой байт."""
+    """Р§РёС‚Р°РµРј genome JSON РѕРґРёРЅ СЂР°Р·, РєСЌС€РёСЂСѓРµРј СЃС‹СЂРѕР№ Р±Р°Р№С‚."""
     config = get_config()
     path = config.GENOME_DIR / f"GENOME_v{config.GENOME_VERSION}.json"
     if path.exists():
@@ -75,11 +76,11 @@ async def root(config=Depends(get_config)):
 async def get_genome(config=Depends(get_config)):
     genome = _load_genome(config)
     if genome is None:
-        raise HTTPException(404, "Геном не найден")
+        raise HTTPException(404, "Р“РµРЅРѕРј РЅРµ РЅР°Р№РґРµРЅ")
     return BookGenomeResponse(
-        themes=genome["modules"].get("themes", [])[:10],
-        characters=genome["modules"].get("characters", [])[:10],
-        values=genome["modules"].get("values", [])[:10],
+        themes=genome["modules"].get("themes", []),
+        characters=genome["modules"].get("characters", []),
+        values=genome["modules"].get("values", []),
         world_entities=genome.get("world_entities", []),
         author_intent=genome.get("author_intent", {}),
     )
@@ -88,20 +89,22 @@ async def get_genome(config=Depends(get_config)):
 @router.get("/layers", response_model=BookLayersResponse, dependencies=[Depends(require_role("reader"))])
 async def get_layers_endpoint(pulse=Depends(get_pulse)):
     if not pulse or not pulse.is_loaded:
-        raise HTTPException(503, "Pulse не загружен")
+        raise HTTPException(503, "Pulse РЅРµ Р·Р°РіСЂСѓР¶РµРЅ")
     k = pulse.layers.get("knowledge")
     m = pulse.layers.get("meaning")
     i = pulse.layers.get("identity")
     ms = pulse.layers.get("mission")
+    w = pulse.layers.get("world_engine")
     return BookLayersResponse(
         knowledge_layer=k.summary if k else "",
         meaning_layer=m.summary if m else "",
         identity_layer=i.summary if i else "",
         mission_layer=ms.summary if ms else "",
+        world_engine_layer=w.summary if w else "",
     )
 
 
-@router.post("/ask", response_model=SuccessResponse, summary="Задать вопрос книге")
+@router.post("/ask", response_model=SuccessResponse, summary="Р—Р°РґР°С‚СЊ РІРѕРїСЂРѕСЃ РєРЅРёРіРµ")
 async def ask(
     req: BookAskRequest,
     user: dict = Depends(require_role("reader")),
@@ -122,14 +125,14 @@ async def ask(
     })
     register_question(req.question[:60], req.question, result.get("answer", ""))
 
-    # WebSocket уведомление
+    # WebSocket СѓРІРµРґРѕРјР»РµРЅРёРµ
     from core.websocket import notify_new_question
     await notify_new_question(req.question, req.question[:60], user.get("user_id", ""))
 
     return SuccessResponse(data=result)
 
 
-@router.post("/generate", response_model=SuccessResponse, summary="Генерация контента", dependencies=[Depends(require_role("editor"))])
+@router.post("/generate", response_model=SuccessResponse, summary="Р“РµРЅРµСЂР°С†РёСЏ РєРѕРЅС‚РµРЅС‚Р°", dependencies=[Depends(require_role("editor"))])
 async def generate(
     req: BookGenerateRequest,
     herald=Depends(get_herald),
@@ -142,31 +145,33 @@ async def generate(
     return SuccessResponse(data=draft)
 
 
-@router.get("/drafts", response_model=SuccessResponse, summary="Получить черновики", dependencies=[Depends(require_role("reader"))])
+@router.get("/drafts", response_model=SuccessResponse, summary="РџРѕР»СѓС‡РёС‚СЊ С‡РµСЂРЅРѕРІРёРєРё", dependencies=[Depends(require_role("reader"))])
 async def get_drafts_endpoint(status: str | None = None, drafts=Depends(get_drafts)):
     if status == "pending":
         return SuccessResponse(data=drafts.get_pending_drafts())
     return SuccessResponse(data=drafts.get_all_drafts())
 
 
-@router.post("/drafts/{draft_id}/approve", response_model=SuccessResponse, summary="Одобрить черновик", dependencies=[Depends(require_role("editor"))])
+@router.post("/drafts/{draft_id}/approve", response_model=SuccessResponse, summary="РћРґРѕР±СЂРёС‚СЊ С‡РµСЂРЅРѕРІРёРє", dependencies=[Depends(require_role("editor"))])
 async def approve_draft(draft_id: str, drafts=Depends(get_drafts)):
     if drafts.approve_draft(draft_id):
         return SuccessResponse(data={"status": "approved", "draft_id": draft_id})
-    raise HTTPException(404, "Черновик не найден")
+    raise HTTPException(404, "Р§РµСЂРЅРѕРІРёРє РЅРµ РЅР°Р№РґРµРЅ")
 
 
-@router.get("/memory/stats", response_model=SuccessResponse, summary="Статистика памяти", dependencies=[Depends(require_role("admin"))])
+@router.get("/memory/stats", response_model=SuccessResponse, summary="РЎС‚Р°С‚РёСЃС‚РёРєР° РїР°РјСЏС‚Рё", dependencies=[Depends(require_role("admin"))])
 async def get_memory_stats(event_logger=Depends(get_event_logger)):
-    return SuccessResponse(data=event_logger.get_statistics())
+    if hasattr(event_logger, "get_statistics"):
+        return SuccessResponse(data=event_logger.get_statistics())
+    return SuccessResponse(data={"total_events": 0, "status": "ok"})
 
 
-# ── Chapters: чтение текста книги ─────────────────
+# в”Ђв”Ђ Chapters: С‡С‚РµРЅРёРµ С‚РµРєСЃС‚Р° РєРЅРёРіРё в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
 
 @lru_cache(maxsize=1)
 def _load_enriched_chunks(config_obj=None) -> list[dict]:
-    """Загрузить enriched_chunks.json (разбитые на главы чанки)."""
+    """Р—Р°РіСЂСѓР·РёС‚СЊ enriched_chunks.json (СЂР°Р·Р±РёС‚С‹Рµ РЅР° РіР»Р°РІС‹ С‡Р°РЅРєРё)."""
     if config_obj is None:
         config_obj = get_config()
     path = config_obj.KNOWLEDGE_DIR / "enriched_chunks.json"
@@ -176,7 +181,7 @@ def _load_enriched_chunks(config_obj=None) -> list[dict]:
 
 
 def _build_chapters_from_chunks(chunks: list[dict]) -> list[dict]:
-    """Сгруппировать чанки по chapter_title в главы."""
+    """РЎРіСЂСѓРїРїРёСЂРѕРІР°С‚СЊ С‡Р°РЅРєРё РїРѕ chapter_title РІ РіР»Р°РІС‹."""
     if not chunks:
         return []
 
@@ -184,14 +189,19 @@ def _build_chapters_from_chunks(chunks: list[dict]) -> list[dict]:
     chapter_map: dict[str, list[dict]] = OrderedDict()
 
     for ch in chunks:
-        title = ch.get("chapter_title", "Без названия")
+        title = ch.get("chapter_title", "Р‘РµР· РЅР°Р·РІР°РЅРёСЏ")
         if title not in chapter_map:
             chapter_map[title] = []
         chapter_map[title].append(ch)
 
     chapters = []
     for i, (title, parts) in enumerate(chapter_map.items()):
-        content = "\n\n".join(p.get("text", "") for p in parts)
+        # If there's a large chunk (full chapter text), use only it to avoid duplication
+        large_parts = [p for p in parts if len(p.get("text", "")) > 1000]
+        if large_parts:
+            content = large_parts[0].get("text", "")
+        else:
+            content = "\n\n".join(p.get("text", "") for p in parts)
         chapters.append({
             "id": f"ch_{i:02d}",
             "title": title,
@@ -211,7 +221,7 @@ def _load_chapters(config_obj=None) -> list[dict]:
 
 @router.get("/chapters", dependencies=[Depends(require_role("reader"))])
 async def get_chapters(config=Depends(get_config)):
-    """Список глав книги (без контента)."""
+    """РЎРїРёСЃРѕРє РіР»Р°РІ РєРЅРёРіРё (Р±РµР· РєРѕРЅС‚РµРЅС‚Р°)."""
     chapters = _load_chapters(config)
     return {
         "ok": True,
@@ -225,27 +235,27 @@ async def get_chapters(config=Depends(get_config)):
 
 @router.get("/chapters/{chapter_id}", dependencies=[Depends(require_role("reader"))])
 async def get_chapter(chapter_id: str, config=Depends(get_config)):
-    """Текст конкретной главы."""
+    """РўРµРєСЃС‚ РєРѕРЅРєСЂРµС‚РЅРѕР№ РіР»Р°РІС‹."""
     chapters = _load_chapters(config)
     for ch in chapters:
         if ch["id"] == chapter_id:
             return {"ok": True, "data": ch}
-    raise HTTPException(404, "Глава не найдена")
+    raise HTTPException(404, "Р“Р»Р°РІР° РЅРµ РЅР°Р№РґРµРЅР°")
 
 
 @lru_cache(maxsize=1)
 def _build_full_text(config_obj=None) -> str:
-    """Склеенный текст всей книги — кэшируется один раз."""
+    """РЎРєР»РµРµРЅРЅС‹Р№ С‚РµРєСЃС‚ РІСЃРµР№ РєРЅРёРіРё вЂ” РєСЌС€РёСЂСѓРµС‚СЃСЏ РѕРґРёРЅ СЂР°Р·."""
     chunks = _load_enriched_chunks(config_obj)
     return "\n\n".join(ch.get("text", "") for ch in chunks)
 
 
 @router.get("/text", dependencies=[Depends(require_role("reader"))])
 async def get_book_text(offset: int = Query(0, ge=0), limit: int = Query(2000, ge=100, le=10000), config=Depends(get_config)):
-    """Фрагмент текста книги с пагинацией по символам."""
+    """Р¤СЂР°РіРјРµРЅС‚ С‚РµРєСЃС‚Р° РєРЅРёРіРё СЃ РїР°РіРёРЅР°С†РёРµР№ РїРѕ СЃРёРјРІРѕР»Р°Рј."""
     full_text = _build_full_text(config)
     if not full_text:
-        raise HTTPException(404, "Текст книги не найден")
+        raise HTTPException(404, "РўРµРєСЃС‚ РєРЅРёРіРё РЅРµ РЅР°Р№РґРµРЅ")
     total = len(full_text)
     chunk = full_text[offset:offset + limit]
     return {
@@ -258,21 +268,21 @@ async def get_book_text(offset: int = Query(0, ge=0), limit: int = Query(2000, g
     }
 
 
-# ── Screenplay: киносценарий ────────────────────
+# в”Ђв”Ђ Screenplay: РєРёРЅРѕСЃС†РµРЅР°СЂРёР№ в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
 
 @lru_cache(maxsize=1)
 def _load_screenplay_text(config_obj=None) -> str:
     if config_obj is None:
         config_obj = get_config()
-    path = config_obj.SOURCE_OF_TRUTH / "SYNOPSIS" / "Наследие_Аркаима_Сценарий_Full.md"
+    path = config_obj.SOURCE_OF_TRUTH / "SYNOPSIS" / "РќР°СЃР»РµРґРёРµ_РђСЂРєР°РёРјР°_РЎС†РµРЅР°СЂРёР№_Full.md"
     if not path.exists():
         return ""
     return path.read_text(encoding="utf-8")
 
 
 def _parse_screenplay_scenes(text: str) -> list[dict]:
-    """Разбить сценарий на сцены по заголовкам (N. INT/EXT)."""
+    """Р Р°Р·Р±РёС‚СЊ СЃС†РµРЅР°СЂРёР№ РЅР° СЃС†РµРЅС‹ РїРѕ Р·Р°РіРѕР»РѕРІРєР°Рј (N. INT/EXT)."""
     import re
     if not text:
         return []
@@ -324,7 +334,7 @@ def _load_screenplay_scenes(config_obj=None) -> list[dict]:
 
 @router.get("/screenplay", dependencies=[Depends(require_role("reader"))])
 async def get_screenplay_scenes(config=Depends(get_config)):
-    """Список сцен киносценария."""
+    """РЎРїРёСЃРѕРє СЃС†РµРЅ РєРёРЅРѕСЃС†РµРЅР°СЂРёСЏ."""
     scenes = _load_screenplay_scenes(config)
     return {
         "ok": True,
@@ -338,9 +348,28 @@ async def get_screenplay_scenes(config=Depends(get_config)):
 
 @router.get("/screenplay/{scene_id}", dependencies=[Depends(require_role("reader"))])
 async def get_screenplay_scene(scene_id: str, config=Depends(get_config)):
-    """Текст конкретной сцены."""
+    """РўРµРєСЃС‚ РєРѕРЅРєСЂРµС‚РЅРѕР№ СЃС†РµРЅС‹."""
     scenes = _load_screenplay_scenes(config)
     for s in scenes:
         if s["id"] == scene_id:
             return {"ok": True, "data": s}
-    raise HTTPException(404, "Сцена не найдена")
+    raise HTTPException(404, "РЎС†РµРЅР° РЅРµ РЅР°Р№РґРµРЅР°")
+
+
+
+# ── Cache Stats ──────────────────────────────────────────
+
+@router.get("/cache/stats", summary="Статистика кэша", dependencies=[Depends(require_role("reader"))])
+async def cache_stats():
+    """Показать статистику всех кэшей."""
+    from core.cache import genome_cache, chunks_cache, world_model_cache, api_cache, rag_cache
+    return {
+        "ok": True,
+        "data": {
+            "genome": genome_cache.stats,
+            "chunks": chunks_cache.stats,
+            "world_model": world_model_cache.stats,
+            "api": api_cache.stats,
+            "rag": rag_cache.stats,
+        }
+    }

@@ -1,4 +1,4 @@
-"""
+﻿"""
 crowdfunding — мониторинг краудфандинг-кампаний.
 
 Поддерживает парсинг Planeta.ru и Boomstarter,
@@ -432,6 +432,7 @@ class CrowdfundingMonitor:
         for cid in list(self.campaigns.keys()):
             try:
                 await self._check_campaign(cid)
+                alerts.extend(self.check_milestones(cid))
             except Exception as e:
                 log.error("crowdfunding_check_error campaign=%s error=%s", cid, e)
                 self.campaigns[cid].error = str(e)

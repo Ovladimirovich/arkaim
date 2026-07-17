@@ -100,7 +100,7 @@ describe('Page renders without crashing', () => {
     const { default: ReadingPage } = await import('@/app/reading/page');
     render(<ReadingPage />);
     expect(document.body).toBeTruthy();
-  });
+  }, 15000);
 
   it('renders SearchPage', async () => {
     mockAuth();

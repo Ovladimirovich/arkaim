@@ -394,14 +394,7 @@ async def add_comment(
 async def like_comment(comment_id: str):
     """Поставить лайк комментарию."""
     store = _get_comment_store()
-    comments = []
-    for parent_type in ("interpretation", "artifact"):
-        items = await store.get_for_parent("dummy")  # Need to find by ID
-    # Find comment by ID across all
-    all_comments = []
-    for c in store._items:
-        all_comments.append(c)
-    comment = next((c for c in all_comments if c.id == comment_id), None)
+    comment = next((c for c in store._items if c.id == comment_id), None)
     if not comment:
         raise HTTPException(404, "Комментарий не найден")
     ok = await store.like(comment_id)
@@ -558,7 +551,7 @@ async def knowledge_status():
 @router.get("/map-data")
 async def get_map_data():
     """Получить данные для интерактивной карты."""
-    map_file = Path("core/KNOWLEDGE/MAP_DATA.json")
+    map_file = Path(__file__).resolve().parents[3] / "core" / "KNOWLEDGE" / "MAP_DATA.json"
     if map_file.exists():
         data = json.loads(map_file.read_text(encoding="utf-8"))
         return data

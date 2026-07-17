@@ -44,7 +44,7 @@ const MOCK_DATA: Record<string, any> = IS_DEV ? {
   '/book/reader/profile': { reader_id: 'dev', questions_total: 42, conversation_count: 15, last_topic: 'Аркаим', topics: [{ name: 'Аркаим', depth: 0.8, questions: 12 }, { name: 'Гиперборея', depth: 0.5, questions: 8 }, { name: 'Древняя Русь', depth: 0.3, questions: 5 }] },
   '/book/reader/history': { data: [{ id: 1, content: 'Кто такой Велик?', created_at: new Date().toISOString() }, { id: 2, content: 'Расскажи об Аркаиме', created_at: new Date(Date.now() - 86400000).toISOString() }] },
   '/book/reader/history/stats': { questions: 42, sessions: 15, last_active: new Date().toISOString() },
-  '/book/crowdfunding/status': { campaigns: [{ id: 'c1', title: 'Издание книги', platform: 'planeta', url: 'https://example.com', target_amount: 500000, current_amount: 127500, backers_count: 234, days_left: 30, milestones: [{ id: 'm1', title: '100 000₽', target_amount: 100000, reached: true }, { id: 'm2', title: '250 000₽', target_amount: 250000, reached: false }] }] },
+  '/book/crowdfunding/status': { campaigns: [{ id: 'c1', title: 'Издание книги', platform: 'planeta', url: 'https://example.com', target_amount: 500000, raised_amount: 127500, backers_count: 234, days_remaining: 30, status: 'active', progress_percent: 25.5, last_checked: new Date().toISOString(), milestones: [{ percent: 30, amount: 150000, reached: false, reached_at: null }, { percent: 50, amount: 250000, reached: false, reached_at: null }, { percent: 75, amount: 375000, reached: false, reached_at: null }, { percent: 100, amount: 500000, reached: false, reached_at: null }] }], count: 1 },
   '/book/presence/suggestions': { suggestions: [{ id: 's1', topic: 'История Аркаима', reason: 'Читатели интересуются', status: 'pending' }, { id: 's2', topic: 'Персонажи книги', reason: 'Много вопросов', status: 'approved' }] },
   '/book/presence/trending': { trending: [{ keyword: 'Аркаим', hits: 45, sources: ['telegram'] }, { keyword: 'Гиперборея', hits: 23, sources: ['api'] }], total: 2 },
   '/book/email/stats': { subscribers: 156, sent: 1200, errors: 3 },
@@ -58,6 +58,48 @@ const MOCK_DATA: Record<string, any> = IS_DEV ? {
   '/book/os/facts/search': { facts: [{ id: 'f1', statement: 'Аркаим расположен на Южном Урале', entity_id: 'arkaim', confidence: 0.9 }] },
   '/book/os/entities': { entities: [{ name: 'Аркаим', type: 'location' }, { name: 'Велик', type: 'character' }] },
   '/book/evolution/status': { current_version: '1.0.0', snapshots: [] },
+  '/book/layers': [
+    { id: 'pulse', name: 'Пульс', description: 'Живой поток знаний', icon: '💓', count: 168 },
+    { id: 'expansion', name: 'Расширение', description: 'Дополнительные темы', icon: '🌐', count: 168 },
+    { id: 'genome', name: 'Геном', description: 'Структура книги', icon: '🧬', count: 50 },
+  ],
+  '/book/community/map-data': {
+    regions: [
+      { id: 'loc_1', name: 'Аркаим', type: 'settlement', coordinates: { lat: 52.65, lng: 59.57 }, description: 'Древнее городище на Южном Урале', era: '~4000 до н.э.', color: '#D2691E', icon: '🏛️' },
+      { id: 'loc_2', name: 'Синташта', type: 'settlement', coordinates: { lat: 52.48, lng: 59.75 }, description: 'Крепость с древнейшими колесницами', era: '~2100 до н.э.', color: '#A0522D', icon: '⚔️' },
+      { id: 'loc_3', name: 'Петровка', type: 'settlement', coordinates: { lat: 52.7, lng: 59.5 }, description: 'Петровская культура', era: '~2000 до н.э.', color: '#8B4513', icon: '🏘️' },
+      { id: 'loc_4', name: 'Гаргарда', type: 'settlement', coordinates: { lat: 53.0, lng: 58.5 }, description: 'Сеть городищ Страны Городов', era: '~3000 до н.э.', color: '#B8860B', icon: '🏰' },
+    ],
+    routes: [
+      { id: 'r1', name: 'Дорога предков', type: 'migration', points: [{ lat: 52.65, lng: 59.57 }, { lat: 52.48, lng: 59.75 }], color: '#FF6B35', dash: false, description: 'Маршрут миграции от Аркаима к Синташте' },
+      { id: 'r2', name: 'Северный путь', type: 'trade', points: [{ lat: 52.65, lng: 59.57 }, { lat: 53.0, lng: 58.5 }], color: '#4FC3F7', dash: true, description: 'Торговый путь на север' },
+    ],
+    energy_lines: [
+      { name: 'Линия Силы', points: [{ lat: 50.0, lng: 55.0 }, { lat: 55.0, lng: 65.0 }], color: '#FFD700', description: 'Древняя энергетическая линия' },
+    ],
+  },
+  '/book/community/interpretations': {
+    data: [
+      { id: 'int_1', title: 'Аркаим как космический порт', author: 'Иван', content: 'Одна из интересных интерпретаций...', likes: 15, comments_count: 3, created_at: new Date().toISOString() },
+      { id: 'int_2', title: 'Тайны Гипербореи', author: 'Мария', content: 'Древние знания о северной цивилизации...', likes: 8, comments_count: 1, created_at: new Date(Date.now() - 86400000).toISOString() },
+    ],
+    total: 2,
+  },
+  '/book/community/interpretations/stats': { total: 2, approved: 2, pending: 0 },
+  '/book/community/artifacts': {
+    data: [
+      { id: 'art_1', title: 'Карта Аркаима', author: 'Пётр', category: 'map', content: 'Интерактивная карта...', likes: 12, comments_count: 2, created_at: new Date().toISOString() },
+      { id: 'art_2', title: 'Хронология событий', author: 'Анна', category: 'timeline', content: 'Таймлайн из книги...', likes: 7, comments_count: 0, created_at: new Date(Date.now() - 172800000).toISOString() },
+    ],
+    total: 2,
+  },
+  '/book/community/artifacts/stats': { total: 2, by_category: { map: 1, timeline: 1 } },
+  '/book/community/search': { results: [] },
+  '/book/story-engine/constraints': { ok: true, constraints: { genre: 'мифология', mood: 'таинственность', max_length: 2000 } },
+  '/book/world-engine/model': { entities: [{ name: 'Аркаим', type: 'location' }, { name: 'Велик', type: 'character' }], relations: [] },
+  '/book/reader/reading-progress': { data: [] },
+  '/book/reader/reading-position': { data: null },
+  '/xray/diagnostics': { checks: [{ name: 'database', status: 'ok', message: 'SQLite connected' }, { name: 'genome', status: 'ok', message: 'Loaded' }, { name: 'memory', status: 'ok', message: 'Store ready' }] },
   '/book/chapters': {
     ok: true,
     total: 17,
@@ -117,6 +159,13 @@ function getMockData(path: string, method: string = 'GET'): any {
     '/book/email/drafts/1/approve': { ok: true },
     '/book/email/drafts/1/send': { ok: true, sent: 10, errors: 0 },
     '/book/email/send/weekly-digest': { ok: true, sent: 150 },
+    '/book/community/interpretations': { ok: true, id: 'int_' + Date.now() },
+    '/book/community/artifacts': { ok: true, id: 'art_' + Date.now() },
+    '/book/community/interpretations/1/like': { ok: true },
+    '/book/community/artifacts/1/like': { ok: true },
+    '/book/story-engine/generate': { ok: true },
+    '/book/reader/reading-event': { ok: true },
+    '/auth/update-profile': { ok: true },
   };
 
   if (method === 'POST' && (POST_MOCKS[path] || POST_MOCKS[basePath])) return POST_MOCKS[path] || POST_MOCKS[basePath];

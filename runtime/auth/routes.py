@@ -271,6 +271,17 @@ async def auth_me(request: Request):
     return JSONResponse({"user": {"id": user["user_id"], "role": user["role"], "username": user.get("username"), "display_name": user.get("display_name"), "provider": user.get("provider")}})
 
 
+@router.post("/update-profile")
+async def update_profile(request: Request):
+    from auth.rbac import get_current_user
+    user = await get_current_user(request)
+    body = await request.json()
+    display_name = body.get("display_name", "").strip()
+    if display_name:
+        await user_store.set_display_name(user["user_id"], display_name)
+    return {"ok": True}
+
+
 @router.post("/api-key")
 async def create_api_key(request: Request, name: str | None = None):
     from auth.rbac import get_current_user
@@ -286,6 +297,17 @@ async def list_api_keys(request: Request):
     user = await get_current_user(request)
     keys = await user_store.list_api_keys(user_id=user["user_id"])
     return JSONResponse([{k: v for k, v in key.items() if k != "key_hash"} for key in keys])
+
+
+@router.delete("/api-keys/{key_id}")
+async def delete_api_key(key_id: str, request: Request):
+    from auth.rbac import get_current_user
+    user = await get_current_user(request)
+    ok = await user_store.revoke_api_key_for_user(key_id, user["user_id"])
+    if not ok:
+        raise HTTPException(status_code=404, detail="API-ключ не найден")
+    log.info("api_key_revoked key_id=%s user_id=%s", key_id, user["user_id"])
+    return {"ok": True, "key_id": key_id}
 
 
 # ── Admin endpoints ──────────────────────────────────

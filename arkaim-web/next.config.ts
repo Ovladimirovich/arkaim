@@ -20,6 +20,10 @@ const nextConfig: NextConfig = {
         // Book API — /book это фронтенд-страница, а /book/* — API.
         // :path+ требует хотя бы один сегмент, чтобы /book не перехватывался.
         { source: '/book/:path+', destination: `${BACKEND}/book/:path*` },
+        // Stream API — /v1/stream для SSE
+        // Analytics — /analytics на верхнем уровне (без /api/ префикса)
+        { source: '/analytics', destination: `${BACKEND}/analytics` },
+        { source: '/v1/:path+', destination: `${BACKEND}/v1/:path*` },
       ],
     };
   },

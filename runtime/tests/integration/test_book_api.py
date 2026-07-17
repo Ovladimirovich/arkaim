@@ -57,22 +57,28 @@ class TestBookHealth:
         _override_auth("reader")
         r = client.get("/book/drafts")
         assert r.status_code == 200
-        assert isinstance(r.json(), list)
+        data = r.json()
+        assert data.get("ok") is True
+        assert isinstance(data.get("data"), list)
 
     def test_book_drafts_pending_empty(self):
         _override_auth("reader")
         r = client.get("/book/drafts?status=pending")
         assert r.status_code == 200
-        assert isinstance(r.json(), list)
+        data = r.json()
+        assert data.get("ok") is True
+        assert isinstance(data.get("data"), list)
 
     def test_book_memory_stats(self):
         _override_auth("admin")
         r = client.get("/book/memory/stats")
         assert r.status_code == 200
         data = r.json()
-        assert "total_events" in data or "status" in data
+        assert data.get("ok") is True
+        assert "total_events" in data.get("data", {}) or "status" in data.get("data", {})
 
     def test_book_xray(self):
-        _override_auth("admin")
-        r = client.get("/book/xray")
+        r = client.get("/xray/version")
         assert r.status_code == 200
+        data = r.json()
+        assert "version" in data
