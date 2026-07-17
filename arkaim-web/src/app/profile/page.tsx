@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Typography, List, Tag, Input, Button, Space, Form, message, Row, Col, Statistic, Progress, Avatar, Empty, Descriptions, Popconfirm, Timeline, Tooltip } from 'antd';
-import { UserOutlined, KeyOutlined, MailOutlined, ClockCircleOutlined, BookOutlined, HeartOutlined, TrophyOutlined, DeleteOutlined, SafetyOutlined, MessageOutlined, SearchOutlined, ReadOutlined, SettingOutlined, LinkOutlined } from '@ant-design/icons';
+import { Card, Typography, List, Tag, Input, Button, Space, Form, message, Row, Col, Statistic, Progress, Avatar, Empty, Descriptions, Popconfirm, Timeline, Tabs, Switch } from 'antd';
+import { UserOutlined, KeyOutlined, MailOutlined, ClockCircleOutlined, BookOutlined, HeartOutlined, TrophyOutlined, DeleteOutlined, SafetyOutlined, MessageOutlined, SearchOutlined, ReadOutlined, SettingOutlined, LinkOutlined, EditOutlined, BulbOutlined, CommentOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
 import { useAuth } from '@/app/providers';
@@ -22,6 +22,34 @@ type ReaderProfile = {
 
 type HistoryItem = { id: number; content: string; created_at: string };
 type ApiKeyItem = { id: string; key_prefix: string; name?: string; last_used_at?: string; is_active: boolean; created_at: string };
+
+type Interpretation = {
+  id: string;
+  reader_name: string;
+  text: string;
+  themes: string[];
+  status: string;
+  likes: number;
+  created_at: string;
+};
+
+type Artifact = {
+  id: string;
+  reader_name: string;
+  title: string;
+  category: string;
+  status: string;
+  likes: number;
+  created_at: string;
+};
+
+type Comment = {
+  id: string;
+  parent_type: string;
+  text: string;
+  likes: number;
+  created_at: string;
+};
 
 // ── Quick Actions ──────────────────────────────────
 
@@ -54,10 +82,10 @@ function QuickActions() {
           </Link>
         </Col>
         <Col xs={12} sm={6}>
-          <Link href="/search">
+          <Link href="/interpretations">
             <Card size="small" hoverable style={{ textAlign: 'center', height: 80 }}>
-              <SearchOutlined style={{ fontSize: 20, color: '#7c3aed' }} />
-              <div><Text style={{ fontSize: 12 }}>Поиск</Text></div>
+              <BulbOutlined style={{ fontSize: 20, color: '#7c3aed' }} />
+              <div><Text style={{ fontSize: 12 }}>Интерпретации</Text></div>
             </Card>
           </Link>
         </Col>
@@ -135,6 +163,140 @@ function AccountInfo({ user }: { user: any }) {
         </Descriptions.Item>
         <Descriptions.Item label="Провайдер">{user?.provider || '—'}</Descriptions.Item>
       </Descriptions>
+    </Card>
+  );
+}
+
+// ── Edit Profile ──────────────────────────────────
+
+function EditProfile({ user }: { user: any }) {
+  const queryClient = useQueryClient();
+  const [form] = Form.useForm();
+
+  const updateMutation = useMutation({
+    mutationFn: (values: { display_name: string }) =>
+      api.post('/auth/update-profile', values),
+    onSuccess: () => {
+      message.success('Профиль обновлён');
+      queryClient.invalidateQueries({ queryKey: ['auth-user'] });
+    },
+  });
+
+  return (
+    <Card title={<><EditOutlined /> Редактировать профиль</>}>
+      <Form
+        form={form}
+        layout="vertical"
+        initialValues={{ display_name: user?.display_name || '' }}
+        onFinish={(values) => updateMutation.mutate(values)}
+      >
+        <Form.Item name="display_name" label="Отображаемое имя">
+          <Input placeholder="Ваше имя" />
+        </Form.Item>
+        <Form.Item>
+          <Button type="primary" htmlType="submit" loading={updateMutation.isPending}>
+            Сохранить
+          </Button>
+        </Form.Item>
+      </Form>
+    </Card>
+  );
+}
+
+// ── My Community Contributions ──────────────────────────────────
+
+function MyContributions() {
+  const { data: interps } = useQuery({
+    queryKey: ['my-interps'],
+    queryFn: () => api.get<{ interpretations: Interpretation[] }>('/book/community/interpretations/mine'),
+  });
+
+  const { data: artifacts } = useQuery({
+    queryKey: ['my-artifacts'],
+    queryFn: () => api.get<{ artifacts: Artifact[] }>('/book/community/artifacts/mine'),
+  });
+
+  const interpretations = interps?.interpretations || [];
+  const myArtifacts = artifacts?.artifacts || [];
+
+  const statusColors: Record<string, string> = {
+    pending: 'orange',
+    approved: 'green',
+    rejected: 'red',
+  };
+
+  return (
+    <Card title={<><HeartOutlined /> Мои вклады в сообщество</>}>
+      <Tabs
+        items={[
+          {
+            key: 'interpretations',
+            label: `Интерпретации (${interpretations.length})`,
+            children: interpretations.length === 0 ? (
+              <Empty description="Вы ещё не добавляли интерпретаций" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            ) : (
+              <List
+                size="small"
+                dataSource={interpretations}
+                renderItem={(item: Interpretation) => (
+                  <List.Item>
+                    <List.Item.Meta
+                      title={
+                        <Space>
+                          <Text ellipsis style={{ maxWidth: 300 }}>{item.text.substring(0, 50)}...</Text>
+                          <Tag color={statusColors[item.status]}>{item.status}</Tag>
+                        </Space>
+                      }
+                      description={
+                        <Space>
+                          <Text type="secondary" style={{ fontSize: 11 }}>
+                            {new Date(item.created_at).toLocaleDateString('ru')}
+                          </Text>
+                          <Text type="secondary" style={{ fontSize: 11 }}>
+                            👍 {item.likes}
+                          </Text>
+                        </Space>
+                      }
+                    />
+                  </List.Item>
+                )}
+              />
+            ),
+          },
+          {
+            key: 'artifacts',
+            label: `Артефакты (${myArtifacts.length})`,
+            children: myArtifacts.length === 0 ? (
+              <Empty description="Вы ещё не добавляли артефактов" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            ) : (
+              <List
+                size="small"
+                dataSource={myArtifacts}
+                renderItem={(item: Artifact) => (
+                  <List.Item>
+                    <List.Item.Meta
+                      title={
+                        <Space>
+                          <Text>{item.title}</Text>
+                          <Tag color={statusColors[item.status]}>{item.status}</Tag>
+                        </Space>
+                      }
+                      description={
+                        <Space>
+                          <Tag>{item.category}</Tag>
+                          <Text type="secondary" style={{ fontSize: 11 }}>
+                            👍 {item.likes}
+                          </Text>
+                        </Space>
+                      }
+                    />
+                  </List.Item>
+                )}
+              />
+            ),
+          },
+        ]}
+      />
     </Card>
   );
 }
@@ -309,13 +471,17 @@ function ProfileContent() {
 
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={14}>
-          <FavoriteTopics topics={profile?.topics || []} />
+          <MyContributions />
+          <div style={{ marginTop: 16 }}>
+            <FavoriteTopics topics={profile?.topics || []} />
+          </div>
           <div style={{ marginTop: 16 }}>
             <RecentActivity />
           </div>
         </Col>
         <Col xs={24} lg={10}>
           <AccountInfo user={user} />
+          <div style={{ marginTop: 16 }}><EditProfile user={user} /></div>
           <div style={{ marginTop: 16 }}><ApiKeysSection /></div>
           <div style={{ marginTop: 16 }}><EmailSubscription /></div>
         </Col>
