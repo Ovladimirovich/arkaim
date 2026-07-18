@@ -269,6 +269,73 @@ async def clear_cache():
     return {"ok": True, "message": "Кэш очищен"}
 
 
+# ── Unified Pipeline (Explorer + Story Engine) ────────────
+
+
+class UnifiedRequest(BaseModel):
+    prompt: str
+    epoch: Optional[str] = None
+    location: Optional[str] = None
+    branch_count: int = 3
+    style: str = "literary"
+    max_length: int = 2000
+    generate_story: bool = True
+    select_best: bool = True
+
+
+@router.post("/unified", summary="Единый pipeline: исследование + генерация")
+async def unified_pipeline(request: UnifiedRequest):
+    """Полный pipeline: World Explorer → Story Engine.
+
+    1. Исследование мира (генерация гипотез, моделирование сценариев)
+    2. Выбор лучшей ветви
+    3. Генерация текста через Story Engine
+    4. Валидация результата
+    """
+    try:
+        from narrative_engine.unified_pipeline import UnifiedPipeline, UnifiedRequest as UReq
+
+        wm = _get_world_model()
+        pipeline = UnifiedPipeline(wm)
+
+        unified_request = UReq(
+            prompt=request.prompt,
+            epoch=request.epoch,
+            location=request.location,
+            branch_count=request.branch_count,
+            style=request.style,
+            max_length=request.max_length,
+            generate_story=request.generate_story,
+            select_best=request.select_best,
+        )
+
+        result = pipeline.run(unified_request)
+
+        return {
+            "ok": True,
+            "data": {
+                "exploration": {
+                    "branch_count": len(result.exploration.ranked_branches) if result.exploration else 0,
+                    "best_score": result.exploration.ranked_branches[0].quality_report.overall_score if result.exploration and result.exploration.ranked_branches else 0,
+                    "summary": result.exploration.summary if result.exploration else "",
+                } if result.exploration else None,
+                "story": {
+                    "system_instruction": result.story.system_instruction[:500] if result.story else "",
+                    "user_prompt": result.story.user_prompt[:1000] if result.story else "",
+                    "style": result.story.style if result.story else "",
+                    "constraints_summary": result.story.constraints_summary if result.story else "",
+                } if result.story else None,
+                "selected_branch_rank": result.selected_branch_rank,
+                "pipeline_steps": result.pipeline_steps,
+                "duration_ms": result.total_duration_ms,
+            },
+            "summary": result.summary,
+        }
+    except Exception as e:
+        log.error("unified_pipeline_error error=%s", e)
+        raise HTTPException(500, detail=str(e))
+
+
 # ── Внешние источники ─────────────────────────────────────
 
 

@@ -1705,5 +1705,79 @@ class TestPerformance:
         assert stats["avg_ms"] > 5  # Должно быть > 5ms из-за sleep
 
 
+# ── Этап 14: Unified Pipeline Tests ────────────────────────
+
+class TestUnifiedPipeline:
+    """Тесты unified pipeline (Explorer + Story Engine)."""
+
+    def test_unified_pipeline_creates_result(self, world_model):
+        """Unified pipeline создаёт результат."""
+        from narrative_engine.unified_pipeline import UnifiedPipeline, UnifiedRequest
+
+        pipeline = UnifiedPipeline(world_model)
+        request = UnifiedRequest(
+            prompt="Что если Аркаим не был разрушен?",
+            epoch="satya_yuga",
+            branch_count=2,
+            generate_story=True,
+        )
+
+        result = pipeline.run(request)
+        assert result.exploration is not None
+        assert result.exploration.ranked_branches
+        assert result.total_duration_ms > 0
+        assert len(result.pipeline_steps) > 0
+
+    def test_unified_pipeline_explore_only(self, world_model):
+        """Unified pipeline только исследование."""
+        from narrative_engine.unified_pipeline import UnifiedPipeline, UnifiedRequest
+
+        pipeline = UnifiedPipeline(world_model)
+        request = UnifiedRequest(
+            prompt="Тест",
+            epoch="satya_yuga",
+            branch_count=2,
+            generate_story=False,
+        )
+
+        result = pipeline.run(request)
+        assert result.exploration is not None
+        assert result.story is None
+
+    def test_unified_pipeline_summary(self, world_model):
+        """Unified pipeline генерирует сводку."""
+        from narrative_engine.unified_pipeline import UnifiedPipeline, UnifiedRequest
+
+        pipeline = UnifiedPipeline(world_model)
+        request = UnifiedRequest(
+            prompt="Тест",
+            epoch="satya_yuga",
+            branch_count=2,
+        )
+
+        result = pipeline.run(request)
+        assert isinstance(result.summary, str)
+        assert len(result.summary) > 0
+
+    def test_generate_from_branch(self, world_model):
+        """Генерация текста из конкретной ветви."""
+        from narrative_engine.unified_pipeline import UnifiedPipeline, UnifiedRequest
+
+        pipeline = UnifiedPipeline(world_model)
+        request = UnifiedRequest(
+            prompt="Тест",
+            epoch="satya_yuga",
+            branch_count=2,
+            generate_story=False,
+        )
+
+        exploration = pipeline.explore_only(request)
+        story = pipeline.generate_from_branch(exploration, branch_rank=1)
+
+        assert story.system_instruction
+        assert story.user_prompt
+        assert story.style == "literary"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])
