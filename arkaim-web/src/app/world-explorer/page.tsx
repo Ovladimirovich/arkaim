@@ -2,7 +2,8 @@ use client;
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, Typography, Input, Button, Select, Slider, Space, Tag, Tabs, List, Progress, Modal, Alert, Spin, Empty, Descriptions, Statistic, Tooltip, Badge, Divider, message } from 'antd';
-import { ExperimentOutlined, ThunderboltOutlined, HistoryOutlined, DeleteOutlined, SwapOutlined, BranchesOutlined, BulbOutlined, NodeIndexOutlined } from '@ant-design/icons';
+import { ExperimentOutlined, ThunderboltOutlined, HistoryOutlined, DeleteOutlined, SwapOutlined, BranchesOutlined, BulbOutlined, NodeIndexOutlined, StarOutlined } from '@ant-design/icons';
+import { Rate } from 'antd';
 import { api } from '@/shared/lib/api';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { ProtectedRoute } from '@/shared/lib/guards';
@@ -28,7 +29,23 @@ const PROGRESS_STEPS = ['Проверка совместимости', 'Гене
 async function loadHistory(): Promise<HistoryItem[]> {
     try {
       const res = await api.get<{ data: any[] }>('/book/world-explorer/history?limit=50');
-      const generateTextFromBranch = async (branch: RankedBranch) => {
+      const submitFeedback = async (branch: RankedBranch) => {
+    if (feedbackRating === 0) { message.warning('Выберите оценку'); return; }
+    try {
+      await api.post('/book/world-explorer/feedback', {
+        branch_rank: branch.rank,
+        branch_type: branch.branch_type,
+        branch_title: branch.title,
+        rating: feedbackRating,
+        comment: feedbackComment,
+      });
+      message.success('Отзыв сохранён');
+      setFeedbackRating(0);
+      setFeedbackComment('');
+    } catch { message.error('Ошибка сохранения'); }
+  };
+
+  const generateTextFromBranch = async (branch: RankedBranch) => {
     setGeneratingText(true);
     try {
       const res = await api.post<{ data: any }>('/book/world-explorer/generate-from-branch', {
@@ -83,6 +100,8 @@ function WorldExplorerContent() {
   const [compareBranches, setCompareBranches] = useState<RankedBranch[]>([]);
   const [showCompare, setShowCompare] = useState(false);
   const [generatedText, setGeneratedText] = useState<{ system_instruction: string; user_prompt: string } | null>(null);
+  const [feedbackRating, setFeedbackRating] = useState(0);
+  const [feedbackComment, setFeedbackComment] = useState('');
   const [generatingText, setGeneratingText] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [progress, setProgress] = useState(-1);
@@ -119,6 +138,22 @@ function WorldExplorerContent() {
     setHistory(prev => prev.filter(x => x.id !== id));
   };
   const toggleCompare = (branch: RankedBranch) => { setCompareBranches(prev => { const exists = prev.find(b => b.rank === branch.rank); if (exists) return prev.filter(b => b.rank !== branch.rank); if (prev.length >= 3) return prev; return [...prev, branch]; }); };
+
+  const submitFeedback = async (branch: RankedBranch) => {
+    if (feedbackRating === 0) { message.warning('Выберите оценку'); return; }
+    try {
+      await api.post('/book/world-explorer/feedback', {
+        branch_rank: branch.rank,
+        branch_type: branch.branch_type,
+        branch_title: branch.title,
+        rating: feedbackRating,
+        comment: feedbackComment,
+      });
+      message.success('Отзыв сохранён');
+      setFeedbackRating(0);
+      setFeedbackComment('');
+    } catch { message.error('Ошибка сохранения'); }
+  };
 
   const generateTextFromBranch = async (branch: RankedBranch) => {
     setGeneratingText(true);

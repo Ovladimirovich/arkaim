@@ -341,6 +341,82 @@ async def get_best_paths(tree_id: str = "root", top_n: int = 3):
     }
 
 
+# ── Обратная связь ────────────────────────────────────────
+
+
+class FeedbackRequest(BaseModel):
+    exploration_id: Optional[int] = None
+    branch_rank: int = 0
+    branch_type: str = ""
+    branch_title: str = ""
+    rating: int = Field(ge=1, le=5)
+    comment: str = ""
+
+
+@router.post("/feedback", summary="Добавить отзыв к ветви")
+async def add_feedback(request: FeedbackRequest, user: dict = Depends(get_current_user)):
+    """Добавить обратную связь к ветви исследования."""
+    try:
+        from core.memory.feedback_store import get_feedback_store
+        store = get_feedback_store()
+        item_id = await store.add_feedback(
+            user_id=user.get("user_id", ""),
+            exploration_id=request.exploration_id,
+            branch_rank=request.branch_rank,
+            branch_type=request.branch_type,
+            branch_title=request.branch_title,
+            rating=request.rating,
+            comment=request.comment,
+        )
+        return {"ok": True, "id": item_id}
+    except Exception as e:
+        log.error("feedback_add_error error=%s", e)
+        raise HTTPException(500, detail=str(e))
+
+
+@router.get("/feedback", summary="Отзывы пользователя")
+async def get_feedback(limit: int = 50, user: dict = Depends(get_current_user)):
+    """Получить список отзывов текущего пользователя."""
+    try:
+        from core.memory.feedback_store import get_feedback_store
+        store = get_feedback_store()
+        items = await store.get_feedback_by_user(user.get("user_id", ""), limit=limit)
+        return {"ok": True, "data": items, "count": len(items)}
+    except Exception as e:
+        log.warning("feedback_load_error error=%s", e)
+        return {"ok": True, "data": [], "count": 0}
+
+
+@router.get("/feedback/average", summary="Средний рейтинг")
+async def get_average_rating(branch_type: Optional[str] = None):
+    """Получить средний рейтинг по типу ветви."""
+    try:
+        from core.memory.feedback_store import get_feedback_store
+        store = get_feedback_store()
+        stats = await store.get_average_rating(branch_type=branch_type)
+        return {"ok": True, "data": stats}
+    except Exception as e:
+        log.error("feedback_stats_error error=%s", e)
+        raise HTTPException(500, detail=str(e))
+
+
+@router.delete("/feedback/{feedback_id}", summary="Удалить отзыв")
+async def delete_feedback(feedback_id: int, user: dict = Depends(get_current_user)):
+    """Удалить свой отзыв."""
+    try:
+        from core.memory.feedback_store import get_feedback_store
+        store = get_feedback_store()
+        deleted = await store.delete_feedback(feedback_id, user.get("user_id", ""))
+        if not deleted:
+            raise HTTPException(404, detail="Отзыв не найден")
+        return {"ok": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.error("feedback_delete_error error=%s", e)
+        raise HTTPException(500, detail=str(e))
+
+
 # ── История исследований ──────────────────────────────────
 
 

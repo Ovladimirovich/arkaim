@@ -1505,5 +1505,91 @@ class TestDeepExplorer:
             assert tree.total_nodes > initial_count
 
 
+# ── Этап 12: Feedback Store Tests ──────────────────────────
+
+class TestFeedbackStore:
+    """Тесты хранилища обратной связи."""
+
+    @pytest.fixture
+    def store(self, tmp_path):
+        """Создать изолированное хранилище для тестов."""
+        from core.memory.feedback_store import FeedbackStore
+        db_path = str(tmp_path / "test_feedback.db")
+        return FeedbackStore(db_path=db_path)
+
+    @pytest.mark.asyncio
+    async def test_add_feedback(self, store):
+        """Добавление отзыва."""
+        item_id = await store.add_feedback(
+            user_id="user1",
+            exploration_id=1,
+            branch_rank=1,
+            branch_type="conservative",
+            branch_title="Тестовая ветвь",
+            rating=4,
+            comment="Хорошая ветвь",
+        )
+        assert item_id > 0
+
+    @pytest.mark.asyncio
+    async def test_get_feedback_for_exploration(self, store):
+        """Получение отзывов для исследования."""
+        await store.add_feedback(
+            user_id="user1", exploration_id=1, branch_rank=1,
+            branch_type="conservative", branch_title="Ветвь 1",
+            rating=4, comment="Хорошо",
+        )
+        await store.add_feedback(
+            user_id="user2", exploration_id=1, branch_rank=2,
+            branch_type="radical", branch_title="Ветвь 2",
+            rating=5, comment="Отлично",
+        )
+
+        items = await store.get_feedback_for_exploration(1)
+        assert len(items) == 2
+
+    @pytest.mark.asyncio
+    async def test_get_average_rating(self, store):
+        """Средний рейтинг."""
+        await store.add_feedback(user_id="u1", exploration_id=None, branch_rank=1,
+                                 branch_type="conservative", branch_title="T", rating=4)
+        await store.add_feedback(user_id="u2", exploration_id=None, branch_rank=1,
+                                 branch_type="conservative", branch_title="T", rating=5)
+
+        stats = await store.get_average_rating(branch_type="conservative")
+        assert stats["average_rating"] == 4.5
+        assert stats["total_ratings"] == 2
+
+    @pytest.mark.asyncio
+    async def test_delete_feedback(self, store):
+        """Удаление отзыва."""
+        item_id = await store.add_feedback(
+            user_id="user1", exploration_id=None, branch_rank=1,
+            branch_type="test", branch_title="T", rating=3,
+        )
+
+        deleted = await store.delete_feedback(item_id, "user1")
+        assert deleted is True
+
+    @pytest.mark.asyncio
+    async def test_delete_other_user_feedback(self, store):
+        """Нельзя удалить чужой отзыв."""
+        item_id = await store.add_feedback(
+            user_id="user1", exploration_id=None, branch_rank=1,
+            branch_type="test", branch_title="T", rating=3,
+        )
+
+        deleted = await store.delete_feedback(item_id, "user2")
+        assert deleted is False
+
+    @pytest.mark.asyncio
+    async def test_health(self, store):
+        """Health check."""
+        health = await store.health()
+        assert health["status"] == "ok"
+        assert health["type"] == "sqlite"
+        assert health["feedback_count"] == 0
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])
