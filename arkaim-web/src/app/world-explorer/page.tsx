@@ -63,6 +63,7 @@ function WorldExplorerContent() {
   // WebSocket real-time progress
   useWsEvent('exploration_progress' as any, (data: any) => { if (data.step !== undefined) setProgress(data.step); });
   useWsEvent('exploration_complete' as any, () => { setProgress(-1); });
+  useWsEvent('exploration_started' as any, (data: any) => { console.log('Exploration started:', data.exploration_id); });
 
   const exploreFromHypothesis = async (hyp: Hypothesis) => { try { setProgress(0); const res = await api.post<{ data: ExplorationResult }>(/book/world-explorer/explore/hypothesis?hypothesis_id=&epoch=&branch_count=, {}); setResult(res.data); setProgress(-1); setActiveTab('explore'); } catch { setProgress(-1); message.error('Ошибка'); } };
   const loadFromHistory = (item: HistoryItem) => { setPrompt(item.prompt); setEpoch(item.epoch); setResult(item.result); setActiveTab('explore'); };

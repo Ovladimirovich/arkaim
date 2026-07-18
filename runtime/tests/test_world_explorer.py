@@ -1072,5 +1072,67 @@ class TestWorldExplorerIntegration:
             assert rb.contradiction_report
 
 
+# ── Этап 7: WebSocket Tests ─────────────────────────────────
+
+class TestExplorationNotifier:
+    """Тесты ExplorationNotifier."""
+
+    def test_notifier_creates_instance(self):
+        """Создание экземпляра нотификатора."""
+        from narrative_engine.exploration_ws import ExplorationNotifier
+        notifier = ExplorationNotifier()
+        assert notifier._exploration_id is None
+
+    def test_pipeline_steps_defined(self):
+        """Этапы pipeline определены."""
+        from narrative_engine.exploration_ws import PIPELINE_STEPS
+        assert len(PIPELINE_STEPS) == 8
+        assert "Проверка совместимости" in PIPELINE_STEPS
+        assert "Ранжирование" in PIPELINE_STEPS
+
+    def test_exploration_events_defined(self):
+        """События WebSocket определены."""
+        from narrative_engine.exploration_ws import EXPLORATION_EVENTS
+        assert "started" in EXPLORATION_EVENTS
+        assert "progress" in EXPLORATION_EVENTS
+        assert "complete" in EXPLORATION_EVENTS
+        assert "error" in EXPLORATION_EVENTS
+
+    def test_explorer_accepts_notifier(self, world_model):
+        """Explorer принимает ws_notifier параметр."""
+        from narrative_engine.world_explorer import WorldExplorer, ExplorationRequest
+        from narrative_engine.exploration_ws import ExplorationNotifier
+
+        explorer = WorldExplorer(world_model)
+        notifier = ExplorationNotifier()
+
+        request = ExplorationRequest(
+            prompt="Тест WS",
+            epoch="satya_yuga",
+            branch_count=2,
+        )
+
+        # Должно работать с notifier=None и с notifier
+        result = explorer.explore(request, ws_notifier=notifier)
+        assert result.hypothesis is not None
+
+    def test_global_notifier_exists(self):
+        """Глобальный нотификатор существует."""
+        from narrative_engine.exploration_ws import exploration_notifier
+        assert exploration_notifier is not None
+
+    def test_notifier_notify_progress_step_range(self):
+        """notify_progress проверяет диапазон шагов."""
+        import asyncio
+        from narrative_engine.exploration_ws import ExplorationNotifier
+
+        notifier = ExplorationNotifier()
+        # Шаг вне диапазона — не должно быть ошибки
+        asyncio.run(notifier.notify_progress(-1))
+        asyncio.run(notifier.notify_progress(100))
+        # Шаг в диапазоне — работает
+        asyncio.run(notifier.notify_progress(0, "test"))
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])

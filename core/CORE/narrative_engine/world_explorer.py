@@ -18,7 +18,7 @@ import time
 import uuid
 from typing import Optional
 
-from narrative_engine.exploration_ws import ExplorationNotifier, notifier
+from narrative_engine.exploration_ws import ExplorationNotifier, exploration_notifier
 
 from pydantic import BaseModel, Field
 
@@ -91,7 +91,7 @@ class WorldExplorer:
         """Полный pipeline исследования с опциональными WebSocket нотификациями."""
         start_time = time.time()
         exploration_id = str(uuid.uuid4())[:8]
-        notify = ws_notifier or notifier
+        notify = ws_notifier or exploration_notifier
 
         # 0. Уведомление о начале
         import asyncio

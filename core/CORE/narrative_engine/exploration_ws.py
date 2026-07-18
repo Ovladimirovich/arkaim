@@ -1,6 +1,6 @@
 """World Explorer WebSocket — real-time прогресс исследования.
 
-Реализует архитектуру World Explorer: Этап 7 — WebSocket Real-time.
+Реализует архитектура World Explorer: Этап 7 — WebSocket Real-time.
 
 Отправляет события через WebSocket при каждом этапе pipeline:
 1. exploration_started — начало исследования
@@ -8,12 +8,11 @@
 3. exploration_complete — завершение с результатом
 4. exploration_error — ошибка
 
-Использует существующий ConnectionManager из runtime/core/websocket.py.
+Использует ConnectionManager из runtime/core/websocket.py.
 """
 
-import json
 import logging
-from typing import Optional, Any
+from typing import Optional
 
 log = logging.getLogger("hermes.narrative.exploration_ws")
 
@@ -39,11 +38,20 @@ PIPELINE_STEPS = [
 ]
 
 
-class ExplorationNotifier:
-    """Отправляет real-time уведомления о прогрессе исследования."""
+def _get_connection_manager():
+    """Получить ConnectionManager из runtime. Ленивый импорт чтобы избежать циклических зависимостей."""
+    try:
+        from core.websocket import manager
+        return manager
+    except ImportError:
+        log.debug("websocket_manager_not_available")
+        return None
 
-    def __init__(self, connection_manager: Any = None):
-        self._cm = connection_manager
+
+class ExplorationNotifier:
+    """Отправляет real-time уведомления о прогрессе исследования через WebSocket."""
+
+    def __init__(self):
         self._exploration_id: Optional[str] = None
 
     async def notify_started(
@@ -79,7 +87,7 @@ class ExplorationNotifier:
 
     async def notify_complete(
         self,
-        result_summary: str,
+        result_summary: str = "",
         branch_count: int = 0,
         best_score: float = 0.0,
         duration_ms: float = 0.0,
@@ -102,14 +110,16 @@ class ExplorationNotifier:
 
     async def _send(self, event: str, data: dict):
         """Отправить событие через ConnectionManager."""
-        if self._cm:
+        cm = _get_connection_manager()
+        if cm:
             try:
-                await self._cm.broadcast(event, data)
+                await cm.broadcast(event, data)
+                log.debug("ws_sent event=%s step=%s", event, data.get("step", ""))
             except Exception as e:
                 log.warning("ws_send_error event=%s error=%s", event, e)
         else:
-            log.debug("ws_no_manager event=%s data=%s", event, data.keys())
+            log.debug("ws_no_manager event=%s", event)
 
 
-# Глобальный экземпляр
-notifier = ExplorationNotifier()
+# Глобальный экземпляр — используется world_explorer.py
+exploration_notifier = ExplorationNotifier()

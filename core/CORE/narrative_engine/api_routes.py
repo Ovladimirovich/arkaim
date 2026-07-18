@@ -21,6 +21,7 @@ from narrative_engine.world_explorer import (
 from narrative_engine.hypothesis_generator import Hypothesis, HypothesisGraph
 from narrative_engine.compatibility_checker import CompatibilityReport
 from narrative_engine.constraint_engine import StoryRequest
+from narrative_engine.exploration_ws import exploration_notifier
 
 log = logging.getLogger("hermes.narrative.world_explorer_api")
 
@@ -53,7 +54,7 @@ async def explore(request: ExplorationRequest):
     explorer = WorldExplorer(wm)
 
     try:
-        result = explorer.explore(request)
+        result = explorer.explore(request, ws_notifier=exploration_notifier)
         return {
             "ok": True,
             "data": _serialize_result(result),
@@ -61,6 +62,13 @@ async def explore(request: ExplorationRequest):
         }
     except Exception as e:
         log.error("exploration_error error=%s", e)
+        import asyncio
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                asyncio.ensure_future(exploration_notifier.notify_error(str(e)))
+        except Exception:
+            pass
         raise HTTPException(500, detail=str(e))
 
 
@@ -86,7 +94,29 @@ async def explore_from_hypothesis(
         raise HTTPException(404, detail=f"Гипотеза '{hypothesis_id}' не найдена")
 
     try:
+        import asyncio
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                asyncio.ensure_future(exploration_notifier.notify_started(
+                    f"hyp_{hypothesis_id}", hypothesis.title, epoch, branch_count
+                ))
+        except Exception:
+            pass
+
         result = explorer.explore_from_hypothesis(hypothesis, branch_count=branch_count)
+
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                asyncio.ensure_future(exploration_notifier.notify_complete(
+                    result.summary, len(result.ranked_branches),
+                    result.ranked_branches[0].quality_report.overall_score if result.ranked_branches else 0.0,
+                    result.duration_ms,
+                ))
+        except Exception:
+            pass
+
         return {
             "ok": True,
             "data": _serialize_result(result),
@@ -94,6 +124,13 @@ async def explore_from_hypothesis(
         }
     except Exception as e:
         log.error("exploration_error error=%s", e)
+        import asyncio
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                asyncio.ensure_future(exploration_notifier.notify_error(str(e)))
+        except Exception:
+            pass
         raise HTTPException(500, detail=str(e))
 
 
