@@ -1591,5 +1591,119 @@ class TestFeedbackStore:
         assert health["feedback_count"] == 0
 
 
+# ── Этап 13: Performance Tests ─────────────────────────────
+
+class TestPerformance:
+    """Тесты оптимизации производительности."""
+
+    def test_lru_cache_basic(self):
+        """Базовая работа LRU-кэша."""
+        from narrative_engine.performance import LRUCache
+
+        cache = LRUCache(max_size=5, ttl_seconds=60)
+
+        cache.set("key1", "value1")
+        assert cache.get("key1") == "value1"
+        assert cache.get("nonexistent") is None
+
+    def test_lru_cache_ttl(self):
+        """LRU-кэш учитывает TTL."""
+        import time
+        from narrative_engine.performance import LRUCache
+
+        cache = LRUCache(max_size=5, ttl_seconds=0)  # 0 секунд = сразу истекает
+
+        cache.set("key1", "value1")
+        time.sleep(0.01)
+        assert cache.get("key1") is None  # Истёк TTL
+
+    def test_lru_cache_eviction(self):
+        """LRU-кэш удаляет старые записи при превышении размера."""
+        from narrative_engine.performance import LRUCache
+
+        cache = LRUCache(max_size=3, ttl_seconds=60)
+
+        cache.set("key1", "value1")
+        cache.set("key2", "value2")
+        cache.set("key3", "value3")
+        cache.set("key4", "value4")  # Должен вытеснить key1
+
+        assert cache.get("key1") is None
+        assert cache.get("key4") == "value4"
+
+    def test_lru_cache_stats(self):
+        """Статистика LRU-кэша."""
+        from narrative_engine.performance import LRUCache
+
+        cache = LRUCache(max_size=5, ttl_seconds=60)
+
+        cache.set("key1", "value1")
+        cache.get("key1")  # Hit
+        cache.get("nonexistent")  # Miss
+
+        stats = cache.stats
+        assert stats["hits"] == 1
+        assert stats["misses"] == 1
+        assert stats["hit_rate"] == 0.5
+
+    def test_cache_stats(self):
+        """Статистика всех кэшей."""
+        from narrative_engine.performance import get_cache_stats
+
+        stats = get_cache_stats()
+        assert "epochs" in stats
+        assert "hypotheses" in stats
+        assert "possibilities" in stats
+        assert "compatibility" in stats
+
+    def test_clear_all_caches(self):
+        """Очистка всех кэшей."""
+        from narrative_engine.performance import (
+            _epochs_cache, _hypotheses_cache,
+            clear_all_caches, get_cache_stats,
+        )
+
+        _epochs_cache.set("test", "value")
+        _hypotheses_cache.set("test", "value")
+
+        clear_all_caches()
+
+        stats = get_cache_stats()
+        assert stats["epochs"]["size"] == 0
+        assert stats["hypotheses"]["size"] == 0
+
+    def test_performance_metrics(self):
+        """Метрики производительности."""
+        from narrative_engine.performance import PerformanceMetrics
+
+        pm = PerformanceMetrics()
+        pm.record("test_metric", 100.0)
+        pm.record("test_metric", 200.0)
+        pm.record("test_metric", 150.0)
+
+        stats = pm.get_stats("test_metric")
+        assert stats["count"] == 3
+        assert stats["avg_ms"] == 150.0
+        assert stats["min_ms"] == 100.0
+        assert stats["max_ms"] == 200.0
+
+    def test_timed_decorator(self):
+        """Декоратор timed измеряет время."""
+        import asyncio
+        from narrative_engine.performance import timed, metrics
+
+        @timed("test_operation")
+        async def slow_operation():
+            await asyncio.sleep(0.01)
+            return "done"
+
+        result = asyncio.run(slow_operation())
+        assert result == "done"
+
+        stats = metrics.get_stats("test_operation")
+        assert stats["count"] == 1
+        assert stats["avg_ms"] > 5  # Должно быть > 5ms из-за sleep
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])

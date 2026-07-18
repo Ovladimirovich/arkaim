@@ -138,25 +138,52 @@ async def explore_from_hypothesis(
 
 @router.get("/hypotheses/{epoch_id}", summary="Гипотезы для эпохи")
 async def get_hypotheses(epoch_id: str, limit: int = 10):
-    """Получить гипотезы для конкретной эпохи."""
+    """Получить гипотезы для конкретной эпохи (с кэшированием)."""
+    from narrative_engine.performance import _hypotheses_cache
+
+    cache_key = f"{epoch_id}:{limit}"
+    cached = _hypotheses_cache.get(cache_key)
+    if cached is not None:
+        return {"ok": True, "data": cached, "count": len(cached), "cached": True}
+
     wm = _get_world_model()
     explorer = WorldExplorer(wm)
 
     hypotheses = explorer.get_hypotheses(epoch_id, limit=limit)
+    serialized = [_serialize_hypothesis(h) for h in hypotheses]
+    _hypotheses_cache.set(cache_key, serialized)
+
     return {
         "ok": True,
-        "data": [_serialize_hypothesis(h) for h in hypotheses],
+        "data": serialized,
         "count": len(hypotheses),
+        "cached": False,
     }
 
 
 @router.get("/possibilities/{epoch_id}", summary="Возможности эпохи")
 async def get_possibilities(epoch_id: str, limit: int = 10):
-    """Получить возможности для конкретной эпохи."""
+    """Получить возможности для конкретной эпохи (с кэшированием)."""
+    from narrative_engine.performance import _possibilities_cache
+
+    cache_key = f"{epoch_id}:{limit}"
+    cached = _possibilities_cache.get(cache_key)
+    if cached is not None:
+        return {"ok": True, "data": cached, "count": len(cached), "cached": True}
+
     wm = _get_world_model()
     explorer = WorldExplorer(wm)
 
     possibilities = explorer.get_possibilities(epoch_id, limit=limit)
+    serialized = [p.model_dump() for p in possibilities]
+    _possibilities_cache.set(cache_key, serialized)
+
+    return {
+        "ok": True,
+        "data": serialized,
+        "count": len(possibilities),
+        "cached": False,
+    }
     return {
         "ok": True,
         "data": [p.model_dump() for p in possibilities],
@@ -217,6 +244,29 @@ async def get_stats():
             "events_count": len(wm.get_events()),
         },
     }
+
+
+@router.get("/cache/stats", summary="Статистика кэша")
+async def get_cache_stats():
+    """Получить статистику кэширования."""
+    from narrative_engine.performance import get_cache_stats, metrics
+
+    return {
+        "ok": True,
+        "data": {
+            "caches": get_cache_stats(),
+            "performance_metrics": metrics.get_all_stats(),
+        },
+    }
+
+
+@router.post("/cache/clear", summary="Очистить кэш")
+async def clear_cache():
+    """Очистить все кэши World Explorer."""
+    from narrative_engine.performance import clear_all_caches
+
+    clear_all_caches()
+    return {"ok": True, "message": "Кэш очищен"}
 
 
 # ── Внешние источники ─────────────────────────────────────
