@@ -1134,5 +1134,134 @@ class TestExplorationNotifier:
         asyncio.run(notifier.notify_progress(0, "test"))
 
 
+# ── Этап 8: ExplorationStore Tests ──────────────────────────
+
+class TestExplorationStore:
+    """Тесты хранилища истории исследований."""
+
+    @pytest.fixture
+    def store(self, tmp_path):
+        """Создать изолированное хранилище для тестов."""
+        from core.memory.exploration_store import ExplorationStore
+        db_path = str(tmp_path / "test_explorations.db")
+        return ExplorationStore(db_path=db_path)
+
+    @pytest.mark.asyncio
+    async def test_save_and_get(self, store):
+        """Сохранение и получение записи."""
+        item_id = await store.save(
+            user_id="test_user",
+            prompt="Тестовый запрос",
+            epoch="satya_yuga",
+            branch_count=3,
+            hypothesis_id="hyp_001",
+            hypothesis_title="Тестовая гипотеза",
+            result_json='{"test": true}',
+            summary="Тестовая сводка",
+            overall_score=0.85,
+            branch_count_actual=3,
+            duration_ms=150.0,
+        )
+        assert item_id > 0
+
+        item = await store.get(item_id)
+        assert item is not None
+        assert item["prompt"] == "Тестовый запрос"
+        assert item["epoch"] == "satya_yuga"
+        assert item["overall_score"] == 0.85
+
+    @pytest.mark.asyncio
+    async def test_list_by_user(self, store):
+        """Список записей пользователя."""
+        for i in range(3):
+            await store.save(
+                user_id="user1",
+                prompt=f"Запрос {i}",
+                epoch="satya_yuga",
+                branch_count=3,
+                hypothesis_id=None,
+                hypothesis_title=None,
+                result_json='{}',
+                summary=f"Сводка {i}",
+                overall_score=0.5 + i * 0.1,
+                branch_count_actual=3,
+                duration_ms=100.0,
+            )
+
+        items = await store.list_by_user("user1", limit=10)
+        assert len(items) == 3
+        # Порядок: DESC по created_at
+        assert items[0]["prompt"] == "Запрос 2"
+
+    @pytest.mark.asyncio
+    async def test_delete(self, store):
+        """Удаление записи."""
+        item_id = await store.save(
+            user_id="user1",
+            prompt="Удаляемый",
+            epoch=None,
+            branch_count=3,
+            hypothesis_id=None,
+            hypothesis_title=None,
+            result_json='{}',
+            summary="",
+            overall_score=0.0,
+            branch_count_actual=0,
+            duration_ms=0.0,
+        )
+
+        deleted = await store.delete(item_id, "user1")
+        assert deleted is True
+
+        item = await store.get(item_id)
+        assert item is None
+
+    @pytest.mark.asyncio
+    async def test_delete_other_user(self, store):
+        """Нельзя удалить чужую запись."""
+        item_id = await store.save(
+            user_id="user1",
+            prompt="Чужая запись",
+            epoch=None,
+            branch_count=3,
+            hypothesis_id=None,
+            hypothesis_title=None,
+            result_json='{}',
+            summary="",
+            overall_score=0.0,
+            branch_count_actual=0,
+            duration_ms=0.0,
+        )
+
+        deleted = await store.delete(item_id, "user2")
+        assert deleted is False
+
+        item = await store.get(item_id)
+        assert item is not None
+
+    @pytest.mark.asyncio
+    async def test_count(self, store):
+        """Подсчёт записей."""
+        assert await store.count("user1") == 0
+
+        await store.save(user_id="user1", prompt="a", epoch=None, branch_count=3,
+                         hypothesis_id=None, hypothesis_title=None, result_json='{}',
+                         summary="", overall_score=0, branch_count_actual=0, duration_ms=0)
+        await store.save(user_id="user2", prompt="b", epoch=None, branch_count=3,
+                         hypothesis_id=None, hypothesis_title=None, result_json='{}',
+                         summary="", overall_score=0, branch_count_actual=0, duration_ms=0)
+
+        assert await store.count("user1") == 1
+        assert await store.count() == 2
+
+    @pytest.mark.asyncio
+    async def test_health(self, store):
+        """Health check."""
+        health = await store.health()
+        assert health["status"] == "ok"
+        assert health["type"] == "sqlite"
+        assert health["explorations"] == 0
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])

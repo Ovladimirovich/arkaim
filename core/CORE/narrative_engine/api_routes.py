@@ -217,6 +217,101 @@ async def get_stats():
     }
 
 
+# ── История исследований ──────────────────────────────────
+
+
+@router.get("/history", summary="История исследований")
+async def get_history(limit: int = 50, offset: int = 0):
+    """Получить список прошлых исследований (для текущего пользователя)."""
+    try:
+        from core.memory.exploration_store import get_exploration_store
+        store = get_exploration_store()
+        items = await store.list_by_user(user_id="dev", limit=limit, offset=offset)
+        return {"ok": True, "data": items, "count": len(items)}
+    except Exception as e:
+        log.warning("history_load_error error=%s", e)
+        return {"ok": True, "data": [], "count": 0}
+
+
+@router.get("/history/{exploration_id}", summary="Детали исследования")
+async def get_history_item(exploration_id: int):
+    """Получить полные данные конкретного исследования."""
+    try:
+        from core.memory.exploration_store import get_exploration_store
+        store = get_exploration_store()
+        item = await store.get(exploration_id)
+        if not item:
+            raise HTTPException(404, detail="Исследование не найдено")
+        # Парсим result_json обратно в dict
+        if "result_json" in item and isinstance(item["result_json"], str):
+            try:
+                item["result"] = json.loads(item["result_json"])
+            except Exception:
+                item["result"] = None
+            del item["result_json"]
+        return {"ok": True, "data": item}
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.error("history_item_error error=%s", e)
+        raise HTTPException(500, detail=str(e))
+
+
+@router.delete("/history/{exploration_id}", summary="Удалить исследование")
+async def delete_history_item(exploration_id: int):
+    """Удалить исследование из истории."""
+    try:
+        from core.memory.exploration_store import get_exploration_store
+        store = get_exploration_store()
+        deleted = await store.delete(exploration_id, user_id="dev")
+        if not deleted:
+            raise HTTPException(404, detail="Исследование не найдено")
+        return {"ok": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.error("history_delete_error error=%s", e)
+        raise HTTPException(500, detail=str(e))
+
+
+class SaveExplorationRequest(BaseModel):
+    prompt: str
+    epoch: Optional[str] = None
+    branch_count: int = 3
+    hypothesis_id: Optional[str] = None
+    hypothesis_title: Optional[str] = None
+    result_json: str
+    summary: str = ""
+    overall_score: float = 0.0
+    branch_count_actual: int = 0
+    duration_ms: float = 0.0
+
+
+@router.post("/history", summary="Сохранить исследование")
+async def save_history(request: SaveExplorationRequest):
+    """Сохранить результат исследования в историю."""
+    try:
+        from core.memory.exploration_store import get_exploration_store
+        store = get_exploration_store()
+        item_id = await store.save(
+            user_id="dev",
+            prompt=request.prompt,
+            epoch=request.epoch,
+            branch_count=request.branch_count,
+            hypothesis_id=request.hypothesis_id,
+            hypothesis_title=request.hypothesis_title,
+            result_json=request.result_json,
+            summary=request.summary,
+            overall_score=request.overall_score,
+            branch_count_actual=request.branch_count_actual,
+            duration_ms=request.duration_ms,
+        )
+        return {"ok": True, "id": item_id}
+    except Exception as e:
+        log.error("history_save_error error=%s", e)
+        raise HTTPException(500, detail=str(e))
+
+
 # ── Сериализация ──────────────────────────────────────────
 
 

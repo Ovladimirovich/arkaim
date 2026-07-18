@@ -25,8 +25,34 @@ const BRANCH_TYPE_LABELS: Record<string, string> = { conservative: 'Консер
 const CRITERIA_LABELS: Record<string, string> = { canon_alignment: 'Канон', logical_consistency: 'Логика', thematic_depth: 'Глубина', dramatic_potential: 'Драма', originality: 'Оригинал' };
 const PROGRESS_STEPS = ['Проверка совместимости', 'Генерация гипотез', 'Моделирование', 'Влияние', 'Противоречия', 'Изменения', 'Оценка', 'Ранжирование'];
 
-function loadHistory(): HistoryItem[] { if (typeof window === 'undefined') return []; try { return JSON.parse(localStorage.getItem('we_history') || '[]'); } catch { return []; } }
-function saveHistory(items: HistoryItem[]) { localStorage.setItem('we_history', JSON.stringify(items.slice(0, 50))); }
+async function loadHistory(): Promise<HistoryItem[]> {
+    try {
+      const res = await api.get<{ data: any[] }>('/book/world-explorer/history?limit=50');
+      return (res.data || []).map((item: any) => ({
+        id: String(item.id),
+        timestamp: new Date(item.created_at).getTime(),
+        prompt: item.prompt,
+        epoch: item.epoch,
+        result: item.result || { request: { prompt: item.prompt }, hypothesis: null, scenario: { branch_count: 0, best_branch_id: '', summary: '' }, ranked_branches: [], duration_ms: item.duration_ms || 0, summary: item.summary || '' },
+      }));
+    } catch { return []; }
+  }
+async function saveHistory(item: HistoryItem) {
+    try {
+      await api.post('/book/world-explorer/history', {
+        prompt: item.prompt,
+        epoch: item.epoch,
+        branch_count: item.result?.request?.branch_count || 3,
+        hypothesis_id: item.result?.hypothesis?.id || null,
+        hypothesis_title: item.result?.hypothesis?.title || null,
+        result_json: JSON.stringify(item.result),
+        summary: item.result?.summary || '',
+        overall_score: item.result?.ranked_branches?.[0]?.quality_score || 0,
+        branch_count_actual: item.result?.ranked_branches?.length || 0,
+        duration_ms: item.result?.duration_ms || 0,
+      });
+    } catch { /* silent */ }
+  }
 
 function WorldExplorerContent() {
   const [prompt, setPrompt] = useState('');
@@ -50,13 +76,13 @@ function WorldExplorerContent() {
   const { data: possData, isLoading: possLoading } = useQuery({ queryKey: ['we-possibilities', epoch], queryFn: () => api.get<{ data: Possibility[] }>(/book/world-explorer/possibilities/?limit=10), enabled: activeTab === 'possibilities' });
   const possibilities = possData?.data || [];
 
-  useEffect(() => { setHistory(loadHistory()); }, []);
+  useEffect(() => { loadHistory().then(setHistory); }, []);
   const checkCompatibility = useCallback(async () => { if (!prompt || prompt.length < 5) { setCompatibility(null); return; } try { const res = await api.post<{ data: CompatibilityResult }>('/book/world-explorer/validate', { prompt, epoch: epoch || null, location: null }); setCompatibility(res.data); } catch { setCompatibility(null); } }, [prompt, epoch]);
   useEffect(() => { const t = setTimeout(checkCompatibility, 500); return () => clearTimeout(t); }, [checkCompatibility]);
 
   const exploreMutation = useMutation({
     mutationFn: async () => { setProgress(0); return api.post<{ data: ExplorationResult; summary: string }>('/book/world-explorer/explore', { prompt, epoch: epoch || undefined, branch_count: branchCount }); },
-    onSuccess: (res) => { setResult(res.data); setProgress(-1); const item: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), prompt, epoch, result: res.data }; const h = [item, ...history].slice(0, 50); setHistory(h); saveHistory(h); message.success('Исследование завершено'); },
+    onSuccess: (res) => { setResult(res.data); setProgress(-1); const item: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), prompt, epoch, result: res.data }; setHistory(prev => [item, ...prev].slice(0, 50)); saveHistory(item); message.success('Исследование завершено'); },
     onError: () => { setProgress(-1); message.error('Ошибка исследования'); },
   });
 
@@ -67,7 +93,10 @@ function WorldExplorerContent() {
 
   const exploreFromHypothesis = async (hyp: Hypothesis) => { try { setProgress(0); const res = await api.post<{ data: ExplorationResult }>(/book/world-explorer/explore/hypothesis?hypothesis_id=&epoch=&branch_count=, {}); setResult(res.data); setProgress(-1); setActiveTab('explore'); } catch { setProgress(-1); message.error('Ошибка'); } };
   const loadFromHistory = (item: HistoryItem) => { setPrompt(item.prompt); setEpoch(item.epoch); setResult(item.result); setActiveTab('explore'); };
-  const deleteFromHistory = (id: string) => { const h = history.filter(x => x.id !== id); setHistory(h); saveHistory(h); };
+  const deleteFromHistory = async (id: string) => {
+    try { await api.delete('/book/world-explorer/history/' + id); } catch {}
+    setHistory(prev => prev.filter(x => x.id !== id));
+  };
   const toggleCompare = (branch: RankedBranch) => { setCompareBranches(prev => { const exists = prev.find(b => b.rank === branch.rank); if (exists) return prev.filter(b => b.rank !== branch.rank); if (prev.length >= 3) return prev; return [...prev, branch]; }); };
 
   return (
