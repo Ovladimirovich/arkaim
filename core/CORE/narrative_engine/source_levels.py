@@ -1,4 +1,4 @@
-﻿"""Уровни источников и протокол provenance для каждого факта мира."""
+"""Уровни источников и протокол provenance для каждого факта мира."""
 
 from enum import Enum
 from datetime import datetime, timezone
@@ -7,7 +7,12 @@ from pydantic import BaseModel, Field
 
 
 class SourceLevel(str, Enum):
-    """Каждый факт должен иметь метку происхождения."""
+    """Каждый факт должен иметь метку происхождения.
+
+    Уровни упорядочены по убыванию достоверности (вес для совместимости):
+    CANON=1.0, AUTHOR_INTERPRETATION=0.85, HISTORICAL=0.8, MYTHOLOGICAL=0.7,
+    SCIENTIFIC=0.6, SYSTEM_INTERPRETATION=0.5, USER_HYPOTHESIS=0.3.
+    """
     CANON = "CANON"
     AUTHOR_INTERPRETATION = "AUTHOR_INTERPRETATION"
     HISTORICAL = "HISTORICAL"
@@ -15,6 +20,18 @@ class SourceLevel(str, Enum):
     SCIENTIFIC = "SCIENTIFIC"
     SYSTEM_INTERPRETATION = "SYSTEM_INTERPRETATION"
     USER_HYPOTHESIS = "USER_HYPOTHESIS"
+
+
+# Веса источников для расчёта CompatibilityScore
+SOURCE_LEVEL_WEIGHTS: dict[SourceLevel, float] = {
+    SourceLevel.CANON: 1.0,
+    SourceLevel.AUTHOR_INTERPRETATION: 0.85,
+    SourceLevel.HISTORICAL: 0.8,
+    SourceLevel.MYTHOLOGICAL: 0.7,
+    SourceLevel.SCIENTIFIC: 0.6,
+    SourceLevel.SYSTEM_INTERPRETATION: 0.5,
+    SourceLevel.USER_HYPOTHESIS: 0.3,
+}
 
 
 class ProvenanceTag(BaseModel):
