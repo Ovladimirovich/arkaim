@@ -314,6 +314,64 @@ async def save_history(request: SaveExplorationRequest, user: dict = Depends(get
         raise HTTPException(500, detail=str(e))
 
 
+# ── Генерация текста из ветви ────────────────────────────
+
+
+class GenerateFromBranchRequest(BaseModel):
+    exploration_prompt: str
+    branch_title: str
+    branch_type: str
+    epoch: Optional[str] = None
+    location: Optional[str] = None
+    style: str = "literary"
+    max_length: int = 2000
+    quality_score: float = 0.0
+    strengths: list[str] = Field(default_factory=list)
+    weaknesses: list[str] = Field(default_factory=list)
+
+
+@router.post("/generate-from-branch", summary="Генерация текста из ветви")
+async def generate_from_branch(request: GenerateFromBranchRequest):
+    """Сформировать промпт для LLM на основе ветви World Explorer.
+
+    Возвращает system_instruction + user_prompt для отправки в LLM.
+    """
+    try:
+        from narrative_engine.story_from_branch import build_story_from_branch, BranchToStoryRequest
+
+        wm = _get_world_model()
+        branch_request = BranchToStoryRequest(
+            exploration_prompt=request.exploration_prompt,
+            branch_title=request.branch_title,
+            branch_type=request.branch_type,
+            epoch=request.epoch,
+            location=request.location,
+            style=request.style,
+            max_length=request.max_length,
+            quality_score=request.quality_score,
+            strengths=request.strengths,
+            weaknesses=request.weaknesses,
+        )
+
+        result = build_story_from_branch(branch_request, wm)
+
+        return {
+            "ok": True,
+            "data": {
+                "system_instruction": result.system_instruction,
+                "user_prompt": result.user_prompt,
+                "style": result.style,
+                "max_length": result.max_length,
+                "branch_title": result.branch_title,
+                "quality_score": result.quality_score,
+                "constraints_summary": result.constraints_summary,
+            },
+        }
+    except Exception as e:
+        log.error("generate_from_branch_error error=%s", e)
+        raise HTTPException(500, detail=str(e))
+
+
 # ── Сериализация ──────────────────────────────────────────
 
 

@@ -1263,5 +1263,87 @@ class TestExplorationStore:
         assert health["explorations"] == 0
 
 
+# ── Этап 9: Story From Branch Tests ────────────────────────
+
+class TestStoryFromBranch:
+    """Тесты генерации текста из ветви."""
+
+    def test_build_story_from_branch(self, world_model):
+        """Построение промпта из ветви."""
+        from narrative_engine.story_from_branch import build_story_from_branch, BranchToStoryRequest
+
+        request = BranchToStoryRequest(
+            exploration_prompt="Что если Аркаим не был разрушен?",
+            branch_title="Консервативное развитие",
+            branch_type="conservative",
+            epoch="satya_yuga",
+            style="literary",
+            max_length=2000,
+            quality_score=0.85,
+            strengths=["Высокое соответствие канону"],
+            weaknesses=["Нет драматического потенциала"],
+        )
+
+        result = build_story_from_branch(request, world_model)
+
+        assert result.system_instruction
+        assert result.user_prompt
+        assert "Аркаим" in result.user_prompt
+        assert "Консервативное развитие" in result.user_prompt
+        assert result.quality_score == 0.85
+        assert result.constraints_summary
+
+    def test_branch_context_included(self, world_model):
+        """Контекст ветви включён в промпт."""
+        from narrative_engine.story_from_branch import build_story_from_branch, BranchToStoryRequest
+
+        request = BranchToStoryRequest(
+            exploration_prompt="Тест",
+            branch_title="Радикальное развитие",
+            branch_type="radical",
+            epoch="satya_yuga",
+            quality_score=0.7,
+            strengths=["Сильная сторона 1"],
+            weaknesses=["Слабая сторона 1"],
+        )
+
+        result = build_story_from_branch(request, world_model)
+
+        assert "Радикальное развитие" in result.user_prompt
+        assert "radical" in result.user_prompt
+        assert "Сильная сторона 1" in result.user_prompt
+        assert "Слабая сторона 1" in result.user_prompt
+
+    def test_constraints_summary(self, world_model):
+        """Сводка ограничений формируется."""
+        from narrative_engine.story_from_branch import build_story_from_branch, BranchToStoryRequest
+
+        request = BranchToStoryRequest(
+            exploration_prompt="Тест",
+            branch_title="Тест",
+            branch_type="moderate",
+            epoch="satya_yuga",
+        )
+
+        result = build_story_from_branch(request, world_model)
+
+        assert "Эпоха" in result.constraints_summary or "Ограничения" in result.constraints_summary
+
+    def test_different_styles(self, world_model):
+        """Разные стили генерации."""
+        from narrative_engine.story_from_branch import build_story_from_branch, BranchToStoryRequest
+
+        for style in ["literary", "documentary", "poetic"]:
+            request = BranchToStoryRequest(
+                exploration_prompt="Тест",
+                branch_title="Тест",
+                branch_type="moderate",
+                epoch="satya_yuga",
+                style=style,
+            )
+            result = build_story_from_branch(request, world_model)
+            assert result.style == style
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])

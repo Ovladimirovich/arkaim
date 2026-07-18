@@ -28,7 +28,26 @@ const PROGRESS_STEPS = ['Проверка совместимости', 'Гене
 async function loadHistory(): Promise<HistoryItem[]> {
     try {
       const res = await api.get<{ data: any[] }>('/book/world-explorer/history?limit=50');
-      return (res.data || []).map((item: any) => ({
+      const generateTextFromBranch = async (branch: RankedBranch) => {
+    setGeneratingText(true);
+    try {
+      const res = await api.post<{ data: any }>('/book/world-explorer/generate-from-branch', {
+        exploration_prompt: prompt,
+        branch_title: branch.title,
+        branch_type: branch.branch_type,
+        epoch: epoch,
+        style: 'literary',
+        max_length: 2000,
+        quality_score: branch.quality_score,
+        strengths: branch.strengths,
+        weaknesses: branch.weaknesses,
+      });
+      setGeneratedText(res.data);
+    } catch { message.error('Ошибка генерации'); }
+    setGeneratingText(false);
+  };
+
+  return(res.data || []).map((item: any) => ({
         id: String(item.id),
         timestamp: new Date(item.created_at).getTime(),
         prompt: item.prompt,
@@ -63,6 +82,8 @@ function WorldExplorerContent() {
   const [selectedBranch, setSelectedBranch] = useState<RankedBranch | null>(null);
   const [compareBranches, setCompareBranches] = useState<RankedBranch[]>([]);
   const [showCompare, setShowCompare] = useState(false);
+  const [generatedText, setGeneratedText] = useState<{ system_instruction: string; user_prompt: string } | null>(null);
+  const [generatingText, setGeneratingText] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [progress, setProgress] = useState(-1);
   const [activeTab, setActiveTab] = useState('explore');
@@ -99,7 +120,26 @@ function WorldExplorerContent() {
   };
   const toggleCompare = (branch: RankedBranch) => { setCompareBranches(prev => { const exists = prev.find(b => b.rank === branch.rank); if (exists) return prev.filter(b => b.rank !== branch.rank); if (prev.length >= 3) return prev; return [...prev, branch]; }); };
 
-  return (
+  const generateTextFromBranch = async (branch: RankedBranch) => {
+    setGeneratingText(true);
+    try {
+      const res = await api.post<{ data: any }>('/book/world-explorer/generate-from-branch', {
+        exploration_prompt: prompt,
+        branch_title: branch.title,
+        branch_type: branch.branch_type,
+        epoch: epoch,
+        style: 'literary',
+        max_length: 2000,
+        quality_score: branch.quality_score,
+        strengths: branch.strengths,
+        weaknesses: branch.weaknesses,
+      });
+      setGeneratedText(res.data);
+    } catch { message.error('Ошибка генерации'); }
+    setGeneratingText(false);
+  };
+
+  return(
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
       <div style={{ marginBottom: 24 }}><Title level={2} style={{ margin: 0 }}><BranchesOutlined style={{ marginRight: 8 }} />Исследование мира</Title><Text type='secondary'>Исследуйте альтернативные линии развития мира книги</Text></div>
       {statsData?.data && (<div style={{ display: 'flex', gap: 16, marginBottom: 24 }}><Statistic title='Эпох' value={statsData.data.epochs_count || 0} /><Statistic title='Локаций' value={statsData.data.locations_count || 0} /><Statistic title='Паттернов' value={statsData.data.patterns_count || 0} /><Statistic title='Событий' value={statsData.data.events_count || 0} /></div>)}
@@ -123,8 +163,8 @@ function WorldExplorerContent() {
           {history.length === 0 ? <Empty description='История пуста' /> : <List dataSource={history} renderItem={(item: HistoryItem) => <List.Item actions={[<Button key='l' size='small' onClick={() => loadFromHistory(item)}>Загрузить</Button>, <Button key='d' size='small' danger icon={<DeleteOutlined />} onClick={() => deleteFromHistory(item.id)} />]}><List.Item.Meta title={item.prompt} description={<Space><Tag>{item.epoch || 'Все эпохи'}</Tag><Tag color='blue'>{item.result.ranked_branches.length} ветвей</Tag><Text type='secondary' style={{ fontSize: 12 }}>{new Date(item.timestamp).toLocaleString('ru-RU')}</Text></Space>} /></List.Item>} />}
         </TabPane>
       </Tabs>
-      <Modal title={selectedBranch?.title || 'Детали ветви'} open={!!selectedBranch} onCancel={() => setSelectedBranch(null)} footer={null} width={700}>
-        {selectedBranch && <Space direction='vertical' style={{ width: '100%' }}><Descriptions column={2}><Descriptions.Item label='Тип'><Tag>{BRANCH_TYPE_LABELS[selectedBranch.branch_type] || selectedBranch.branch_type}</Tag></Descriptions.Item><Descriptions.Item label='Ранг'>#{selectedBranch.rank}</Descriptions.Item></Descriptions><Divider /><Title level={5}>Критерии</Title>{Object.entries(CRITERIA_LABELS).map(([key, label]) => <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}><Text style={{ width: 120, fontSize: 13 }}>{label}</Text><Progress percent={Math.round(selectedBranch.quality_score * 100)} size='small' style={{ flex: 1 }} /></div>)}<Divider /><div style={{ display: 'flex', gap: 16 }}><div style={{ flex: 1 }}><Text strong>Сильные стороны:</Text>{selectedBranch.strengths.length > 0 ? selectedBranch.strengths.map((s, i) => <div key={i}><Tag color='green'>{s}</Tag></div>) : <Text type='secondary'>Нет</Text>}</div><div style={{ flex: 1 }}><Text strong>Слабые стороны:</Text>{selectedBranch.weaknesses.length > 0 ? selectedBranch.weaknesses.map((w, i) => <div key={i}><Tag color='red'>{w}</Tag></div>) : <Text type='secondary'>Нет</Text>}</div></div><Divider /><Descriptions column={3}><Descriptions.Item label='Влияние'><Progress type='circle' percent={Math.round(selectedBranch.impact_score * 100)} size={50} /></Descriptions.Item><Descriptions.Item label='Противоречия'><Badge count={selectedBranch.contradictions} showZero color={selectedBranch.contradictions > 0 ? 'red' : 'green'}><NodeIndexOutlined style={{ fontSize: 24 }} /></Badge></Descriptions.Item><Descriptions.Item label='Изменения'><Statistic value={selectedBranch.delta_changes} /></Descriptions.Item></Descriptions></Space>}
+      <Modal title={selectedBranch?.title || 'Детали ветви'} open={!!selectedBranch} onCancel={() => { setSelectedBranch(null); setGeneratedText(null); }} footer={selectedBranch ? [<Button key='gen' type='primary' loading={generatingText} onClick={() => selectedBranch && generateTextFromBranch(selectedBranch)}>Сгенерировать текст</Button>] : []} width={700}>
+        {selectedBranch && <Space direction='vertical' style={{ width: '100%' }}><Descriptions column={2}><Descriptions.Item label='Тип'><Tag>{BRANCH_TYPE_LABELS[selectedBranch.branch_type] || selectedBranch.branch_type}</Tag></Descriptions.Item><Descriptions.Item label='Ранг'>#{selectedBranch.rank}</Descriptions.Item></Descriptions><Divider /><Title level={5}>Критерии</Title>{Object.entries(CRITERIA_LABELS).map(([key, label]) => <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}><Text style={{ width: 120, fontSize: 13 }}>{label}</Text><Progress percent={Math.round(selectedBranch.quality_score * 100)} size='small' style={{ flex: 1 }} /></div>)}<Divider /><div style={{ display: 'flex', gap: 16 }}><div style={{ flex: 1 }}><Text strong>Сильные стороны:</Text>{selectedBranch.strengths.length > 0 ? selectedBranch.strengths.map((s, i) => <div key={i}><Tag color='green'>{s}</Tag></div>) : <Text type='secondary'>Нет</Text>}</div><div style={{ flex: 1 }}><Text strong>Слабые стороны:</Text>{selectedBranch.weaknesses.length > 0 ? selectedBranch.weaknesses.map((w, i) => <div key={i}><Tag color='red'>{w}</Tag></div>) : <Text type='secondary'>Нет</Text>}</div></div><Divider /><Descriptions column={3}><Descriptions.Item label='Влияние'><Progress type='circle' percent={Math.round(selectedBranch.impact_score * 100)} size={50} /></Descriptions.Item><Descriptions.Item label='Противоречия'><Badge count={selectedBranch.contradictions} showZero color={selectedBranch.contradictions > 0 ? 'red' : 'green'}><NodeIndexOutlined style={{ fontSize: 24 }} /></Badge></Descriptions.Item><Descriptions.Item label='Изменения'><Statistic value={selectedBranch.delta_changes} /></Descriptions.Item></Descriptions>{generatedText && (<><Divider /><Title level={5}>Сгенерированный промпт</Title><Card size='small' style={{ maxHeight: 300, overflow: 'auto' }}><Text style={{ fontSize: 12, whiteSpace: 'pre-wrap' }}>{generatedText.user_prompt}</Text></Card></>)}</Space>}
       </Modal>
       <Modal title='Сравнение ветвей' open={showCompare} onCancel={() => setShowCompare(false)} footer={null} width={900}>
         <div style={{ display: 'flex', gap: 16 }}>{compareBranches.map(branch => <Card key={branch.rank} size='small' style={{ flex: 1 }}><Title level={5}>{branch.title}</Title><Tag color={branch.rank === 1 ? 'green' : 'blue'}>#{branch.rank}</Tag><Divider />{Object.entries(CRITERIA_LABELS).map(([key, label]) => <div key={key} style={{ marginBottom: 4 }}><Text style={{ fontSize: 12 }}>{label}</Text><Progress percent={Math.round(branch.quality_score * 100)} size='small' strokeColor={branch.quality_score >= 0.8 ? '#52c41a' : '#faad14'} /></div>)}<Divider /><Statistic title='Балл' value={branch.quality_score} precision={3} /></Card>)}</div>
