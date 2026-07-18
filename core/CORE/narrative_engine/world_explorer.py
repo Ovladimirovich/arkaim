@@ -15,7 +15,10 @@
 
 import logging
 import time
+import uuid
 from typing import Optional
+
+from narrative_engine.exploration_ws import ExplorationNotifier, notifier
 
 from pydantic import BaseModel, Field
 
@@ -84,9 +87,22 @@ class WorldExplorer:
         self._quality_evaluator = QualityEvaluator(world_model)
         self._branch_manager = BranchManager(world_model)
 
-    def explore(self, request: ExplorationRequest) -> ExplorationResult:
-        """Полный pipeline исследования."""
+    def explore(self, request: ExplorationRequest, ws_notifier: Optional[ExplorationNotifier] = None) -> ExplorationResult:
+        """Полный pipeline исследования с опциональными WebSocket нотификациями."""
         start_time = time.time()
+        exploration_id = str(uuid.uuid4())[:8]
+        notify = ws_notifier or notifier
+
+        # 0. Уведомление о начале
+        import asyncio
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                asyncio.ensure_future(notify.notify_started(
+                    exploration_id, request.prompt, request.epoch, request.branch_count
+                ))
+        except Exception:
+            pass
 
         # 1. Проверка совместимости
         story_request = StoryRequest(
@@ -95,8 +111,13 @@ class WorldExplorer:
             location=request.location,
         )
         compat_report = self._compatibility_checker.check(story_request)
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                asyncio.ensure_future(notify.notify_progress(0, f"Score: {compat_report.overall_score:.2f}"))
+        except Exception:
+            pass
 
-        # Если идея несовместима — всё равно продолжаем, но с предупреждением
         if not compat_report.is_compatible:
             log.warning("idea_not_compatible score=%.2f", compat_report.overall_score)
 
@@ -106,10 +127,16 @@ class WorldExplorer:
                 request.epoch, limit=request.branch_count
             )
         else:
-            # Проактивная генерация
             hypotheses = self._hypothesis_generator.generate_proactive(
                 limit=request.branch_count
             )
+
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                asyncio.ensure_future(notify.notify_progress(1, f"Гипотез: {len(hypotheses)}"))
+        except Exception:
+            pass
 
         if not hypotheses:
             return ExplorationResult(
@@ -118,47 +145,63 @@ class WorldExplorer:
                 duration_ms=(time.time() - start_time) * 1000,
             )
 
-        # Берём лучшую гипотезу
         best_hypothesis = hypotheses[0]
 
         # 3. Моделирование сценария
         scenario = self._scenario_modeler.model_scenario(
             best_hypothesis, branch_count=request.branch_count
         )
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                asyncio.ensure_future(notify.notify_progress(2, f"Ветвей: {scenario.branch_count}"))
+        except Exception:
+            pass
 
         # 4. Оценка влияния и противоречий для каждой ветви
         ranked_branches = []
-        for branch in scenario.branches:
-            # Оценка влияния
+        for idx, branch in enumerate(scenario.branches):
             impact = None
             if branch.cause_effect_tree:
                 impact = self._impact_assessor.assess(
                     branch.cause_effect_tree, epoch_id=request.epoch
                 )
 
-            # Проверка противоречий
             contradictions = None
             if branch.cause_effect_tree:
                 contradictions = self._contradiction_detector.detect(
                     branch.cause_effect_tree
                 )
 
-            # Изменения мира
             delta = None
             if branch.cause_effect_tree and impact:
                 delta = self._delta_calculator.calculate(
                     branch.cause_effect_tree, impact, epoch_id=request.epoch
                 )
 
-            # Сохраняем в ветви
             branch.impact_report = impact
             branch.contradiction_report = contradictions
             branch.world_delta = delta
 
+        # Уведомления об этапах 3-6
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                asyncio.ensure_future(notify.notify_progress(3, "Влияние оценено"))
+                asyncio.ensure_future(notify.notify_progress(4, "Противоречия проверены"))
+                asyncio.ensure_future(notify.notify_progress(5, "Изменения рассчитаны"))
+        except Exception:
+            pass
+
         # 5. Оценка качества и ранжирование
         quality_reports = self._quality_evaluator.evaluate_branches(scenario.branches)
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                asyncio.ensure_future(notify.notify_progress(6, "Качество оценено"))
+        except Exception:
+            pass
 
-        # Собираем RankedBranch
         for i, (branch, quality) in enumerate(zip(scenario.branches, quality_reports)):
             ranked_branches.append(RankedBranch(
                 rank=quality.rank,
@@ -177,10 +220,22 @@ class WorldExplorer:
 
         # 7. Формируем результат
         duration_ms = (time.time() - start_time) * 1000
+        best_score = ranked_branches[0].quality_report.overall_score if ranked_branches else 0.0
 
         summary = self._generate_summary(
             best_hypothesis, scenario, ranked_branches, duration_ms
         )
+
+        # Уведомление о завершении
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                asyncio.ensure_future(notify.notify_progress(7, "Ранжирование завершено"))
+                asyncio.ensure_future(notify.notify_complete(
+                    summary, len(ranked_branches), best_score, duration_ms
+                ))
+        except Exception:
+            pass
 
         return ExplorationResult(
             request=request,

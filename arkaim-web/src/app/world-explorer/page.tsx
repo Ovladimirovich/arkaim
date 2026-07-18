@@ -6,6 +6,7 @@ import { ExperimentOutlined, ThunderboltOutlined, HistoryOutlined, DeleteOutline
 import { api } from '@/shared/lib/api';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { ProtectedRoute } from '@/shared/lib/guards';
+import { useWsEvent } from '@/shared/lib/ws-hooks';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -59,7 +60,9 @@ function WorldExplorerContent() {
     onError: () => { setProgress(-1); message.error('Ошибка исследования'); },
   });
 
-  useEffect(() => { if (exploreMutation.isPending) { setProgress(0); let step = 0; progressTimer.current = setInterval(() => { step++; if (step < PROGRESS_STEPS.length) setProgress(step); }, 400); } else { if (progressTimer.current) clearInterval(progressTimer.current); } return () => { if (progressTimer.current) clearInterval(progressTimer.current); }; }, [exploreMutation.isPending]);
+  // WebSocket real-time progress
+  useWsEvent('exploration_progress' as any, (data: any) => { if (data.step !== undefined) setProgress(data.step); });
+  useWsEvent('exploration_complete' as any, () => { setProgress(-1); });
 
   const exploreFromHypothesis = async (hyp: Hypothesis) => { try { setProgress(0); const res = await api.post<{ data: ExplorationResult }>(/book/world-explorer/explore/hypothesis?hypothesis_id=&epoch=&branch_count=, {}); setResult(res.data); setProgress(-1); setActiveTab('explore'); } catch { setProgress(-1); message.error('Ошибка'); } };
   const loadFromHistory = (item: HistoryItem) => { setPrompt(item.prompt); setEpoch(item.epoch); setResult(item.result); setActiveTab('explore'); };
