@@ -9,8 +9,10 @@ import logging
 import time
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
+
+from auth.rbac import get_current_user
 
 from narrative_engine.world_model import WorldModel
 from narrative_engine.world_explorer import (
@@ -221,12 +223,12 @@ async def get_stats():
 
 
 @router.get("/history", summary="История исследований")
-async def get_history(limit: int = 50, offset: int = 0):
+async def get_history(limit: int = 50, offset: int = 0, user: dict = Depends(get_current_user)):
     """Получить список прошлых исследований (для текущего пользователя)."""
     try:
         from core.memory.exploration_store import get_exploration_store
         store = get_exploration_store()
-        items = await store.list_by_user(user_id="dev", limit=limit, offset=offset)
+        items = await store.list_by_user(user_id=user.get("user_id", ""), limit=limit, offset=offset)
         return {"ok": True, "data": items, "count": len(items)}
     except Exception as e:
         log.warning("history_load_error error=%s", e)
@@ -258,12 +260,12 @@ async def get_history_item(exploration_id: int):
 
 
 @router.delete("/history/{exploration_id}", summary="Удалить исследование")
-async def delete_history_item(exploration_id: int):
+async def delete_history_item(exploration_id: int, user: dict = Depends(get_current_user)):
     """Удалить исследование из истории."""
     try:
         from core.memory.exploration_store import get_exploration_store
         store = get_exploration_store()
-        deleted = await store.delete(exploration_id, user_id="dev")
+        deleted = await store.delete(exploration_id, user_id=user.get("user_id", ""))
         if not deleted:
             raise HTTPException(404, detail="Исследование не найдено")
         return {"ok": True}
@@ -288,13 +290,13 @@ class SaveExplorationRequest(BaseModel):
 
 
 @router.post("/history", summary="Сохранить исследование")
-async def save_history(request: SaveExplorationRequest):
+async def save_history(request: SaveExplorationRequest, user: dict = Depends(get_current_user)):
     """Сохранить результат исследования в историю."""
     try:
         from core.memory.exploration_store import get_exploration_store
         store = get_exploration_store()
         item_id = await store.save(
-            user_id="dev",
+            user_id=user.get("user_id", ""),
             prompt=request.prompt,
             epoch=request.epoch,
             branch_count=request.branch_count,
