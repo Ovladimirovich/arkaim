@@ -25,6 +25,7 @@ const NAV_GROUPS = [
       { key: '/library', icon: <ReadOutlined />, label: 'Библиотека' },
       { key: '/genres', icon: <TagsOutlined />, label: 'Жанры' },
       { key: '/visual-view', icon: <EyeOutlined />, label: 'Визуал' },
+      { key: '/world-explorer', icon: <BranchesOutlined />, label: 'Исследование' },
     ],
   },
   {

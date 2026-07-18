@@ -50,6 +50,9 @@ const MOCK_DATA: Record<string, any> = IS_DEV ? {
   '/book/email/stats': { subscribers: 156, sent: 1200, errors: 3 },
   '/book/email/drafts': [{ id: 'd1', subject: 'Недельный дайджест', status: 'sent', created_at: new Date().toISOString() }],
   '/book/email/subscribers': [{ email: 'reader@example.com', name: 'Иван', subscribed_at: new Date().toISOString() }],
+  '/book/world-explorer/epochs': { data: [{ id: 'satya_yuga', name: 'Satya Yuga', name_ru: 'Сатья Юга', order: 1 }, { id: 'kali_yuga', name: 'Kali Yuga', name_ru: 'Кали Юга', order: 4 }] },
+  '/book/world-explorer/stats': { data: { world_model: 'Мир: 12 эпох', patterns_count: 54, epochs_count: 12, locations_count: 12, events_count: 17 } },
+
   '/book/graph/stats': { nodes: 150, edges: 300, node_types: { character: 20, location: 10, concept: 50 }, relationship_types: { knows: 50, lives_in: 30, part_of: 20 } },
   '/xray/stats': { active_traces: 0, completed_traces: 42, orphan_spans: 0 },
   '/xray/traces': [{ trace_id: 't1', name: 'book.ask', status: 'ok', duration_ms: 150, started_at: new Date().toISOString() }],
