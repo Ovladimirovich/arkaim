@@ -255,6 +255,92 @@ async def search_external_sources(
         raise HTTPException(500, detail=str(e))
 
 
+# ── Глубокое исследование ─────────────────────────────────
+
+
+class DeepExplorationRequest(BaseModel):
+    prompt: str
+    epoch: Optional[str] = None
+    parent_branch_id: Optional[str] = None
+    max_depth: int = 3
+    branches_per_level: int = 3
+
+
+@router.post("/explore-deep", summary="Глубокое исследование мира")
+async def explore_deep(request: DeepExplorationRequest):
+    """Многоуровневое исследование мира с ветвлением от ветвей."""
+    try:
+        from narrative_engine.deep_explorer import DeepExplorer, DeepExplorationRequest as DEReq
+
+        wm = _get_world_model()
+        explorer = DeepExplorer(wm)
+
+        deep_request = DEReq(
+            prompt=request.prompt,
+            epoch=request.epoch,
+            parent_branch_id=request.parent_branch_id,
+            max_depth=request.max_depth,
+            branches_per_level=request.branches_per_level,
+        )
+
+        tree = explorer.explore_deep(deep_request)
+
+        return {
+            "ok": True,
+            "data": {
+                "total_nodes": tree.total_nodes,
+                "max_depth": tree.max_depth_reached,
+                "summary": tree.summary,
+                "nodes": {
+                    nid: {
+                        "id": n.id,
+                        "hypothesis_title": n.hypothesis.title_ru if n.hypothesis else "",
+                        "hypothesis_type": n.hypothesis.hypothesis_type.value if n.hypothesis and hasattr(n.hypothesis.hypothesis_type, 'value') else "",
+                        "quality_score": n.quality_score,
+                        "depth": n.depth,
+                        "children": n.children,
+                        "parent_id": n.parent_id,
+                    }
+                    for nid, n in tree.nodes.items()
+                },
+            },
+        }
+    except Exception as e:
+        log.error("deep_exploration_error error=%s", e)
+        raise HTTPException(500, detail=str(e))
+
+
+@router.get("/free-points", summary="Свободные точки мира")
+async def get_free_points(epoch: Optional[str] = None):
+    """Обнаружить «свободные точки» мира — где есть потенциал для развития."""
+    try:
+        from narrative_engine.deep_explorer import DeepExplorer
+
+        wm = _get_world_model()
+        explorer = DeepExplorer(wm)
+        free_points = explorer.find_free_points(epoch_id=epoch)
+
+        return {
+            "ok": True,
+            "data": free_points,
+            "count": len(free_points),
+        }
+    except Exception as e:
+        log.error("free_points_error error=%s", e)
+        raise HTTPException(500, detail=str(e))
+
+
+@router.get("/best-paths", summary="Лучшие пути в дереве")
+async def get_best_paths(tree_id: str = "root", top_n: int = 3):
+    """Найти лучшие пути в дереве глубокого исследования."""
+    # Заглушка — в реальности tree хранится в сессии/БД
+    return {
+        "ok": True,
+        "data": [],
+        "message": "Используйте /explore-deep для создания дерева, затем best-paths",
+    }
+
+
 # ── История исследований ──────────────────────────────────
 
 

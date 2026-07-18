@@ -1398,5 +1398,112 @@ class TestExternalSources:
         assert isinstance(results, list)
 
 
+# ── Этап 11: Deep Explorer Tests ───────────────────────────
+
+class TestDeepExplorer:
+    """Тесты многоуровневого исследования."""
+
+    def test_explore_deep_creates_tree(self, world_model):
+        """Глубокое исследование создаёт дерево."""
+        from narrative_engine.deep_explorer import DeepExplorer, DeepExplorationRequest
+
+        explorer = DeepExplorer(world_model)
+        request = DeepExplorationRequest(
+            prompt="Что если Аркаим не был разрушен?",
+            epoch="satya_yuga",
+            max_depth=2,
+            branches_per_level=2,
+        )
+
+        tree = explorer.explore_deep(request)
+        assert tree.total_nodes > 0
+        assert tree.max_depth_reached >= 1
+        assert tree.root_node is not None
+
+    def test_explore_deep_max_depth(self, world_model):
+        """Глубокое исследование уважает max_depth."""
+        from narrative_engine.deep_explorer import DeepExplorer, DeepExplorationRequest
+
+        explorer = DeepExplorer(world_model)
+        request = DeepExplorationRequest(
+            prompt="Тест",
+            epoch="satya_yuga",
+            max_depth=1,
+            branches_per_level=2,
+        )
+
+        tree = explorer.explore_deep(request)
+        assert tree.max_depth_reached <= 1
+
+    def test_find_free_points(self, world_model):
+        """Обнаружение свободных точек мира."""
+        from narrative_engine.deep_explorer import DeepExplorer
+
+        explorer = DeepExplorer(world_model)
+        free_points = explorer.find_free_points(epoch_id="satya_yuga")
+
+        assert isinstance(free_points, list)
+        assert len(free_points) > 0
+        # Есть хотя бы персонажи
+        char_points = [p for p in free_points if p["type"] == "character"]
+        assert len(char_points) > 0
+
+    def test_find_free_points_all_epochs(self, world_model):
+        """Свободные точки для всех эпох."""
+        from narrative_engine.deep_explorer import DeepExplorer
+
+        explorer = DeepExplorer(world_model)
+        free_points = explorer.find_free_points()
+
+        assert isinstance(free_points, list)
+
+    def test_get_best_paths(self, world_model):
+        """Поиск лучших путей в дереве."""
+        from narrative_engine.deep_explorer import DeepExplorer, DeepExplorationRequest
+
+        explorer = DeepExplorer(world_model)
+        request = DeepExplorationRequest(
+            prompt="Тест",
+            epoch="satya_yuga",
+            max_depth=2,
+            branches_per_level=2,
+        )
+
+        tree = explorer.explore_deep(request)
+        paths = explorer.get_best_paths(tree, top_n=2)
+
+        assert isinstance(paths, list)
+        assert len(paths) > 0
+        # Каждый путь начинается с корня
+        for path in paths:
+            assert path[0] == "root"
+
+    def test_explore_from_branch(self, world_model):
+        """Ветвление от конкретной ветви."""
+        from narrative_engine.deep_explorer import DeepExplorer, DeepExplorationRequest
+
+        explorer = DeepExplorer(world_model)
+        request = DeepExplorationRequest(
+            prompt="Тест",
+            epoch="satya_yuga",
+            max_depth=1,
+            branches_per_level=2,
+        )
+
+        tree = explorer.explore_deep(request)
+        initial_count = tree.total_nodes
+
+        # Находим ветвь для продолжения
+        branch_id = None
+        for nid, node in tree.nodes.items():
+            if node.children:
+                branch_id = nid
+                break
+
+        if branch_id:
+            tree = explorer.explore_from_branch(branch_id, tree, branches_per_level=2)
+            assert tree.total_nodes > initial_count
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])
