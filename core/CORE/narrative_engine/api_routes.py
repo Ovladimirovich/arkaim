@@ -219,6 +219,42 @@ async def get_stats():
     }
 
 
+# ── Внешние источники ─────────────────────────────────────
+
+
+@router.get("/sources/search", summary="Поиск во внешних источниках")
+async def search_external_sources(
+    query: str,
+    limit: int = 5,
+    sources: Optional[str] = None,
+):
+    """Поиск во внешних источниках (Wikipedia, Semantic Scholar, OpenAlex).
+
+    Args:
+        query: Поисковый запрос
+        limit: Максимум результатов с одного источника
+        sources: Список источников через запятую (wikipedia,semantic_scholar,openalex)
+    """
+    try:
+        from narrative_engine.external_sources import search_all_sources, search_local_knowledge
+
+        source_list = sources.split(",") if sources else None
+        external_results = await search_all_sources(query, limit_per_source=limit, sources=source_list)
+        local_results = search_local_knowledge(query, limit=limit)
+
+        all_results = external_results + local_results
+
+        return {
+            "ok": True,
+            "data": [r.model_dump() for r in all_results],
+            "count": len(all_results),
+            "sources_searched": source_list or ["wikipedia", "semantic_scholar", "openalex", "local"],
+        }
+    except Exception as e:
+        log.error("sources_search_error error=%s", e)
+        raise HTTPException(500, detail=str(e))
+
+
 # ── История исследований ──────────────────────────────────
 
 
