@@ -1779,5 +1779,84 @@ class TestUnifiedPipeline:
         assert story.style == "literary"
 
 
+# ── Этап 15: Export Report Tests ───────────────────────────
+
+class TestExportReport:
+    """Тесты экспорта результатов."""
+
+    def test_generate_markdown_report(self, world_model):
+        """Генерация Markdown отчёта."""
+        from narrative_engine.world_explorer import WorldExplorer, ExplorationRequest
+        from narrative_engine.export_report import generate_markdown_report
+
+        explorer = WorldExplorer(world_model)
+        request = ExplorationRequest(
+            prompt="Тест экспорта",
+            epoch="satya_yuga",
+            branch_count=2,
+        )
+        result = explorer.explore(request)
+        report = generate_markdown_report(result)
+
+        assert report.title
+        assert report.created_at
+        assert report.markdown
+        assert "# " in report.markdown
+        assert "Результаты исследования" in report.markdown
+
+    def test_report_contains_branches_table(self, world_model):
+        """Отчёт содержит таблицу ветвей."""
+        from narrative_engine.world_explorer import WorldExplorer, ExplorationRequest
+        from narrative_engine.export_report import generate_markdown_report
+
+        explorer = WorldExplorer(world_model)
+        request = ExplorationRequest(
+            prompt="Тест",
+            epoch="satya_yuga",
+            branch_count=2,
+        )
+        result = explorer.explore(request)
+        report = generate_markdown_report(result)
+
+        assert "| # |" in report.markdown
+        assert "Качество" in report.markdown
+
+    def test_report_contains_recommendations(self, world_model):
+        """Отчёт содержит рекомендации."""
+        from narrative_engine.world_explorer import WorldExplorer, ExplorationRequest
+        from narrative_engine.export_report import generate_markdown_report
+
+        explorer = WorldExplorer(world_model)
+        request = ExplorationRequest(
+            prompt="Тест",
+            epoch="satya_yuga",
+            branch_count=2,
+        )
+        result = explorer.explore(request)
+        report = generate_markdown_report(result)
+
+        assert len(report.recommendations) > 0
+        assert "Рекомендации" in report.markdown
+
+    def test_report_has_metadata(self, world_model):
+        """Отчёт содержит метаданные."""
+        from narrative_engine.world_explorer import WorldExplorer, ExplorationRequest
+        from narrative_engine.export_report import generate_markdown_report
+
+        explorer = WorldExplorer(world_model)
+        request = ExplorationRequest(
+            prompt="Тест метаданных",
+            epoch="satya_yuga",
+            branch_count=2,
+        )
+        result = explorer.explore(request)
+        report = generate_markdown_report(result)
+
+        assert report.prompt == "Тест метаданных"
+        assert report.epoch == "satya_yuga"
+        assert report.branch_count == 2
+        assert report.duration_ms > 0
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])

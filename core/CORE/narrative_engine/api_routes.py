@@ -336,6 +336,53 @@ async def unified_pipeline(request: UnifiedRequest):
         raise HTTPException(500, detail=str(e))
 
 
+# ── Экспорт результатов ───────────────────────────────────
+
+
+class ExportRequest(BaseModel):
+    prompt: str
+    epoch: Optional[str] = None
+    branch_count: int = 3
+
+
+@router.post("/export", summary="Экспорт результатов исследования в Markdown")
+async def export_results(request: ExportRequest):
+    """Сгенерировать Markdown отчёт о результатах исследования."""
+    try:
+        from narrative_engine.world_explorer import WorldExplorer, ExplorationRequest as ExpReq
+        from narrative_engine.export_report import generate_markdown_report
+
+        wm = _get_world_model()
+        explorer = WorldExplorer(wm)
+
+        exploration_request = ExpReq(
+            prompt=request.prompt,
+            epoch=request.epoch,
+            branch_count=request.branch_count,
+        )
+        result = explorer.explore(exploration_request)
+        report = generate_markdown_report(result)
+
+        return {
+            "ok": True,
+            "data": {
+                "title": report.title,
+                "created_at": report.created_at,
+                "prompt": report.prompt,
+                "epoch": report.epoch,
+                "branch_count": report.branch_count,
+                "best_score": report.best_score,
+                "duration_ms": report.duration_ms,
+                "branches_summary": report.branches_summary,
+                "recommendations": report.recommendations,
+                "markdown": report.markdown,
+            },
+        }
+    except Exception as e:
+        log.error("export_error error=%s", e)
+        raise HTTPException(500, detail=str(e))
+
+
 # ── Внешние источники ─────────────────────────────────────
 
 
