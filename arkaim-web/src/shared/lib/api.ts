@@ -51,9 +51,9 @@ const MOCK_DATA: Record<string, any> = IS_DEV ? {
   '/book/email/drafts': [{ id: 'd1', subject: 'Недельный дайджест', status: 'sent', created_at: new Date().toISOString() }],
   '/book/email/subscribers': [{ email: 'reader@example.com', name: 'Иван', subscribed_at: new Date().toISOString() }],
   '/book/world-explorer/epochs': { data: [{ id: 'satya_yuga', name: 'Satya Yuga', name_ru: 'Сатья Юга', order: 1 }, { id: 'kali_yuga', name: 'Kali Yuga', name_ru: 'Кали Юга', order: 4 }] },
-  '/book/world-explorer/stats': { data: { world_model: '  '/book/world-explorer/generate-from-branch': { data: { system_instruction: 'System prompt', user_prompt: 'Generated story prompt...', style: 'literary', max_length: 2000, branch_title: 'Test', quality_score: 0.85, constraints_summary: 'Test constraints' } },
-  '/book/world-explorer/history': { data: [{ id: 1, prompt: 'Test exploration', epoch: 'satya_yuga', hypothesis_title: 'Pattern', summary: 'Test', overall_score: 0.85, branch_count_actual: 3, duration_ms: 150, created_at: new Date().toISOString() }], count: 1 },
+  '/book/world-explorer/generate-from-branch': { data: { system_instruction: 'System prompt', user_prompt: 'Generated story prompt...', style: 'literary', max_length: 2000, branch_title: 'Test', quality_score: 0.85, constraints_summary: 'Test constraints' } },
   '/book/world-explorer/stats': { data: { world_model: 'Мир: 12 эпох', patterns_count: 54, epochs_count: 12, locations_count: 12, events_count: 17 } },
+  '/book/world-explorer/history': { data: [{ id: 1, prompt: 'Test exploration', epoch: 'satya_yuga', hypothesis_title: 'Pattern', summary: 'Test', overall_score: 0.85, branch_count_actual: 3, duration_ms: 150, created_at: new Date().toISOString() }], count: 1 },
 
   '/book/graph/stats': { nodes: 150, edges: 300, node_types: { character: 20, location: 10, concept: 50 }, relationship_types: { knows: 50, lives_in: 30, part_of: 20 } },
   '/xray/stats': { active_traces: 0, completed_traces: 42, orphan_spans: 0 },
