@@ -6,7 +6,7 @@ import {
   HistoryOutlined, UploadOutlined, PictureOutlined, EyeOutlined,
   TagsOutlined, TrophyOutlined, FileTextOutlined, QuestionCircleOutlined,
   InfoCircleOutlined, SettingOutlined,
-  CodeOutlined, DollarOutlined, RiseOutlined, BellOutlined, SearchOutlined,
+  CodeOutlined, DollarOutlined, RiseOutlined, BellOutlined, SearchOutlined, BranchesOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
