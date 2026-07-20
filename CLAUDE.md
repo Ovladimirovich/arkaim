@@ -16,7 +16,7 @@ cd arkaim-web && npx vitest run    # Тесты
 - Frontend проксирует API на бэкенд через Next.js rewrites
 
 ## Текущее состояние
-- **30 страниц** фронтенда, все работают (включая World Explorer)
+- **34 страницы** фронтенда, все работают (включая World Explorer и World Engine)
 - **111+ unit-тестов** (backend) + 30 (frontend)
 - **168 тем** в ExpansionLayer (расширенные знания)
 - **11 модулей** обогащения знаний
@@ -38,7 +38,7 @@ cd arkaim-web && npx vitest run    # Тесты
 - API прокси: Next.js rewrites (3000 → 8642)
 - FSD: entities / features / widgets / shared
 
-## Страницы (29 шт.)
+## Страницы (34 шт.)
 | Страница | Путь | Описание |
 |----------|------|----------|
 | Задать вопрос | /ask | Минималистичный ввод вопроса, популярные вопросы, streaming |
@@ -93,6 +93,69 @@ cd arkaim-web && npx vitest run    # Тесты
 - **5 правил** консистентности мира
 - **10 режимов** работы
 - **10 API эндпоинтов** на `/book/world/`
+
+### Категории мира
+| Категория | Количество |
+|-----------|------------|
+| philosophy | 268 |
+| language | 134 |
+| geography | 38 |
+| mythology | 37 |
+| technologies | 22 |
+| social_structure | 12 |
+| religion | 10 |
+| rituals | 10 |
+| architecture | 5 |
+| civilizations | 4 |
+| daily_life | 3 |
+| climate | 2 |
+| transport | 2 |
+
+### API Эндпоинты
+```
+/book/world/summary              # Сводка мира
+/book/world/search               # Поиск по миру
+/book/world/entity/{id}          # Получить сущность
+/book/world/entity/{id}/context  # Контекст сущности
+/book/world/entity/{id}/visual-prompt  # Визуальный промпт
+/book/world/validate             # Проверка консистентности
+/book/world/rules                # Правила мира
+/book/world/modes                # Режимы работы
+/book/world/categories           # Категории мира
+/book/world/form-library         # Библиотека форм
+```
+
+### Команды
+```bash
+cd runtime && python world_cli.py stats           # Статистика мира
+cd runtime && python world_cli.py search "Аркаим" # Поиск
+cd runtime && python world_cli.py visual region_arkaim  # Визуальный промпт
+cd runtime && python demo_world_engine.py         # Демонстрация
+```
+
+### Файлы
+| Файл | Описание |
+|------|----------|
+| `core/CORE/narrative_engine/world_engine.py` | WorldEngine — координатор |
+| `core/CORE/narrative_engine/world_model_ext.py` | Расширенная модель мира |
+| `core/CORE/narrative_engine/form_engine.py` | Движок форм |
+| `core/CORE/narrative_engine/consistency_engine.py` | Проверка консистентности |
+| `core/CORE/narrative_engine/experience_engine.py` | 10 режимов работы |
+| `runtime/world_cli.py` | CLI интерфейс |
+| `runtime/world_batch.py` | Пакетная обработка |
+| `runtime/demo_world_engine.py` | Демонстрация |
+
+
+
+## World Engine (НОВЫЙ)
+
+### Статистика
+- **547 сущностей** мира в 13 категориях
+- **287 связей** между сущностями (8 типов)
+- **55 форм** для визуализации (11 категорий)
+- **5 правил** консистентности мира
+- **10 режимов** работы
+- **10 API эンドпоинтов** на `/book/world/`
 
 ### Категории мира
 | Категория | Количество |

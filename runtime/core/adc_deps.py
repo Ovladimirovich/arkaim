@@ -1,219 +1,328 @@
-"""
+﻿"""
 adc_deps — FastAPI зависимости для ADC-компонентов.
-CORE/ добавляется в sys.path один раз при старте (core/main.py).
+
+Использует ServiceRegistry вместо @functools.cache для управления
+ жизненным циклом экземпляров.
 """
 
 import logging
-from typing import Optional
 
 from fastapi import Depends
-from core.pulse_manager import get_pulse as _gp, get_voice as _gv, get_reader_memory as _grm
+from core.services.registry import registry
 
 log = logging.getLogger("hermes.adc_deps")
 
 
-# ── Pulse + Voice (живые, через pulse_manager) ───────
+# ── Фабрики (регистрируются один раз при импорте модуля) ──────
 
-import functools
-
-
-@functools.cache
-def _cached_pulse():
+def _factory_pulse():
+    from core.pulse_manager import get_pulse as _gp
     return _gp()
 
 
-@functools.cache
-def _cached_voice():
+def _factory_voice():
+    from core.pulse_manager import get_voice as _gv
     return _gv()
 
 
-def get_pulse():
-    return _cached_pulse()
-
-
-def get_voice():
-    return _cached_voice()
-
-
-# ── Агенты (с Pulse) ─────────────────────────────────
-
-def _get_keeper():
-    from agents.keeper import KeeperAgent
-    return KeeperAgent(pulse=_cached_pulse(), voice=_cached_voice())
-
-
-def _get_herald():
-    from agents.keeper import HeraldAgent
-    return HeraldAgent(pulse=_cached_pulse())
-
-
-def _get_diplomat():
-    from agents.keeper import DiplomatAgent
-    return DiplomatAgent(pulse=_cached_pulse())
-
-
-@functools.cache
-def _cached_keeper():
-    return _get_keeper()
-
-
-@functools.cache
-def _cached_herald():
-    return _get_herald()
-
-
-@functools.cache
-def _cached_diplomat():
-    return _get_diplomat()
-
-
-# ── Конфиг ───────────────────────────────────────────
-
-def _get_config():
+def _factory_config():
     from config import config
     return config
 
 
-@functools.cache
-def _cached_config():
-    return _get_config()
-
-
-# ── Visualization ───────────────────────────────────
-
-def _get_scene_engine():
-    from visualization.scene_engine import SceneEngine
-    return SceneEngine(genome=_cached_pulse().genome, retriever=_get_retriever())
-
-
-def _get_prompt_builder():
-    from visualization.prompt_builder import PromptBuilder
-    return PromptBuilder(pulse=_cached_pulse())
-
-
-def _get_image_provider():
-    from providers.image import ImageProviderChain
-    from providers.image.comfyui import ComfyUIProvider
-    from providers.image.mock import MockImageProvider
-    return ImageProviderChain([ComfyUIProvider(), MockImageProvider()])
-
-
-@functools.cache
-def _cached_scene_engine():
-    return _get_scene_engine()
-
-
-@functools.cache
-def _cached_prompt_builder():
-    return _get_prompt_builder()
-
-
-@functools.cache
-def _cached_image_provider():
-    return _get_image_provider()
-
-
-def get_scene_engine():
-    return _cached_scene_engine()
-
-
-def get_prompt_builder():
-    return _cached_prompt_builder()
-
-
-def get_image_provider():
-    return _cached_image_provider()
-
-
-# ── Retriever ──────────────────────────────────────
-
-def _get_retriever():
+def _factory_retriever():
     from intelligence.retriever import BookRetriever
     return BookRetriever()
 
 
-def _get_event_logger():
+def _factory_keeper():
+    from agents.keeper import KeeperAgent
+    return KeeperAgent(pulse=registry.get("pulse"), voice=registry.get("voice"))
+
+
+def _factory_herald():
+    from agents.keeper import HeraldAgent
+    return HeraldAgent(pulse=registry.get("pulse"))
+
+
+def _factory_diplomat():
+    from agents.keeper import DiplomatAgent
+    return DiplomatAgent(pulse=registry.get("pulse"))
+
+
+def _factory_scene_engine():
+    from visualization.scene_engine import SceneEngine
+    return SceneEngine(genome=registry.get("pulse").genome, retriever=registry.get("retriever"))
+
+
+def _factory_prompt_builder():
+    from visualization.prompt_builder import PromptBuilder
+    return PromptBuilder(pulse=registry.get("pulse"))
+
+
+def _factory_image_provider():
+    from providers.image import ImageProviderChain
+    from providers.image.comfyui import ComfyUIProvider
+    from providers.image.pollinations import PollinationsProvider
+    from providers.image.mock import MockImageProvider
+    return ImageProviderChain([ComfyUIProvider(), PollinationsProvider(), MockImageProvider()])
+
+
+def _factory_video_provider():
+    from providers.video import VideoProviderChain
+    from providers.video.image_sequence import ImageSequenceVideoProvider
+    from providers.video.mock import MockVideoProvider
+    image_prov = registry.get("image_provider")
+    return VideoProviderChain([
+        ImageSequenceVideoProvider(image_provider=image_prov),
+        MockVideoProvider(),
+    ])
+
+
+def _factory_asset_store():
+    from visual_assets.storage import AssetStorage
+    return AssetStorage()
+
+
+def _factory_generation_pipeline():
+    from visual_assets.pipeline import AssetGenerationPipeline
+    return AssetGenerationPipeline(
+        scene_engine=registry.get("scene_engine"),
+        prompt_builder=registry.get("prompt_builder"),
+        image_provider=registry.get("image_provider"),
+        video_provider=registry.get("video_provider"),
+        asset_store=registry.get("asset_store"),
+    )
+
+
+def _factory_film_store():
+    from film_studio.store import FilmProjectStore
+    return FilmProjectStore()
+
+
+def _factory_generation_queue():
+    from visual_assets.queue import GenerationQueue
+    return GenerationQueue(pipeline=registry.get("generation_pipeline"), max_concurrent=2)
+
+
+def _factory_event_logger():
     from core_memory.logger import EventLogger
     return EventLogger()
 
 
-def _get_xray():
+def _factory_xray():
     from core_memory.analyzer import XRayObserver
     return XRayObserver()
 
 
-def _get_drafts():
+def _factory_drafts():
     from community.telegram import DraftManager
     return DraftManager()
 
 
-def _get_telegram_stub():
+def _factory_telegram_stub():
     from community.telegram import TelegramBotStub
     return TelegramBotStub()
 
 
-@functools.cache
-def _cached_retriever():
-    return _get_retriever()
+def _factory_reader_memory():
+    from core.pulse_manager import get_reader_memory as _grm
+    return _grm()
 
 
-@functools.cache
-def _cached_event_logger():
-    return _get_event_logger()
+def _factory_graph_engine():
+    from book_os.entity_store import EntityStore
+    from book_os.relationship_store import RelationshipStore
+    from book_os.fact_store import FactStore
+    from knowledge_graph.graph_engine import GraphEngine
+
+    entity_store = EntityStore()
+    rel_store = RelationshipStore()
+    fact_store = FactStore()
+    engine = GraphEngine(entity_store, rel_store, fact_store)
+    engine.build()
+    return engine
 
 
-@functools.cache
-def _cached_xray():
-    return _get_xray()
+# ── Регистрация ─────────────────────────────────────────────
+
+def _factory_world_engine():
+    from narrative_engine.world_model import WorldModel
+    return WorldModel.load()
+
+def _factory_story_engine():
+    from narrative_engine.constraint_engine import parse_prompt
+    from narrative_engine.canon_validator import CanonValidator
+    from narrative_engine.context_assembler import ContextAssembler
+    from narrative_engine.planner import UnifiedPlanner
+    from narrative_engine.story.composer import compose_prompt, format_composer_prompt
+    from narrative_engine.story.post_validator import validate_story
+    from narrative_engine.world_model import WorldModel
+    return {
+        "parse": parse_prompt,
+        "CanonValidator": CanonValidator,
+        "ContextAssembler": ContextAssembler,
+        "UnifiedPlanner": UnifiedPlanner,
+        "compose_prompt": compose_prompt,
+        "format_composer_prompt": format_composer_prompt,
+        "validate": validate_story,
+        "WorldModel": WorldModel,
+    }
+
+def _factory_research_engine():
+    from narrative_engine.research.api_routes import _extract_simple
+    return {"extract": _extract_simple}
 
 
-@functools.cache
-def _cached_drafts():
-    return _get_drafts()
+
+# ── Visual Intelligence (core/CORE/visual/) ────────────────────
+
+def _factory_visual_context_builder():
+    from visual.visual_context_builder import VisualContextBuilder
+    return VisualContextBuilder(genome=registry.get("pulse").genome, retriever=registry.get("retriever"))
 
 
-@functools.cache
-def _cached_telegram_stub():
-    return _get_telegram_stub()
+def _factory_prompt_composer():
+    from visual.prompt_composer import PromptComposer
+    return PromptComposer(generator="comfyui")
 
 
-# ── FastAPI-зависимости (публичный API) ─────────────
+def _factory_continuity_engine():
+    from visual.continuity_engine import ContinuityEngine
+    return ContinuityEngine()
+
+
+def _factory_video_intelligence():
+    from visual.video_intelligence import VideoIntelligence
+    return VideoIntelligence()
+
+registry.register("pulse", _factory_pulse)
+registry.register("voice", _factory_voice)
+registry.register("config", _factory_config)
+registry.register("retriever", _factory_retriever)
+registry.register("keeper", _factory_keeper)
+registry.register("herald", _factory_herald)
+registry.register("diplomat", _factory_diplomat)
+registry.register("scene_engine", _factory_scene_engine)
+registry.register("prompt_builder", _factory_prompt_builder)
+registry.register("image_provider", _factory_image_provider)
+registry.register("video_provider", _factory_video_provider)
+registry.register("asset_store", _factory_asset_store)
+registry.register("generation_pipeline", _factory_generation_pipeline)
+registry.register("film_store", _factory_film_store)
+registry.register("generation_queue", _factory_generation_queue)
+registry.register("event_logger", _factory_event_logger)
+registry.register("xray", _factory_xray)
+registry.register("drafts", _factory_drafts)
+registry.register("telegram_stub", _factory_telegram_stub)
+registry.register("reader_memory", _factory_reader_memory)
+registry.register("graph_engine", _factory_graph_engine)
+registry.register("world_engine", _factory_world_engine)
+registry.register("story_engine", _factory_story_engine)
+registry.register("research_engine", _factory_research_engine)
+registry.register("visual_context_builder", _factory_visual_context_builder)
+registry.register("prompt_composer", _factory_prompt_composer)
+registry.register("continuity_engine", _factory_continuity_engine)
+registry.register("video_intelligence", _factory_video_intelligence)
+
+
+# ── Публичный API (совместимый с существующими роутами) ────────
+
+def get_world_engine():
+    return registry.get("world_engine")
+
+def get_story_engine():
+    return registry.get("story_engine")
+
+def get_research_engine():
+    return registry.get("research_engine")
+
+
+def get_pulse():
+    return registry.get("pulse")
+
+
+def get_voice():
+    return registry.get("voice")
+
 
 def get_config():
-    return _cached_config()
+    return registry.get("config")
 
 
 def get_retriever():
-    return _cached_retriever()
+    return registry.get("retriever")
 
 
 def get_keeper():
-    return _cached_keeper()
+    return registry.get("keeper")
 
 
 def get_herald():
-    return _cached_herald()
+    return registry.get("herald")
 
 
 def get_diplomat():
-    return _cached_diplomat()
+    return registry.get("diplomat")
+
+
+def get_scene_engine():
+    return registry.get("scene_engine")
+
+
+def get_prompt_builder():
+    return registry.get("prompt_builder")
+
+
+def get_image_provider():
+    return registry.get("image_provider")
+
+
+def get_video_provider():
+    return registry.get("video_provider")
+
+
+def get_asset_store():
+    return registry.get("asset_store")
+
+
+def get_generation_pipeline():
+    return registry.get("generation_pipeline")
+
+
+def get_film_store():
+    return registry.get("film_store")
+
+
+def get_generation_queue():
+    return registry.get("generation_queue")
 
 
 def get_event_logger():
-    return _cached_event_logger()
+    return registry.get("event_logger")
 
 
 def get_xray():
-    return _cached_xray()
+    return registry.get("xray")
 
 
 def get_drafts():
-    return _cached_drafts()
+    return registry.get("drafts")
 
 
 def get_telegram_stub():
-    return _cached_telegram_stub()
+    return registry.get("telegram_stub")
 
+
+def get_reader_memory():
+    return registry.get("reader_memory")
+
+
+def get_graph_engine():
+    return registry.get("graph_engine")
+
+
+# ── FastAPI Depends (для BOOK_DEPS) ──────────────────────────
 
 BOOK_DEPS = {
     "config": Depends(get_config),
@@ -230,14 +339,17 @@ BOOK_DEPS = {
 }
 
 
-def get_reader_memory():
-    return _grm()
-
-
 __all__ = [
     "get_config", "get_retriever",
     "get_keeper", "get_herald", "get_diplomat",
     "get_event_logger", "get_xray", "get_drafts", "get_telegram_stub",
-    "get_pulse", "get_voice", "get_reader_memory",
+    "get_pulse", "get_voice", "get_reader_memory", "get_world_engine", "get_story_engine", "get_research_engine",
+    "get_scene_engine", "get_prompt_builder", "get_image_provider",
+    "get_visual_context_builder", "get_prompt_composer",
+    "get_continuity_engine", "get_video_intelligence",
+    "get_video_provider", "get_asset_store", "get_generation_pipeline", "get_generation_queue",
     "BOOK_DEPS",
 ]
+
+
+
