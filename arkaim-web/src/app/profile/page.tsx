@@ -1,5 +1,23 @@
 'use client';
 
+
+// ── Progress Charts ──────────────────────────
+function ProgressRing({ percent, size = 80 }: { percent: number; size?: number }) {
+  const radius = (size - 16) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const offset = circumference - (percent / 100) * circumference;
+  return (
+    <div style={{ position: 'relative', width: size, height: size }}>
+      <svg width={size} height={size}>
+        <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke="#f0f0f0" strokeWidth={8} />
+        <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke="#1890ff" strokeWidth={8} strokeDasharray={circumference} strokeDashoffset={offset} transform={`rotate(-90 ${size/2} ${size/2})`} />
+      </svg>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{percent}%</div>
+    </div>
+  );
+}
+
+
 import { useState } from 'react';
 import { Card, Typography, List, Tag, Input, Button, Space, Form, message, Row, Col, Statistic, Progress, Avatar, Empty, Descriptions, Popconfirm, Timeline, Tabs, Switch } from 'antd';
 import { UserOutlined, KeyOutlined, MailOutlined, ClockCircleOutlined, BookOutlined, HeartOutlined, TrophyOutlined, DeleteOutlined, SafetyOutlined, MessageOutlined, SearchOutlined, ReadOutlined, SettingOutlined, LinkOutlined, EditOutlined, BulbOutlined, CommentOutlined } from '@ant-design/icons';

@@ -1,5 +1,27 @@
 'use client';
 
+
+// ── World Tab ──────────────────────────
+function WorldTab() {
+  const [categories, setCategories] = React.useState({});
+  React.useEffect(() => {
+    fetch('/book/world/categories').then(r => r.json()).then(d => setCategories(d.categories || {}));
+  }, []);
+  return (
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+        {Object.entries(categories).map(([cat, count]) => (
+          <div key={cat} style={{ padding: 16, border: '1px solid #f0f0f0', borderRadius: 8, textAlign: 'center' }}>
+            <div style={{ fontSize: 24, fontWeight: 'bold' }}>{count}</div>
+            <div>{cat}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
 import { useState } from 'react';
 import { Card, Typography, Row, Col, Tag, Tabs, List, Empty, Spin, Space, Input, Badge, Avatar, Tooltip, Descriptions, Modal, Divider } from 'antd';
 import { BookOutlined, TeamOutlined, EnvironmentOutlined, HeartOutlined, SearchOutlined, BulbOutlined, StarOutlined, EyeOutlined, HistoryOutlined, ReloadOutlined } from '@ant-design/icons';

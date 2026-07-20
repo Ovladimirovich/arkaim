@@ -1,11 +1,11 @@
-'use client';
+﻿'use client';
 
 import { Layout, Menu } from 'antd';
 import {
   BookOutlined, ReadOutlined, EditOutlined, VideoCameraOutlined,
   HistoryOutlined, UploadOutlined, PictureOutlined, EyeOutlined,
   TagsOutlined, TrophyOutlined, FileTextOutlined, QuestionCircleOutlined,
-  InfoCircleOutlined, SettingOutlined,
+  InfoCircleOutlined, SettingOutlined, GlobalOutlined,
   CodeOutlined, DollarOutlined, RiseOutlined, BellOutlined, SearchOutlined, BranchesOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
@@ -25,7 +25,10 @@ const NAV_GROUPS = [
       { key: '/library', icon: <ReadOutlined />, label: 'Библиотека' },
       { key: '/genres', icon: <TagsOutlined />, label: 'Жанры' },
       { key: '/visual-view', icon: <EyeOutlined />, label: 'Визуал' },
+      { key: '/assets', icon: <PictureOutlined />, label: 'Ассеты' },
+      { key: '/film-studio', icon: <VideoCameraOutlined />, label: 'Film Studio' },
       { key: '/world-explorer', icon: <BranchesOutlined />, label: 'Исследование' },
+      { key: '/world-engine', icon: <GlobalOutlined />, label: 'World Engine' },
     ],
   },
   {
@@ -140,3 +143,6 @@ export function Sidebar({ collapsed, onCollapse, selectedKey }: SidebarProps) {
     </Sider>
   );
 }
+
+
+
