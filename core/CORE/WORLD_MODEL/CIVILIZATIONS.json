@@ -1,0 +1,55 @@
+[
+  {
+    "id": "civ_civilizations",
+    "name": "civilizations",
+    "name_ru": "civilizations",
+    "category": "civilizations",
+    "description": "",
+    "properties": {
+      "epoch": null,
+      "values": []
+    },
+    "relationships": [],
+    "source": "civilization_profiles.json",
+    "confidence": 1.0
+  },
+  {
+    "id": "civ_type_main",
+    "name": "main",
+    "name_ru": "main",
+    "category": "civilizations",
+    "description": "Тип персонажей: main",
+    "properties": {
+      "type": "character_type"
+    },
+    "relationships": [],
+    "source": "CHARACTERS.json",
+    "confidence": 1.0
+  },
+  {
+    "id": "civ_type_secondary",
+    "name": "secondary",
+    "name_ru": "secondary",
+    "category": "civilizations",
+    "description": "Тип персонажей: secondary",
+    "properties": {
+      "type": "character_type"
+    },
+    "relationships": [],
+    "source": "CHARACTERS.json",
+    "confidence": 1.0
+  },
+  {
+    "id": "civ_type_главные",
+    "name": "главные",
+    "name_ru": "главные",
+    "category": "civilizations",
+    "description": "Тип персонажей: главные",
+    "properties": {
+      "type": "character_type"
+    },
+    "relationships": [],
+    "source": "CHARACTERS.json",
+    "confidence": 1.0
+  }
+]

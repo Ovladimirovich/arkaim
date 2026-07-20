@@ -1,0 +1,292 @@
+[
+  {
+    "id": "tech_аркаим",
+    "name": "Аркаим",
+    "name_ru": "Аркаим",
+    "category": "technologies",
+    "description": "",
+    "properties": {},
+    "relationships": [],
+    "source": "TECHNOLOGY.json",
+    "confidence": 1.0
+  },
+  {
+    "id": "tech_гардарика_(страна_городов)",
+    "name": "Гардарика (Страна Городов)",
+    "name_ru": "Гардарика (Страна Городов)",
+    "category": "technologies",
+    "description": "",
+    "properties": {},
+    "relationships": [],
+    "source": "TECHNOLOGY.json",
+    "confidence": 1.0
+  },
+  {
+    "id": "tech_синташта",
+    "name": "Синташта",
+    "name_ru": "Синташта",
+    "category": "technologies",
+    "description": "",
+    "properties": {},
+    "relationships": [],
+    "source": "TECHNOLOGY.json",
+    "confidence": 1.0
+  },
+  {
+    "id": "tech_мехенго",
+    "name": "Мехенго",
+    "name_ru": "Мехенго",
+    "category": "technologies",
+    "description": "",
+    "properties": {},
+    "relationships": [],
+    "source": "TECHNOLOGY.json",
+    "confidence": 1.0
+  },
+  {
+    "id": "tech_каргонодская_культура",
+    "name": "Каргонодская культура",
+    "name_ru": "Каргонодская культура",
+    "category": "technologies",
+    "description": "",
+    "properties": {},
+    "relationships": [],
+    "source": "TECHNOLOGY.json",
+    "confidence": 1.0
+  },
+  {
+    "id": "tech_страна_городов_(археологический_термин)",
+    "name": "Страна Городов (археологический термин)",
+    "name_ru": "Страна Городов (археологический термин)",
+    "category": "technologies",
+    "description": "",
+    "properties": {},
+    "relationships": [],
+    "source": "TECHNOLOGY.json",
+    "confidence": 1.0
+  },
+  {
+    "id": "tech_болгарский_государственный_историко-архитектурный_музей-заповедник",
+    "name": "Болгарский государственный историко-архитектурный музей-заповедник",
+    "name_ru": "Болгарский государственный историко-архитектурный музей-заповедник",
+    "category": "technologies",
+    "description": "",
+    "properties": {},
+    "relationships": [],
+    "source": "TECHNOLOGY.json",
+    "confidence": 1.0
+  },
+  {
+    "id": "tech_гёбекли-тепе",
+    "name": "Гёбекли-Тепе",
+    "name_ru": "Гёбекли-Тепе",
+    "category": "technologies",
+    "description": "",
+    "properties": {},
+    "relationships": [],
+    "source": "TECHNOLOGY.json",
+    "confidence": 1.0
+  },
+  {
+    "id": "tech_лепенски-вир",
+    "name": "Лепенски-Вир",
+    "name_ru": "Лепенски-Вир",
+    "category": "technologies",
+    "description": "",
+    "properties": {},
+    "relationships": [],
+    "source": "TECHNOLOGY.json",
+    "confidence": 1.0
+  },
+  {
+    "id": "tech_карьякская_(карийская)_культура",
+    "name": "Карьякская (Карийская) культура",
+    "name_ru": "Карьякская (Карийская) культура",
+    "category": "technologies",
+    "description": "",
+    "properties": {},
+    "relationships": [],
+    "source": "TECHNOLOGY.json",
+    "confidence": 1.0
+  },
+  {
+    "id": "tech_гиперборея",
+    "name": "Гиперборея",
+    "name_ru": "Гиперборея",
+    "category": "technologies",
+    "description": "",
+    "properties": {
+      "literal": "Древняя цивилизация на Севере, обладавшая высокими знаниями и технологиями",
+      "metaphorical": "Состояние сознания, в котором человек соединён с космическим разумом",
+      "cosmic": "Точка входа космических знаний на планету через северные широты"
+    },
+    "relationships": [],
+    "source": "TECHNOLOGY.json",
+    "confidence": 1.0
+  },
+  {
+    "id": "tech_учитель_(наставник)",
+    "name": "Учитель (Наставник)",
+    "name_ru": "Учитель (Наставник)",
+    "category": "technologies",
+    "description": "",
+    "properties": {
+      "literal": "Духовный лидер гипербореев, обладающий высокими знаниями и способностями",
+      "metaphorical": "Внутренний голос, ведущий к истине",
+      "cosmic": "Звено в Иерархии Света, связывающее земное и космическое"
+    },
+    "relationships": [],
+    "source": "TECHNOLOGY.json",
+    "confidence": 1.0
+  },
+  {
+    "id": "tech_велик_(великосвет)",
+    "name": "Велик (Великосвет)",
+    "name_ru": "Велик (Великосвет)",
+    "category": "technologies",
+    "description": "",
+    "properties": {
+      "literal": "Главный герой, проходящий путь от воина к просветлённому",
+      "metaphorical": "Каждый человек на пути самопознания",
+      "cosmic": "Посредник между эпохами, несущий знания будущему"
+    },
+    "relationships": [],
+    "source": "TECHNOLOGY.json",
+    "confidence": 1.0
+  },
+  {
+    "id": "tech_кали_юга",
+    "name": "Кали Юга",
+    "name_ru": "Кали Юга",
+    "category": "technologies",
+    "description": "",
+    "properties": {
+      "literal": "Эпоха упадка и хаоса в индийской хронологии",
+      "metaphorical": "Время, когда материализм подавляет духовность",
+      "cosmic": "Циклический этап, необходимый для прорыва сознания"
+    },
+    "relationships": [],
+    "source": "TECHNOLOGY.json",
+    "confidence": 1.0
+  },
+  {
+    "id": "tech_иерархия_света",
+    "name": "Иерархия Света",
+    "name_ru": "Иерархия Света",
+    "category": "technologies",
+    "description": "",
+    "properties": {
+      "literal": "Цепочка высших существ, управляющих эволюцией",
+      "metaphorical": "Структура внутренних центров сознания человека",
+      "cosmic": "Космическая организация, обеспечивающая развитие цивилизаций"
+    },
+    "relationships": [],
+    "source": "TECHNOLOGY.json",
+    "confidence": 1.0
+  },
+  {
+    "id": "tech_звукознание",
+    "name": "Звукознание",
+    "name_ru": "Звукознание",
+    "category": "technologies",
+    "description": "",
+    "properties": {
+      "literal": "Наука о звуке как основе мироздания",
+      "metaphorical": "Понимание того, что всё во Вселенной есть вибрация",
+      "cosmic": "Ключ к управлению материей через резонанс"
+    },
+    "relationships": [],
+    "source": "TECHNOLOGY.json",
+    "confidence": 1.0
+  },
+  {
+    "id": "tech_эмиграция_/_миграция_гипербореев",
+    "name": "Эмиграция / Миграция Гипербореев",
+    "name_ru": "Эмиграция / Миграция Гипербореев",
+    "category": "technologies",
+    "description": "",
+    "properties": {
+      "literal": "Переселение северных народов на юг из-за климатических изменений",
+      "metaphorical": "Духовная миграция — движение от неведения к знанию",
+      "cosmic": "Распространение космических знаний по планете через культурные контакты"
+    },
+    "relationships": [],
+    "source": "TECHNOLOGY.json",
+    "confidence": 1.0
+  },
+  {
+    "id": "tech_духовное_пробуждение",
+    "name": "Духовное пробуждение",
+    "name_ru": "Духовное пробуждение",
+    "category": "technologies",
+    "description": "",
+    "properties": {
+      "literal": "Пробуждение сознания через духовные практики",
+      "metaphorical": "Осознание истинной природы реальности",
+      "cosmic": "Новый этап эволюции планеты и человечества"
+    },
+    "relationships": [],
+    "source": "TECHNOLOGY.json",
+    "confidence": 1.0
+  },
+  {
+    "id": "tech_передача_знаний",
+    "name": "Передача знаний",
+    "name_ru": "Передача знаний",
+    "category": "technologies",
+    "description": "",
+    "properties": {
+      "literal": "Наставники передают знания ученикам",
+      "metaphorical": "Живая традиция — знания передаются через опыт, а не через книги",
+      "cosmic": "Цепь преемственности, связывающая поколения с космическим разумом"
+    },
+    "relationships": [],
+    "source": "TECHNOLOGY.json",
+    "confidence": 1.0
+  },
+  {
+    "id": "tech_архат",
+    "name": "Архат",
+    "name_ru": "Архат",
+    "category": "technologies",
+    "description": "",
+    "properties": {
+      "literal": "Существо, завершившее человеческую эволюцию",
+      "metaphorical": "Потенциал каждого человека — достичь полного раскрытия",
+      "cosmic": "Космический учитель, помогающий планетарным цивилизациям"
+    },
+    "relationships": [],
+    "source": "TECHNOLOGY.json",
+    "confidence": 1.0
+  },
+  {
+    "id": "tech_космическая_изоляция_земли",
+    "name": "Космическая изоляция Земли",
+    "name_ru": "Космическая изоляция Земли",
+    "category": "technologies",
+    "description": "",
+    "properties": {
+      "literal": "Изоляция планеты от космических влияний",
+      "metaphorical": "Изоляция человека от истинных знаний через материализм",
+      "cosmic": "Временный экран, ограничивающий доступ к космическому разуму"
+    },
+    "relationships": [],
+    "source": "TECHNOLOGY.json",
+    "confidence": 1.0
+  },
+  {
+    "id": "tech_энергетика_мест",
+    "name": "Энергетика мест",
+    "name_ru": "Энергетика мест",
+    "category": "technologies",
+    "description": "",
+    "properties": {
+      "literal": "Определённые места обладают особыми энергетическими свойствами",
+      "metaphorical": "Внутренние центры сознания, активируемые определёнными практиками",
+      "cosmic": "Точки входа космической энергии на планете"
+    },
+    "relationships": [],
+    "source": "TECHNOLOGY.json",
+    "confidence": 1.0
+  }
+]
