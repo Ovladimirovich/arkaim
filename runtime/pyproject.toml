@@ -21,6 +21,8 @@ line-ending = "auto"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+pythonpath = ["core/CORE", "."]
+testpaths = ["tests"]
 
 [dependency-groups]
 dev = [
