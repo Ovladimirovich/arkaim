@@ -23,22 +23,29 @@ export function UsersPanel() {
     mutationFn: ({ id, role }: { id: string; role: string }) =>
       api.post(`/auth/admin/users/${id}/role?role=${role}`),
     onSuccess: () => { message.success('Роль изменена'); queryClient.invalidateQueries({ queryKey: ['admin-users'] }); },
+    onError: () => message.error('Ошибка выполнения'),
   });
 
   const toggleMutation = useMutation({
     mutationFn: (id: string) => api.post(`/auth/admin/users/${id}/toggle`),
     onSuccess: () => { message.success('Статус изменён'); queryClient.invalidateQueries({ queryKey: ['admin-users'] }); },
+    onError: () => message.error('Ошибка выполнения'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/auth/admin/users/${id}`),
     onSuccess: () => { message.success('Пользователь удалён'); queryClient.invalidateQueries({ queryKey: ['admin-users'] }); },
+    onError: () => message.error('Ошибка выполнения'),
   });
 
   const viewUser = async (id: string) => {
-    const user = await api.get<User>(`/auth/admin/users/${id}`);
-    setSelectedUser(user);
-    setDrawerOpen(true);
+    try {
+      const user = await api.get<User>(`/auth/admin/users/${id}`);
+      setSelectedUser(user);
+      setDrawerOpen(true);
+    } catch {
+      message.error('Ошибка загрузки пользователя');
+    }
   };
 
   const exportUsers = () => {
@@ -64,7 +71,7 @@ export function UsersPanel() {
 
   const columns = [
     { title: 'ID', dataIndex: 'id', key: 'id', width: 100, render: (v: string) => <code style={{ fontSize: 12 }}>{v.slice(0, 8)}...</code> },
-    { title: 'Имя', key: 'name', render: (_: any, r: User) => r.display_name || r.username || '—' },
+    { title: 'Имя', key: 'name', render: (_: unknown, r: User) => r.display_name || r.username || '—' },
     { title: 'Провайдер', dataIndex: 'provider', key: 'provider', render: (v: string) => <Tag>{v}</Tag> },
     {
       title: 'Роль', dataIndex: 'role', key: 'role',
@@ -85,7 +92,7 @@ export function UsersPanel() {
     },
     {
       title: 'Действия', key: 'actions',
-      render: (_: any, record: User) => (
+      render: (_: unknown, record: User) => (
         <Space>
           <Button size="small" icon={<EyeOutlined />} onClick={() => viewUser(record.id)} />
           <Button size="small" onClick={() => toggleMutation.mutate(record.id)}>

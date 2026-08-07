@@ -1,4 +1,4 @@
-"""World Explorer — единый pipeline исследования мира.
+﻿"""World Explorer — единый pipeline исследования мира.
 
 Реализует архитектуру World Explorer: Этап 5 — Интеграция.
 
@@ -96,13 +96,13 @@ class WorldExplorer:
         # 0. Уведомление о начале
         import asyncio
         try:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             if loop.is_running():
                 asyncio.ensure_future(notify.notify_started(
                     exploration_id, request.prompt, request.epoch, request.branch_count
                 ))
-        except Exception:
-            pass
+        except RuntimeError:
+            pass  # No running event loop
 
         # 1. Проверка совместимости
         story_request = StoryRequest(
@@ -112,11 +112,11 @@ class WorldExplorer:
         )
         compat_report = self._compatibility_checker.check(story_request)
         try:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             if loop.is_running():
                 asyncio.ensure_future(notify.notify_progress(0, f"Score: {compat_report.overall_score:.2f}"))
-        except Exception:
-            pass
+        except RuntimeError:
+            pass  # No running event loop
 
         if not compat_report.is_compatible:
             log.warning("idea_not_compatible score=%.2f", compat_report.overall_score)
@@ -132,11 +132,11 @@ class WorldExplorer:
             )
 
         try:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             if loop.is_running():
                 asyncio.ensure_future(notify.notify_progress(1, f"Гипотез: {len(hypotheses)}"))
-        except Exception:
-            pass
+        except RuntimeError:
+            pass  # No running event loop
 
         if not hypotheses:
             return ExplorationResult(
@@ -152,11 +152,11 @@ class WorldExplorer:
             best_hypothesis, branch_count=request.branch_count
         )
         try:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             if loop.is_running():
                 asyncio.ensure_future(notify.notify_progress(2, f"Ветвей: {scenario.branch_count}"))
-        except Exception:
-            pass
+        except RuntimeError:
+            pass  # No running event loop
 
         # 4. Оценка влияния и противоречий для каждой ветви
         ranked_branches = []
@@ -185,22 +185,22 @@ class WorldExplorer:
 
         # Уведомления об этапах 3-6
         try:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             if loop.is_running():
                 asyncio.ensure_future(notify.notify_progress(3, "Влияние оценено"))
                 asyncio.ensure_future(notify.notify_progress(4, "Противоречия проверены"))
                 asyncio.ensure_future(notify.notify_progress(5, "Изменения рассчитаны"))
-        except Exception:
-            pass
+        except RuntimeError:
+            pass  # No running event loop
 
         # 5. Оценка качества и ранжирование
         quality_reports = self._quality_evaluator.evaluate_branches(scenario.branches)
         try:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             if loop.is_running():
                 asyncio.ensure_future(notify.notify_progress(6, "Качество оценено"))
-        except Exception:
-            pass
+        except RuntimeError:
+            pass  # No running event loop
 
         for i, (branch, quality) in enumerate(zip(scenario.branches, quality_reports)):
             ranked_branches.append(RankedBranch(
@@ -228,14 +228,14 @@ class WorldExplorer:
 
         # Уведомление о завершении
         try:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             if loop.is_running():
                 asyncio.ensure_future(notify.notify_progress(7, "Ранжирование завершено"))
                 asyncio.ensure_future(notify.notify_complete(
                     summary, len(ranked_branches), best_score, duration_ms
                 ))
-        except Exception:
-            pass
+        except RuntimeError:
+            pass  # No running event loop
 
         return ExplorationResult(
             request=request,

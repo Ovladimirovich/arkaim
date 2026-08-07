@@ -33,12 +33,19 @@ class TelegramBot:
             return resp.json()
 
     async def send_message(self, chat_id: int, text: str, parse_mode: str = "HTML"):
-        """Отправить сообщение."""
-        await self._api("sendMessage", {
-            "chat_id": chat_id,
-            "text": text,
-            "parse_mode": parse_mode,
-        })
+        """Отправить сообщение с проверкой ответа."""
+        data = {"chat_id": chat_id, "text": text}
+        if parse_mode:
+            data["parse_mode"] = parse_mode
+        result = await self._api("sendMessage", data)
+        if not result.get("ok"):
+            error_code = result.get("error_code", 0)
+            description = result.get("description", "unknown")
+            if error_code == 400 and "parse" in description.lower():
+                log.warning("telegram_parse_error chat=%d desc=%s — retrying plain", chat_id, description)
+                await self._api("sendMessage", {"chat_id": chat_id, "text": text})
+            else:
+                log.error("telegram_send_error chat=%d code=%d desc=%s", chat_id, error_code, description)
 
     async def handle_command(self, message: dict):
         """Обработка команд."""
@@ -58,14 +65,18 @@ class TelegramBot:
             )
             login_url = f"{self.public_base_url}/login?token={token}"
 
-            await self.send_message(chat_id,
-                f"🔐 <b>Вход в «Наследие Аркаима»</b>\n\n"
-                f"Нажмите на ссылку для входа:\n"
-                f"<a href=\"{login_url}\">Войти в систему</a>\n\n"
-                f"Ссылка действительна 10 минут.\n"
+            # Plain text — Telegram НЕ автолинкует URL в бот-сообщениях
+            # поэтому даём инструкцию скопировать
+            msg = (
+                "Вход в «Наследие Аркаима»\n\n"
+                "Скопируйте ссылку и откройте в браузере:\n\n"
+                f"{login_url}\n\n"
+                "Ссылка действительна 10 минут.\n"
                 f"Пользователь: @{username or 'без username'}"
             )
-            log.info("login_token_sent user_id=%s username=%s", telegram_user_id, username)
+
+            await self.send_message(chat_id, msg, None)
+            log.info("login_token_sent user_id=%s username=%s url=%s", telegram_user_id, username, login_url)
 
         elif text == "/start":
             await self.send_message(chat_id,

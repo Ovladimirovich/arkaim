@@ -1,6 +1,6 @@
 'use client';
 
-import { Table, Button, Popconfirm, message } from 'antd';
+import { Table, Button, Popconfirm, message, Empty } from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
@@ -18,6 +18,7 @@ export function SessionsPanel() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/auth/admin/sessions/${id}`),
     onSuccess: () => { message.success('Сессия отозвана'); queryClient.invalidateQueries({ queryKey: ['admin-sessions'] }); },
+    onError: () => message.error('Ошибка удаления сессии'),
   });
 
   const columns = [
@@ -27,7 +28,7 @@ export function SessionsPanel() {
     { title: 'Создана', dataIndex: 'created_at', key: 'created_at', render: (v: string) => v ? new Date(v).toLocaleString('ru') : '—' },
     {
       title: '', key: 'actions',
-      render: (_: any, record: Session) => (
+      render: (_: unknown, record: Session) => (
         <Popconfirm title="Отозвать сессию?" onConfirm={() => deleteMutation.mutate(record.id)}>
           <Button size="small" danger icon={<DeleteOutlined />} />
         </Popconfirm>
@@ -36,6 +37,12 @@ export function SessionsPanel() {
   ];
 
   return (
-    <Table columns={columns} dataSource={sessions || []} rowKey="id" loading={isLoading} size="small" />
+    <>
+      {Array.isArray(sessions) && sessions.length === 0 ? (
+        <Empty description="Нет активных сессий" />
+      ) : (
+        <Table columns={columns} dataSource={sessions || []} rowKey="id" loading={isLoading} size="small" />
+      )}
+    </>
   );
 }

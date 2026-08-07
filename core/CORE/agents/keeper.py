@@ -4,11 +4,14 @@ Keeper Agent — Хранитель книги.
 Главный эксперт по книге. Использует Pulse (живое ядро) для ответов.
 LLM — только инструмент озвучки (BookVoice), не источник личности.
 """
+import logging
 from typing import Dict, Any, Optional
 from agents.base import BaseAgent
 from core_memory.logger import EventLogger
 from pulse.pulse import BookPulse
 from pulse.voice import BookVoice
+
+log = logging.getLogger("hermes.keeper")
 
 
 class KeeperAgent(BaseAgent):
@@ -108,10 +111,6 @@ class KeeperAgent(BaseAgent):
     def _suggest_followup(self, answer: str, mood: str, source: str) -> str:
         """Предложить уточняющий вопрос на основе ответа и настроения."""
         import random
-
-        # Не предлагать после каждого ответа — только иногда
-        if random.random() > 0.3:
-            return ""
 
         suggestions = {
             'curiosity': [

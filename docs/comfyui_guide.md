@@ -320,3 +320,75 @@ python scripts/visualize_scene.py --chapter 1 --scene scene_001 --output output/
 ```
 
 Если ComfyUI не запущен — `visualize_scene.py` вернёт SVG-заглушку вместо ошибки.
+
+---
+
+## 10. Запуск на Google Colab (бесплатный GPU)
+
+### 10.1 Зачем
+
+ComfyUI требует GPU для генерации изображений. На бесплатном Colab доступен T4 GPU (16GB VRAM) — достаточно для SDXL и SVD-XT.
+
+### 10.2 Запуск
+
+1. Откройте 
+otebooks/comfyui_colab.ipynb в Google Colab
+2. Выберите Runtime > Change runtime type > **T4 GPU**
+3. Запускайте ячейки последовательно
+
+### 10.3 Модели
+
+| Модель | Источник | Назначение |
+|--------|----------|-----------|
+| SDXL base 1.0 | HuggingFace (автозагрузка) | Изображения из текста |
+| svd_xt | Google Drive | Видео из изображений |
+
+**Google Drive**: модель svd_xt должна лежать в G:\Мой диск\comfyui\models\checkpoint\svd_xt.safetensors
+
+### 10.4 Cloudflare Tunnel
+
+Colab notebook автоматически запускает cloudflared tunnel для проброски порта 8188 наружу.
+
+**Quick Tunnel** (без аккаунта):
+- URL меняется при перезапуске tunnel
+- Скопируйте URL в .env бэкенда
+
+**Cloudflare Account Tunnel** (стабильный URL):
+1. Зарегистрируйтесь на cloudflare.com (бесплатно)
+2. cloudflared tunnel login
+3. cloudflared tunnel create arkaim-comfyui
+4. URL не меняется при перезапуске
+
+### 10.5 Подключение к бэкенду
+
+`ash
+# 1. Запустите Colab notebook
+# 2. Скопируйте URL туннеля
+# 3. Добавьте в runtime/.env:
+COMFYUI_URL=https://xxx.trycloudflare.com
+
+# 4. Перезапустите бэкенд
+cd runtime && python -m uvicorn core.main:app --port 8642
+
+# 5. Проверьте:
+curl http://localhost:8642/book/comfyui/status
+`
+
+### 10.6 Ограничения
+
+- Colab free: T4 GPU, ~12ч/день, автоотключение через 90мин бездействия
+- Google Drive: нужна авторизация при каждом запуске
+- SDXL генерация: ~15-30 секунд
+- SVD-XT видео: ~60-120 секунд
+
+---
+
+## 11. Устранение неполадок
+
+| Проблема | Решение |
+|----------|---------|
+| ComfyUI не запускается | Проверьте GPU: Runtime > Change runtime type > T4 |
+| Tunnel не даёт URL | Подождите 30 сек, перезапустите ячейку |
+| Бэкенд не видит ComfyUI | Проверьте COMFYUI_URL в .env |
+| Ошибка CUDA OOM | Уменьшите размер изображения или используйте SD 1.5 |
+| Pollinations вместо ComfyUI | ComfyUI недоступен — проверьте tunnel |

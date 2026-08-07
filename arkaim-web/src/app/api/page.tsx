@@ -1,14 +1,11 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Card, Typography, Tabs, Button, Table, Tag, Space, Input, message, Popconfirm, Select, Alert, Collapse, List, Badge } from 'antd';
-import { KeyOutlined, CodeOutlined, DeleteOutlined, CopyOutlined, CaretRightOutlined, HistoryOutlined, BookOutlined } from '@ant-design/icons';
+import { LCard, LButton, LTag, LSpace, LInput, LAlert, LTable, LSelect, LTextArea, LTabs, LBadge, LModal, toast } from '@/shared/ui/light';
+import { KeyOutlined, CodeOutlined, DeleteOutlined, CaretRightOutlined, HistoryOutlined, BookOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
 import { ProtectedRoute } from '@/shared/lib/guards';
-
-const { Title, Text, Paragraph } = Typography;
-const { TextArea } = Input;
 
 type ApiKey = {
   id: string;
@@ -23,16 +20,15 @@ type TestResult = {
   endpoint: string;
   method: string;
   status: number;
-  data: any;
+  data: Record<string, unknown>;
   time: number;
   timestamp: Date;
 };
 
-// ── API Keys Panel ──────────────────────────────────
-
 function ApiKeysPanel() {
   const queryClient = useQueryClient();
   const [newKey, setNewKey] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<ApiKey | null>(null);
 
   const { data: keys, isLoading } = useQuery({
     queryKey: ['api-keys'],
@@ -43,7 +39,7 @@ function ApiKeysPanel() {
     mutationFn: (name: string) => api.post<{ key: string; key_masked: string }>('/auth/api-key', null, { method: 'POST' }),
     onSuccess: (data) => {
       setNewKey(data.key);
-      message.success('API-ключ создан');
+      toast.success('API-ключ создан');
       queryClient.invalidateQueries({ queryKey: ['api-keys'] });
     },
   });
@@ -51,45 +47,52 @@ function ApiKeysPanel() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/auth/api-keys/${id}`),
     onSuccess: () => {
-      message.success('API-ключ удалён');
+      toast.success('API-ключ удалён');
+      setDeleteConfirm(null);
       queryClient.invalidateQueries({ queryKey: ['api-keys'] });
     },
   });
 
   const columns = [
-    { title: 'Префикс', dataIndex: 'key_prefix', key: 'prefix', render: (v: string) => <code>{v}...</code> },
-    { title: 'Имя', dataIndex: 'name', key: 'name', render: (v: string) => v || '—' },
-    { title: 'Последнее использование', dataIndex: 'last_used_at', key: 'last_used', render: (v: string) => v ? new Date(v).toLocaleString('ru') : 'Никогда' },
-    { title: 'Статус', dataIndex: 'is_active', key: 'status', render: (v: boolean) => v ? <Tag color="green">Активен</Tag> : <Tag color="red">Удалён</Tag> },
+    { title: 'Префикс', dataIndex: 'key_prefix', key: 'prefix', render: (v: unknown) => <code>{String(v)}...</code> },
+    { title: 'Имя', dataIndex: 'name', key: 'name', render: (v: unknown) => String(v || '—') },
+    { title: 'Последнее использование', dataIndex: 'last_used_at', key: 'last_used', render: (v: unknown) => v ? new Date(String(v)).toLocaleString('ru') : 'Никогда' },
+    { title: 'Статус', dataIndex: 'is_active', key: 'status', render: (v: unknown) => v ? <LTag color="green">Активен</LTag> : <LTag color="red">Удалён</LTag> },
     {
       title: '', key: 'actions',
-      render: (_: any, record: ApiKey) => record.is_active ? (
-        <Popconfirm title="Удалить ключ?" onConfirm={() => deleteMutation.mutate(record.id)}>
-          <Button size="small" danger icon={<DeleteOutlined />} />
-        </Popconfirm>
-      ) : null,
+      render: (_: unknown, record: unknown) => {
+        const r = record as ApiKey;
+        return r.is_active ? (
+          <LButton size="small" danger icon={<DeleteOutlined />} onClick={() => setDeleteConfirm(r)} />
+        ) : null;
+      },
     },
   ];
 
   return (
     <div>
-      <Space style={{ marginBottom: 16 }}>
-        <Button type="primary" icon={<KeyOutlined />} onClick={() => createMutation.mutate('web-app')}>
+      <LSpace style={{ marginBottom: 16 }}>
+        <LButton type="primary" icon={<KeyOutlined />} onClick={() => createMutation.mutate('web-app')}>
           Создать ключ
-        </Button>
-      </Space>
+        </LButton>
+      </LSpace>
+
+      <LModal open={!!deleteConfirm} title="Удалить ключ?" onCancel={() => setDeleteConfirm(null)}
+        footer={<><LButton onClick={() => setDeleteConfirm(null)}>Отмена</LButton><LButton type="primary" danger onClick={() => deleteConfirm && deleteMutation.mutate(deleteConfirm.id)}>Удалить</LButton></>}>
+        <span>Вы уверены, что хотите удалить ключ {deleteConfirm?.key_prefix}?</span>
+      </LModal>
 
       {newKey && (
-        <Alert
+        <LAlert
           type="success"
           message="Новый API-ключ"
           description={
-            <Space direction="vertical">
-              <Text copyable>{newKey}</Text>
-              <Text type="warning" style={{ fontSize: 12 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <code>{newKey}</code>
+              <span style={{ color: '#faad14', fontSize: 12 }}>
                 Сохраните ключ — он показывается только один раз!
-              </Text>
-            </Space>
+              </span>
+            </div>
           }
           closable
           onClose={() => setNewKey(null)}
@@ -97,12 +100,10 @@ function ApiKeysPanel() {
         />
       )}
 
-      <Table columns={columns} dataSource={keys || []} rowKey="id" loading={isLoading} size="small" />
+      <LTable columns={columns} dataSource={keys || []} rowKey="id" loading={isLoading} size="small" />
     </div>
   );
 }
-
-// ── API Tester Panel ──────────────────────────────────
 
 function ApiTesterPanel() {
   const [method, setMethod] = useState('GET');
@@ -130,11 +131,7 @@ function ApiTesterPanel() {
     setLoading(true);
     const start = Date.now();
     try {
-      const opts: RequestInit = { method };
-      if (method !== 'GET' && body) {
-        opts.body = body;
-      }
-      let data: any;
+      let data: Record<string, unknown>;
       if (method === 'GET') {
         data = await api.get(endpoint);
       } else if (method === 'POST') {
@@ -147,8 +144,9 @@ function ApiTesterPanel() {
       const testResult: TestResult = { endpoint, method, status: 200, data, time: Date.now() - start, timestamp: new Date() };
       setResult(testResult);
       setHistory(prev => [testResult, ...prev].slice(0, 20));
-    } catch (err: any) {
-      const testResult: TestResult = { endpoint, method, status: err.status || 500, data: err.data || { error: err.message }, time: Date.now() - start, timestamp: new Date() };
+    } catch (err: unknown) {
+      const error = err as { status?: number; data?: Record<string, unknown>; message?: string };
+      const testResult: TestResult = { endpoint, method, status: error.status || 500, data: error.data || { error: error.message }, time: Date.now() - start, timestamp: new Date() };
       setResult(testResult);
       setHistory(prev => [testResult, ...prev].slice(0, 20));
     } finally {
@@ -158,85 +156,53 @@ function ApiTesterPanel() {
 
   return (
     <div>
-      <Space direction="vertical" style={{ width: '100%' }} size="middle">
-        <Space wrap>
-          <Select value={method} onChange={setMethod} style={{ width: 100 }}>
-            <Select.Option value="GET">GET</Select.Option>
-            <Select.Option value="POST">POST</Select.Option>
-            <Select.Option value="DELETE">DELETE</Select.Option>
-          </Select>
-          <Select
-            showSearch
-            style={{ width: 400 }}
-            placeholder="Выберите эндпоинт"
-            value={endpoint}
-            onChange={setEndpoint}
-            options={endpoints}
-          />
-          <Button type="primary" icon={<CaretRightOutlined />} onClick={runTest} loading={loading}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <LSpace wrap>
+          <LSelect value={method} onChange={setMethod} options={[{ value: 'GET', label: 'GET' }, { value: 'POST', label: 'POST' }, { value: 'DELETE', label: 'DELETE' }]} style={{ width: 100 }} />
+          <LSelect value={endpoint} onChange={setEndpoint} options={endpoints} style={{ width: 400 }} placeholder="Выберите эндпоинт" />
+          <LButton type="primary" icon={<CaretRightOutlined />} onClick={runTest} loading={loading}>
             Выполнить
-          </Button>
-        </Space>
+          </LButton>
+        </LSpace>
 
         {method !== 'GET' && (
-          <TextArea
-            value={body}
-            onChange={e => setBody(e.target.value)}
-            placeholder='{"question": "Кто такой Велик?"}'
-            rows={3}
-          />
+          <LTextArea value={body} onChange={e => setBody(e.target.value)} placeholder='{"question": "Кто такой Велик?"}' rows={3} />
         )}
 
         {result && (
-          <Card size="small" title="Результат">
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <Space>
-                <Tag color={result.status < 400 ? 'green' : 'red'}>{result.status}</Tag>
-                <Text type="secondary">{result.time}ms</Text>
-                <Text type="secondary" style={{ fontSize: 11 }}>{result.timestamp.toLocaleTimeString('ru')}</Text>
-              </Space>
-              <pre style={{
-                background: '#f8fafc',
-                padding: 12,
-                borderRadius: 6,
-                fontSize: 12,
-                overflow: 'auto',
-                maxHeight: 300,
-                margin: 0,
-              }}>
+          <LCard size="small" title="Результат">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <LSpace>
+                <LTag color={result.status < 400 ? 'green' : 'red'}>{result.status}</LTag>
+                <span style={{ color: '#999', fontSize: 12 }}>{result.time}ms</span>
+                <span style={{ color: '#999', fontSize: 11 }}>{result.timestamp.toLocaleTimeString('ru')}</span>
+              </LSpace>
+              <pre style={{ background: 'var(--surface-bg)', padding: 12, borderRadius: 6, fontSize: 12, overflow: 'auto', maxHeight: 300, margin: 0 }}>
                 {JSON.stringify(result.data, null, 2)}
               </pre>
-            </Space>
-          </Card>
+            </div>
+          </LCard>
         )}
 
         {history.length > 0 && (
-          <Card size="small" title={<><HistoryOutlined /> История запросов</>}>
-            <List
-              size="small"
-              dataSource={history}
-              renderItem={(item) => (
-                <List.Item
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => { setMethod(item.method); setEndpoint(item.endpoint); }}
-                >
-                  <Space>
-                    <Tag color={item.status < 400 ? 'green' : 'red'} style={{ minWidth: 45 }}>{item.status}</Tag>
-                    <Text code>{item.method}</Text>
-                    <Text>{item.endpoint}</Text>
-                    <Text type="secondary" style={{ fontSize: 11 }}>{item.time}ms</Text>
-                  </Space>
-                </List.Item>
-              )}
-            />
-          </Card>
+          <LCard size="small" title={<><HistoryOutlined /> История запросов</>}>
+            {history.map((item, i) => (
+              <div key={i} style={{ cursor: 'pointer', padding: '6px 8px', borderRadius: 4 }}
+                onClick={() => { setMethod(item.method); setEndpoint(item.endpoint); }}>
+                <LSpace>
+                  <LTag color={item.status < 400 ? 'green' : 'red'} style={{ minWidth: 45 }}>{item.status}</LTag>
+                  <code style={{ fontSize: 12 }}>{item.method}</code>
+                  <span style={{ fontSize: 13 }}>{item.endpoint}</span>
+                  <span style={{ color: '#999', fontSize: 11 }}>{item.time}ms</span>
+                </LSpace>
+              </div>
+            ))}
+          </LCard>
         )}
-      </Space>
+      </div>
     </div>
   );
 }
-
-// ── API Examples Panel ──────────────────────────────────
 
 function ApiExamplesPanel() {
   const examples = [
@@ -308,48 +274,40 @@ print(resp.json())`,
     <div>
       <div style={{ display: 'flex', gap: 16 }}>
         <div style={{ width: 250, flexShrink: 0 }}>
-          <List
-            size="small"
-            dataSource={examples}
-            renderItem={(item, index) => (
-              <List.Item
-                style={{ cursor: 'pointer', background: selected === index ? '#f1f5f9' : undefined, borderRadius: 6, padding: '8px 12px' }}
-                onClick={() => setSelected(index)}
-              >
-                <Space>
-                  <Tag color={item.method === 'GET' ? 'blue' : 'green'}>{item.method}</Tag>
-                  <Text style={{ fontSize: 13 }}>{item.title}</Text>
-                </Space>
-              </List.Item>
-            )}
-          />
+          {examples.map((item, index) => (
+            <div key={index} style={{ cursor: 'pointer', background: selected === index ? '#f1f5f9' : undefined, borderRadius: 6, padding: '8px 12px' }}
+              onClick={() => setSelected(index)}>
+              <LSpace>
+                <LTag color={item.method === 'GET' ? 'blue' : 'green'}>{item.method}</LTag>
+                <span style={{ fontSize: 13 }}>{item.title}</span>
+              </LSpace>
+            </div>
+          ))}
         </div>
         <div style={{ flex: 1 }}>
           {examples[selected] && (
-            <Space direction="vertical" style={{ width: '100%' }} size="middle">
-              <Title level={4}>{examples[selected].title}</Title>
-              <Text code>{examples[selected].method} {examples[selected].endpoint}</Text>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <h4 style={{ margin: 0 }}>{examples[selected].title}</h4>
+              <code>{examples[selected].method} {examples[selected].endpoint}</code>
 
-              <Card size="small" title="cURL">
+              <LCard size="small" title="cURL">
                 <pre style={{ background: '#1e293b', color: '#e2e8f0', padding: 12, borderRadius: 6, fontSize: 12, margin: 0, overflow: 'auto' }}>
                   {examples[selected].curl}
                 </pre>
-              </Card>
+              </LCard>
 
-              <Card size="small" title="Python">
+              <LCard size="small" title="Python">
                 <pre style={{ background: '#1e293b', color: '#e2e8f0', padding: 12, borderRadius: 6, fontSize: 12, margin: 0, overflow: 'auto' }}>
                   {examples[selected].python}
                 </pre>
-              </Card>
-            </Space>
+              </LCard>
+            </div>
           )}
         </div>
       </div>
     </div>
   );
 }
-
-// ── API Docs Panel ──────────────────────────────────
 
 function ApiDocsPanel() {
   const sections = [
@@ -407,8 +365,8 @@ function ApiDocsPanel() {
   return (
     <div>
       {sections.map(section => (
-        <Card key={section.title} title={section.title} style={{ marginBottom: 16 }}>
-          <Table
+        <LCard key={section.title} title={section.title} style={{ marginBottom: 16 }}>
+          <LTable
             dataSource={section.endpoints}
             rowKey="path"
             size="small"
@@ -416,24 +374,21 @@ function ApiDocsPanel() {
             columns={[
               {
                 title: 'Метод', dataIndex: 'method', key: 'method', width: 80,
-                render: (v: string) => (
-                  <Tag color={v === 'GET' ? 'blue' : v === 'POST' ? 'green' : v === 'DELETE' ? 'red' : 'orange'}>
-                    {v}
-                  </Tag>
-                ),
+                render: (v: unknown) => {
+                  const val = String(v);
+                  return <LTag color={val === 'GET' ? 'blue' : val === 'POST' ? 'green' : val === 'DELETE' ? 'red' : 'orange'}>{val}</LTag>;
+                },
               },
-              { title: 'Путь', dataIndex: 'path', key: 'path', render: (v: string) => <code>{v}</code> },
+              { title: 'Путь', dataIndex: 'path', key: 'path', render: (v: unknown) => <code>{String(v)}</code> },
               { title: 'Описание', dataIndex: 'desc', key: 'desc' },
-              { title: 'Тело', dataIndex: 'body', key: 'body', render: (v: string) => v ? <code style={{ fontSize: 11 }}>{v}</code> : '—' },
+              { title: 'Тело', dataIndex: 'body', key: 'body', render: (v: unknown) => v ? <code style={{ fontSize: 11 }}>{String(v)}</code> : '—' },
             ]}
           />
-        </Card>
+        </LCard>
       ))}
     </div>
   );
 }
-
-// ── Main Page ──────────────────────────────────
 
 function ApiContent() {
   const items = [
@@ -445,11 +400,11 @@ function ApiContent() {
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-      <Title level={2}><CodeOutlined /> API</Title>
-      <Paragraph type="secondary">
+      <h2><CodeOutlined /> API</h2>
+      <p style={{ color: '#999' }}>
         Управление API-ключами, тестирование эндпоинтов, примеры кода, документация API.
-      </Paragraph>
-      <Tabs items={items} />
+      </p>
+      <LTabs items={items} />
     </div>
   );
 }

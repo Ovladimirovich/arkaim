@@ -45,6 +45,8 @@ const SEARCH_PAGES = [
   { path: '/reading', title: 'Чтение', group: 'Книга' },
   { path: '/library', title: 'Библиотека', group: 'Книга' },
   { path: '/visual-view', title: 'Визуал', group: 'Книга' },
+  { path: '/assets', title: 'Ассеты', group: 'Книга' },
+  { path: '/film-studio', title: 'Film Studio', group: 'Книга' },
   { path: '/world-explorer', title: 'Исследование мира', group: 'Книга' },
   { path: '/map', title: 'Карта мира', group: 'Книга' },
   { path: '/profile', title: 'Профиль', group: 'Читатель' },
@@ -126,8 +128,8 @@ export function Topbar({ collapsed, onToggleCollapse, pathname }: TopbarProps) {
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '0 16px',
-        background: isDark ? '#1f1f1f' : '#fff',
-        borderBottom: `1px solid ${isDark ? '#303030' : '#f0f0f0'}`,
+        background: 'var(--surface-bg)',
+        borderBottom: '1px solid var(--card-border)',
         position: 'sticky',
         top: 0,
         zIndex: 50,
@@ -226,10 +228,10 @@ export function Topbar({ collapsed, onToggleCollapse, pathname }: TopbarProps) {
                       padding: '8px 12px',
                       cursor: 'pointer',
                       borderRadius: 6,
-                      background: pathname === p.path ? (isDark ? '#177ddc22' : '#e6f4ff') : 'transparent',
+                      background: pathname === p.path ? 'var(--card-border)' : 'transparent',
                     }}
                     onMouseEnter={e => {
-                      if (pathname !== p.path) e.currentTarget.style.background = isDark ? '#ffffff0a' : '#f5f5f5';
+                      if (pathname !== p.path) e.currentTarget.style.background = 'var(--divider-color)';
                     }}
                     onMouseLeave={e => {
                       if (pathname !== p.path) e.currentTarget.style.background = 'transparent';

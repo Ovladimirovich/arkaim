@@ -146,3 +146,68 @@ class TestComfyUIProvider:
         p = WF_DIR / "default.json"
         if p.exists():
             p.unlink()
+
+
+class TestComfyUIQuality:
+    def setup_method(self):
+        self.p = ComfyUIProvider(base_url="http://127.0.0.1:18188", workflow_name="test_quality.json")
+
+    def test_quality_presets_defined(self):
+        assert "draft" in self.p.QUALITY_PRESETS
+        assert "standard" in self.p.QUALITY_PRESETS
+        assert "high" in self.p.QUALITY_PRESETS
+        assert "ultra" in self.p.QUALITY_PRESETS
+
+    def test_inject_quality_draft(self):
+        wf = dict(DEFAULT_WF)
+        self.p._inject_quality(wf, "draft")
+        for n in wf.values():
+            if isinstance(n, dict) and n.get("class_type") == "KSampler":
+                assert n["inputs"]["steps"] == 15
+                assert n["inputs"]["cfg"] == 5.0
+                assert n["inputs"]["sampler_name"] == "euler"
+                return
+        assert False, "KSampler not found"
+
+    def test_inject_quality_standard(self):
+        wf = dict(DEFAULT_WF)
+        self.p._inject_quality(wf, "standard")
+        for n in wf.values():
+            if isinstance(n, dict) and n.get("class_type") == "KSampler":
+                assert n["inputs"]["steps"] == 25
+                assert n["inputs"]["cfg"] == 7.0
+                assert n["inputs"]["sampler_name"] == "euler"
+                return
+        assert False, "KSampler not found"
+
+    def test_inject_quality_high(self):
+        wf = dict(DEFAULT_WF)
+        self.p._inject_quality(wf, "high")
+        for n in wf.values():
+            if isinstance(n, dict) and n.get("class_type") == "KSampler":
+                assert n["inputs"]["steps"] == 40
+                assert n["inputs"]["cfg"] == 9.0
+                assert n["inputs"]["sampler_name"] == "ddim"
+                return
+        assert False, "KSampler not found"
+
+    def test_inject_quality_ultra(self):
+        wf = dict(DEFAULT_WF)
+        self.p._inject_quality(wf, "ultra")
+        for n in wf.values():
+            if isinstance(n, dict) and n.get("class_type") == "KSampler":
+                assert n["inputs"]["steps"] == 60
+                assert n["inputs"]["cfg"] == 11.0
+                assert n["inputs"]["sampler_name"] == "dpmpp_2m"
+                return
+        assert False, "KSampler not found"
+
+    def test_inject_quality_unknown_fallback_to_standard(self):
+        wf = dict(DEFAULT_WF)
+        self.p._inject_quality(wf, "nonexistent")
+        for n in wf.values():
+            if isinstance(n, dict) and n.get("class_type") == "KSampler":
+                assert n["inputs"]["steps"] == 25
+                assert n["inputs"]["cfg"] == 7.0
+                return
+        assert False, "KSampler not found"

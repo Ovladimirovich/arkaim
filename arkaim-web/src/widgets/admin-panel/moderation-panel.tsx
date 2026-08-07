@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Typography, List, Button, Space, Tag, Tabs, Empty, message, Popconfirm } from 'antd';
-import { CheckOutlined, CloseOutlined, DeleteOutlined, LikeOutlined } from '@ant-design/icons';
+import { Card, Typography, List, Button, Space, Tag, Tabs, Empty, message, Popconfirm, Spin } from 'antd';
+import { CheckOutlined, CloseOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
 
-const { Title, Text, Paragraph } = Typography;
+const { Text, Paragraph } = Typography;
 
 type Interpretation = {
   id: string;
@@ -66,6 +66,8 @@ function InterpretationsModeration() {
   });
 
   const items = data?.interpretations || [];
+
+  if (isLoading) return <div style={{ textAlign: 'center', padding: 40 }}><Spin size="large" /></div>;
 
   if (items.length === 0) {
     return <Empty description="Нет интерпретаций на модерации" />;
@@ -154,6 +156,8 @@ function ArtifactsModeration() {
   });
 
   const items = data?.artifacts || [];
+
+  if (isLoading) return <div style={{ textAlign: 'center', padding: 40 }}><Spin size="large" /></div>;
 
   if (items.length === 0) {
     return <Empty description="Нет артефактов на модерации" />;

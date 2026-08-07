@@ -1,6 +1,7 @@
 ﻿"""Book Intelligence вЂ” РѕСЃРЅРѕРІРЅС‹Рµ СЌРЅРґРїРѕРёРЅС‚С‹ (/book/*)."""
 import json
 import logging
+import re
 from functools import lru_cache
 from pathlib import Path
 
@@ -19,6 +20,30 @@ from core.adc_deps import (
 )
 
 log = logging.getLogger("hermes.routes.book")
+
+
+@lru_cache(maxsize=1)
+def _get_expansion_loader():
+    """Cached ExpansionLoader - loads once."""
+    try:
+        from knowledge_expansion.expansion_loader import ExpansionLoader
+        loader = ExpansionLoader()
+        loader.load()
+        return loader
+    except Exception as e:
+        log.warning("expansion_loader_init_failed: %s", e)
+        return None
+
+
+@lru_cache(maxsize=1)
+def _get_genome_data():
+    """Cached genome data - loads once."""
+    try:
+        from genome.extractor import load_json, GENOME_DIR
+        return load_json(GENOME_DIR / "GENOME_v1.0.0.json")
+    except Exception as e:
+        log.warning("genome_load_failed: %s", e)
+        return {}
 
 router = APIRouter(tags=["Book Intelligence"])
 
@@ -83,6 +108,7 @@ async def get_genome(config=Depends(get_config)):
         values=genome["modules"].get("values", []),
         world_entities=genome.get("world_entities", []),
         author_intent=genome.get("author_intent", {}),
+        modules=genome.get("modules", {}),
     )
 
 
@@ -275,7 +301,7 @@ async def get_book_text(offset: int = Query(0, ge=0), limit: int = Query(2000, g
 def _load_screenplay_text(config_obj=None) -> str:
     if config_obj is None:
         config_obj = get_config()
-    path = config_obj.SOURCE_OF_TRUTH / "SYNOPSIS" / "РќР°СЃР»РµРґРёРµ_РђСЂРєР°РёРјР°_РЎС†РµРЅР°СЂРёР№_Full.md"
+    path = config_obj.SOURCE_OF_TRUTH / "SYNOPSIS" / "Наследие_Аркаима_Сценарий_Full.md"
     if not path.exists():
         return ""
     return path.read_text(encoding="utf-8")
@@ -283,7 +309,6 @@ def _load_screenplay_text(config_obj=None) -> str:
 
 def _parse_screenplay_scenes(text: str) -> list[dict]:
     """Р Р°Р·Р±РёС‚СЊ СЃС†РµРЅР°СЂРёР№ РЅР° СЃС†РµРЅС‹ РїРѕ Р·Р°РіРѕР»РѕРІРєР°Рј (N. INT/EXT)."""
-    import re
     if not text:
         return []
 
@@ -346,6 +371,57 @@ async def get_screenplay_scenes(config=Depends(get_config)):
     }
 
 
+@router.get("/screenplay/genome", dependencies=[Depends(require_role("reader"))])
+async def get_screenplay_genome():
+    """Получить genome-данные сценария."""
+    import json as _json
+    kb = Path(__file__).resolve().parent.parent.parent.parent / "core" / "KNOWLEDGE"
+    extracts_path = kb / "screenplay_extracts.json"
+    if not extracts_path.exists():
+        return {"ok": True, "data": {"characters": [], "dialogues": [], "locations": []}}
+    extracts = _json.loads(extracts_path.read_text(encoding="utf-8"))
+    characters = []
+    for o in extracts.get("oceania_officers", []):
+        characters.append({"name": o.get("name", ""), "role": o.get("rank", ""), "description": o.get("description", "")})
+    stranger = extracts.get("the_stranger", "")
+    if stranger:
+        characters.append({"name": "Незнакомец", "role": "гипербореец", "description": stranger})
+    dialogues = [{"participants": d.get("participants", []), "topic": d.get("topic", ""), "excerpt": d.get("excerpt", "")} for d in extracts.get("key_dialogues", [])]
+    return {"ok": True, "data": {"characters": characters, "dialogues": dialogues, "total_characters": len(characters), "total_dialogues": len(dialogues)}}
+
+
+
+@router.get("/screenplay/context/{query}", dependencies=[Depends(require_role("reader"))])
+async def get_screenplay_context(query: str):
+    """RAG-поиск по screenplay с genome-обогащением."""
+    import json as _json
+    kb = Path(__file__).resolve().parent.parent.parent.parent / "core" / "KNOWLEDGE"
+    extracts_path = kb / "screenplay_extracts.json"
+    if not extracts_path.exists():
+        return {"ok": True, "data": {"dialogues": [], "characters": [], "visual_notes": []}}
+    extracts = _json.loads(extracts_path.read_text(encoding="utf-8"))
+    q = query.lower()
+    dialogues = []
+    for d in extracts.get("key_dialogues", []):
+        participants = " ".join(d.get("participants", [])).lower()
+        topic = d.get("topic", "").lower()
+        if any(w in q for w in participants.split() + topic.split()):
+            dialogues.append({"scene": d.get("scene", ""), "participants": d.get("participants", []), "topic": d.get("topic", ""), "excerpt": d.get("excerpt", ""), "significance": d.get("significance", "")})
+    characters = []
+    for o in extracts.get("oceania_officers", []):
+        if o.get("name", "").lower() in q:
+            characters.append({"name": o["name"], "role": o.get("rank", ""), "description": o.get("description", ""), "key_dialogue": o.get("key_dialogue", "")})
+    visual_notes = []
+    if "незнакомец" in q:
+        s = extracts.get("the_stranger", "")
+        if s:
+            visual_notes.append({"name": "Незнакомец", "description": s})
+    if any(w in q for w in ["обучение", "комната", "транс"]):
+        room = extracts.get("teaching_room", {})
+        if room:
+            visual_notes.append({"name": "Комната обучения", "description": room.get("description", "")})
+    return {"ok": True, "data": {"dialogues": dialogues, "characters": characters, "visual_notes": visual_notes}}
+
 @router.get("/screenplay/{scene_id}", dependencies=[Depends(require_role("reader"))])
 async def get_screenplay_scene(scene_id: str, config=Depends(get_config)):
     """РўРµРєСЃС‚ РєРѕРЅРєСЂРµС‚РЅРѕР№ СЃС†РµРЅС‹."""
@@ -355,6 +431,157 @@ async def get_screenplay_scene(scene_id: str, config=Depends(get_config)):
             return {"ok": True, "data": s}
     raise HTTPException(404, "РЎС†РµРЅР° РЅРµ РЅР°Р№РґРµРЅР°")
 
+
+
+# ── Screenplay Genome ──────────────────────────────────
+
+
+# ── Knowledge Autocomplete ─────────────────────────────
+
+
+@router.get("/knowledge/autocomplete", dependencies=[Depends(require_role("reader"))])
+async def knowledge_autocomplete(q: str = "", limit: int = 8):
+    """Автодополнение для поисковой строки."""
+    if not q or len(q) < 1:
+        return {"ok": True, "data": [], "query": q}
+
+    q_lower = q.lower()
+    suggestions = []
+
+    # 1. Search in ExpansionLayer topics
+    try:
+        loader = _get_expansion_loader()
+        if loader:
+            for topic in loader._knowledge.keys():
+                if q_lower in topic:
+                    suggestions.append({"text": topic, "type": "expansion", "score": 10 if topic.startswith(q_lower) else 5})
+    except Exception as e:
+        log.warning("autocomplete_expansion_error: %s", e)
+
+    # 2. Search in Genome themes
+    try:
+        genome = _get_genome_data()
+        modules = genome.get("modules", {})
+        for theme in modules.get("themes", []):
+            name = theme.get("name", "")
+            if q_lower in name.lower():
+                suggestions.append({"text": name, "type": "theme", "score": 8 if name.lower().startswith(q_lower) else 4})
+        for char in modules.get("characters", []):
+            name = char.get("name", "")
+            if q_lower in name.lower():
+                suggestions.append({"text": name, "type": "character", "score": 8 if name.lower().startswith(q_lower) else 4})
+        for sym in modules.get("symbols", []):
+            name = sym.get("name", "")
+            if q_lower in name.lower():
+                suggestions.append({"text": name, "type": "symbol", "score": 6 if name.lower().startswith(q_lower) else 3})
+    except Exception as e:
+        log.warning("autocomplete_genome_error: %s", e)
+
+    # 3. Sort by score and limit
+    suggestions.sort(key=lambda x: x.get("score", 0), reverse=True)
+    seen = set()
+    unique = []
+    for s in suggestions:
+        if s["text"].lower() not in seen:
+            seen.add(s["text"].lower())
+            unique.append(s)
+    return {"ok": True, "data": unique[:limit], "query": q}
+
+# ── Knowledge Search ──────────────────────────────────
+
+
+@router.get("/knowledge/search", dependencies=[Depends(require_role("reader"))])
+async def search_knowledge(q: str = "", limit: int = 10, offset: int = 0, type: str = "", sort: str = "relevance"):
+    """Поиск по базе знаний (ExpansionLayer + Genome).
+    
+    Параметры:
+      q: поисковый запрос
+      limit: максимальное количество результатов (по умолчанию 10)
+      offset: смещение для пагинации (по умолчанию 0)
+      type: фильтр по типу контента (theme, character, symbol, conflict, expansion)
+      sort: сортировка (relevance или date)
+    """
+    if not q or len(q) < 2:
+        return {"ok": True, "data": [], "query": q, "type_filter": type, "total": 0, "offset": offset, "limit": limit}
+
+    # 1. Search in ExpansionLayer
+    expansion_results = []
+    try:
+        loader = _get_expansion_loader()
+        if loader and (not type or type == "expansion"):
+            expansion_results = loader.search(q, limit=limit + offset + 50)
+    except Exception as e:
+        log.warning("search_expansion_error: %s", e)
+        expansion_results = []
+
+    # 2. Search in Genome
+    try:
+        genome = _get_genome_data()
+        genome_results = []
+        modules = genome.get("modules", {})
+        q_lower = q.lower()
+
+        # Search themes
+        if not type or type == "theme":
+         for theme in modules.get("themes", []):
+            name = theme.get("name", "").lower()
+            desc = theme.get("description", "").lower()
+            if q_lower in name or q_lower in desc:
+                genome_results.append({"type": "theme", "name": theme.get("name", ""), "description": theme.get("description", "")[:200]})
+
+        # Search characters
+        if not type or type == "character":
+         for char in modules.get("characters", []):
+            name = char.get("name", "").lower()
+            desc = char.get("description", "").lower()
+            if q_lower in name or q_lower in desc:
+                genome_results.append({"type": "character", "name": char.get("name", ""), "description": char.get("description", "")[:200]})
+
+        # Search symbols
+        if not type or type == "symbol":
+         for sym in modules.get("symbols", []):
+            name = sym.get("name", "").lower()
+            desc = sym.get("description", "").lower()
+            if q_lower in name or q_lower in desc:
+                genome_results.append({"type": "symbol", "name": sym.get("name", ""), "description": sym.get("description", "")[:200]})
+
+        # Search conflicts
+        if not type or type == "conflict":
+         for conf in modules.get("conflicts", []):
+            name = conf.get("name", "").lower()
+            desc = conf.get("description", "").lower()
+            if q_lower in name or q_lower in desc:
+                genome_results.append({"type": "conflict", "name": conf.get("name", ""), "description": conf.get("description", "")[:200]})
+    except Exception as e:
+        log.warning("search_genome_error: %s", e)
+        genome_results = []
+
+    # 3. Combine results
+    all_results = []
+    for r in expansion_results[:limit]:
+        all_results.append({
+            "source": "expansion",
+            "topic": r.get("topic", ""),
+            "score": r.get("score", 0),
+            "data": {k: v for k, v in r.get("data", {}).items() if k != "layers"} if isinstance(r.get("data"), dict) else {},
+        })
+    for r in genome_results[:limit]:
+        all_results.append({
+            "source": "genome",
+            "type": r.get("type", ""),
+            "name": r.get("name", ""),
+            "description": r.get("description", ""),
+        })
+
+        # Sort results
+    if sort == "date":
+        all_results.sort(key=lambda x: x.get("data", {}).get("added_at", x.get("created_at", "")), reverse=True)
+    else:
+        all_results.sort(key=lambda x: x.get("score", 0), reverse=True)
+
+    # Apply pagination
+    paginated = all_results[offset:offset + limit]
+    return {"ok": True, "data": paginated, "query": q, "total": len(all_results), "offset": offset, "limit": limit, "type_filter": type or "all", "sort": sort}
 
 
 # ── Cache Stats ──────────────────────────────────────────

@@ -1,7 +1,8 @@
 @echo off
+chcp 65001 >nul
 echo ========================================
 echo   Arkaim Digital Consciousness
-echo   Server Startup
+echo   Core Server Startup
 echo ========================================
 echo.
 
@@ -32,8 +33,10 @@ if not exist ".venv\Scripts\python.exe" (
         pause
         exit /b 1
     )
+) else (
+    echo   venv found.
+    echo   WARNING: If .venv was copied from old location, delete it and re-run.
 )
-echo   venv OK.
 
 echo [3/4] Checking configuration...
 if not exist ".env" (
@@ -49,21 +52,12 @@ if not exist ".env" (
     )
 )
 
-for /f "tokens=1,* delims==" %%a in (.env 2^>nul) do (
-    if "%%a"=="SESSION_SECRET" (
-        if "%%b"=="change-me-in-production" (
-            echo WARNING: SESSION_SECRET is default value!
-            echo   Generate: python -c "import secrets; print(secrets.token_urlsafe(48))"
-            echo.
-        )
-    )
-)
-
 echo [4/4] Starting server...
 echo.
 if "%CORE_HOST%"=="" set CORE_HOST=127.0.0.1
 if "%CORE_PORT%"=="" set CORE_PORT=8642
 set PYTHONPATH=%CD%
+title Arkaim Core :%CORE_PORT%
 
 echo   Server:   http://%CORE_HOST%:%CORE_PORT%
 echo   API Docs: http://%CORE_HOST%:%CORE_PORT%/docs
@@ -73,3 +67,13 @@ echo   Press Ctrl+C to stop the server.
 echo.
 
 .venv\Scripts\python.exe -m uvicorn core.main:app --host %CORE_HOST% --port %CORE_PORT% --log-level info
+if errorlevel 1 (
+    echo.
+    echo [ERROR] Server exited with error code %errorlevel%
+    echo.
+    echo Try deleting the .venv folder and re-running:
+    echo   rmdir /s /q .venv
+    echo   start.bat
+    echo.
+    pause
+)

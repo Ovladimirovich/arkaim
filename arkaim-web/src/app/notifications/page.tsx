@@ -1,15 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Typography, Tabs, Table, Tag, Button, Space, List, Statistic, Row, Col, Modal, message, Empty, Badge } from 'antd';
 import { BellOutlined, MailOutlined, BulbOutlined, SendOutlined, CheckOutlined, CloseOutlined, ReloadOutlined, TeamOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
 import { ProtectedRoute } from '@/shared/lib/guards';
-
-const { Title, Text, Paragraph } = Typography;
-
-// ── Types ──────────────────────────────────────────
+import { LCard } from '@/shared/ui/light/LCard';
+import { LTabs } from '@/shared/ui/light/LTabs';
+import { LTable } from '@/shared/ui/light/LTable';
+import { LTag } from '@/shared/ui/light/LTag';
+import { LButton } from '@/shared/ui/light/LButton';
+import { LSpace } from '@/shared/ui/light/LSpace';
+import { LStatistic } from '@/shared/ui/light/LStatistic';
+import { LModal } from '@/shared/ui/light/LModal';
+import { LEmpty } from '@/shared/ui/light/LEmpty';
+import { LBadge } from '@/shared/ui/light/LBadge';
 
 type Suggestion = {
   id: string;
@@ -41,202 +46,210 @@ type EmailStats = {
   errors: number;
 };
 
-// ── Suggestions Panel ──────────────────────────────
-
 function SuggestionsPanel() {
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
     queryKey: ['suggestions'],
-    queryFn: () => api.get<{ suggestions: Suggestion[] }>('/book/presence/suggestions'),
+    queryFn: () => api.get('/notifications/suggestions') as Promise<{ data: Suggestion[] }>,
   });
 
   const approveMutation = useMutation({
-    mutationFn: (id: string) => api.post(`/book/presence/suggestions/${id}/approve`),
-    onSuccess: () => { message.success('Предложение одобрено'); queryClient.invalidateQueries({ queryKey: ['suggestions'] }); },
+    mutationFn: (id: string) => api.post(`/notifications/suggestions/${id}/approve`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suggestions'] });
+      alert('Одобрено');
+    },
   });
 
   const rejectMutation = useMutation({
-    mutationFn: (id: string) => api.post(`/book/presence/suggestions/${id}/reject`),
-    onSuccess: () => { message.success('Предложение отклонено'); queryClient.invalidateQueries({ queryKey: ['suggestions'] }); },
+    mutationFn: (id: string) => api.post(`/notifications/suggestions/${id}/reject`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suggestions'] });
+      alert('Отклонено');
+    },
   });
 
-  const suggestions = data?.suggestions || [];
-  const pending = suggestions.filter(s => s.status === 'pending');
-  const approved = suggestions.filter(s => s.status === 'approved');
-  const rejected = suggestions.filter(s => s.status === 'rejected');
+  const suggestions = (data as any)?.data || [];
 
   const columns = [
-    { title: 'Тема', dataIndex: 'topic', key: 'topic', render: (v: string) => <Text strong>{v}</Text> },
-    { title: 'Причина', dataIndex: 'reason', key: 'reason', render: (v: string) => v || '—' },
-    { title: 'Статус', dataIndex: 'status', key: 'status', render: (v: string) => (
-      <Tag color={v === 'approved' ? 'green' : v === 'rejected' ? 'red' : 'orange'}>{v}</Tag>
+    { title: 'Тема', dataIndex: 'topic', key: 'topic' },
+    { title: 'Статус', dataIndex: 'status', key: 'status', render: (v: unknown) => <LTag color={v === 'pending' ? 'blue' : v === 'approved' ? 'green' : 'red'}>{v as string}</LTag> },
+    { title: 'Действия', key: 'actions', render: (_: unknown, record: unknown) => (
+      (record as Suggestion).status === 'pending' ? (
+        <LSpace size={4}>
+          <LButton size="small" icon={<CheckOutlined />} onClick={() => approveMutation.mutate((record as Suggestion).id)} loading={approveMutation.isPending}>Одобрить</LButton>
+          <LButton size="small" icon={<CloseOutlined />} onClick={() => rejectMutation.mutate((record as Suggestion).id)} loading={rejectMutation.isPending}>Отклонить</LButton>
+        </LSpace>
+      ) : null
     )},
-    { title: 'Действия', key: 'actions', render: (_: any, record: Suggestion) => record.status === 'pending' ? (
-      <Space>
-        <Button size="small" type="primary" icon={<CheckOutlined />} onClick={() => approveMutation.mutate(record.id)}>Одобрить</Button>
-        <Button size="small" danger icon={<CloseOutlined />} onClick={() => rejectMutation.mutate(record.id)}>Отклонить</Button>
-      </Space>
-    ) : null },
   ];
 
   return (
-    <div>
-      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-        <Col span={8}><Card size="small"><Statistic title="Ожидают" value={pending.length} valueStyle={{ color: '#f59e0b' }} /></Card></Col>
-        <Col span={8}><Card size="small"><Statistic title="Одобрено" value={approved.length} valueStyle={{ color: '#16a34a' }} /></Card></Col>
-        <Col span={8}><Card size="small"><Statistic title="Отклонено" value={rejected.length} valueStyle={{ color: '#dc2626' }} /></Card></Col>
-      </Row>
-      <Table columns={columns} dataSource={suggestions} rowKey="id" loading={isLoading} size="small" pagination={{ pageSize: 10 }} />
-    </div>
+    <LTable columns={columns} dataSource={suggestions} rowKey="id" loading={isLoading} size="small" pagination={{ pageSize: 10 }} />
   );
 }
-
-// ── Trending Panel ──────────────────────────────
 
 function TrendingPanel() {
   const { data, isLoading } = useQuery({
     queryKey: ['trending'],
-    queryFn: () => api.get<{ trending: TrendingTopic[]; total: number }>('/book/presence/trending?min_hits=1'),
+    queryFn: () => api.get('/book/trending') as Promise<{ data: TrendingTopic[] }>,
   });
 
-  const trending = data?.trending || [];
+  const topics = (data as any)?.data || [];
+
+  if (isLoading) return <div style={{ padding: 24, textAlign: 'center', color: '#999' }}>Загрузка...</div>;
+
+  if (topics.length === 0) return <LEmpty description="Нет трендовых тем" />;
 
   return (
     <div>
-      <Card title="Трендовые темы" style={{ marginBottom: 16 }}>
-        {isLoading ? <Text type="secondary">Загрузка...</Text> : trending.length === 0 ? (
-          <Empty description="Нет трендовых тем" />
-        ) : (
-          <List
-            dataSource={trending}
-            renderItem={(item: TrendingTopic, index: number) => (
-              <List.Item>
-                <List.Item.Meta
-                  title={<Space><Badge count={index + 1} style={{ backgroundColor: '#2563eb' }} /><Text strong>{item.keyword}</Text></Space>}
-                  description={<Space>{item.sources?.map((s, i) => <Tag key={i}>{s}</Tag>)}</Space>}
-                />
-                <Statistic title="Упоминаний" value={item.hits} />
-              </List.Item>
-            )}
-          />
-        )}
-      </Card>
+      {topics.slice(0, 10).map((topic: TrendingTopic, i: number) => (
+        <div key={topic.keyword} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <LBadge count={i + 1} />
+            <span>{topic.keyword}</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ color: '#666', fontSize: 12 }}>{topic.hits}</span>
+            <span style={{ fontSize: 12, color: '#999' }}>{topic.sources.join(', ')}</span>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
-
-// ── Email Drafts Panel ──────────────────────────────
 
 function EmailDraftsPanel() {
   const queryClient = useQueryClient();
   const [selectedDraft, setSelectedDraft] = useState<EmailDraft | null>(null);
 
-  const { data: drafts, isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['email-drafts'],
-    queryFn: () => api.get<EmailDraft[]>('/book/email/drafts'),
+    queryFn: () => api.get('/notifications/email/drafts') as Promise<{ data: EmailDraft[] }>,
   });
 
   const { data: stats } = useQuery({
     queryKey: ['email-stats'],
-    queryFn: () => api.get<EmailStats>('/book/email/stats'),
+    queryFn: () => api.get('/notifications/email/stats') as Promise<{ data: EmailStats }>,
   });
 
   const generateMutation = useMutation({
-    mutationFn: () => api.post('/book/email/draft/auto'),
-    onSuccess: () => { message.success('Черновик создан'); queryClient.invalidateQueries({ queryKey: ['email-drafts'] }); },
+    mutationFn: () => api.post('/notifications/email/generate'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['email-drafts'] });
+      alert('Черновик создан');
+    },
   });
 
-  const approveMutation = useMutation({
-    mutationFn: (id: string) => api.post(`/book/email/drafts/${id}/approve`),
-    onSuccess: () => { message.success('Черновик одобрен'); queryClient.invalidateQueries({ queryKey: ['email-drafts'] }); },
+  const approveDraftMutation = useMutation({
+    mutationFn: (id: string) => api.post(`/notifications/email/drafts/${id}/approve`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['email-drafts'] });
+      alert('Черновик одобрен');
+    },
   });
 
   const sendMutation = useMutation({
-    mutationFn: (id: string) => api.post(`/book/email/drafts/${id}/send`),
-    onSuccess: () => { message.success('Письмо отправлено'); queryClient.invalidateQueries({ queryKey: ['email-drafts'] }); },
+    mutationFn: () => api.post('/notifications/email/send'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['email-drafts'] });
+      queryClient.invalidateQueries({ queryKey: ['email-stats'] });
+      alert('Рассылка отправлена');
+    },
   });
+
+  const drafts = (data as any)?.data || [];
+  const emailStats = (stats as any)?.data;
 
   const columns = [
     { title: 'Тема', dataIndex: 'subject', key: 'subject' },
-    { title: 'Статус', dataIndex: 'status', key: 'status', render: (v: string) => (
-      <Tag color={v === 'sent' ? 'green' : v === 'approved' ? 'blue' : 'orange'}>{v}</Tag>
-    )},
-    { title: 'Создан', dataIndex: 'created_at', key: 'created', render: (v: string) => v ? new Date(v).toLocaleString('ru') : '—' },
-    { title: 'Действия', key: 'actions', render: (_: any, record: EmailDraft) => (
-      <Space>
-        {record.status === 'draft' && <Button size="small" onClick={() => approveMutation.mutate(record.id)}>Одобрить</Button>}
-        {record.status === 'approved' && <Button size="small" type="primary" onClick={() => sendMutation.mutate(record.id)}>Отправить</Button>}
-        <Button size="small" onClick={() => setSelectedDraft(record)}>Просмотр</Button>
-      </Space>
-    )},
+    { title: 'Статус', dataIndex: 'status', key: 'status', render: (v: unknown) => <LTag color={v === 'approved' ? 'green' : v === 'sent' ? 'blue' : 'orange'}>{v as string}</LTag> },
+    { title: 'Создан', dataIndex: 'created_at', key: 'created_at', render: (v: unknown) => (v as string) ? new Date(v as string).toLocaleDateString('ru') : '—' },
+    {
+      title: 'Действия', key: 'actions', render: (_: unknown, record: unknown) => (
+        <LSpace size={4}>
+          <LButton size="small" onClick={() => setSelectedDraft(record as EmailDraft)}>Просмотр</LButton>
+          {(record as EmailDraft).status === 'draft' && (
+            <LButton size="small" icon={<CheckOutlined />} onClick={() => approveDraftMutation.mutate((record as EmailDraft).id)}>Одобрить</LButton>
+          )}
+        </LSpace>
+      ),
+    },
   ];
 
   return (
     <div>
-      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-        <Col span={8}><Card size="small"><Statistic title="Подписчиков" value={stats?.subscribers ?? 0} prefix={<TeamOutlined />} /></Card></Col>
-        <Col span={8}><Card size="small"><Statistic title="Отправлено" value={stats?.sent ?? 0} /></Card></Col>
-        <Col span={8}><Card size="small"><Statistic title="Ошибок" value={stats?.errors ?? 0} valueStyle={{ color: stats?.errors ? '#dc2626' : undefined }} /></Card></Col>
-      </Row>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+        {emailStats && (
+          <>
+            <LCard size="small"><LStatistic title="Подписчиков" value={emailStats.subscribers} /></LCard>
+            <LCard size="small"><LStatistic title="Отправлено" value={emailStats.sent} /></LCard>
+            <LCard size="small"><LStatistic title="Ошибок" value={emailStats.errors} /></LCard>
+          </>
+        )}
+      </div>
+      <div style={{ marginBottom: 12 }}>
+        <LSpace size={8}>
+          <LButton icon={<SendOutlined />} onClick={() => generateMutation.mutate()} loading={generateMutation.isPending}>Создать черновик</LButton>
+          <LButton icon={<ReloadOutlined />} onClick={() => sendMutation.mutate()} loading={sendMutation.isPending}>Отправить рассылку</LButton>
+        </LSpace>
+      </div>
+      <LTable columns={columns} dataSource={drafts} rowKey="id" loading={isLoading} size="small" pagination={{ pageSize: 10 }} />
 
-      <Space style={{ marginBottom: 16 }}>
-        <Button type="primary" icon={<MailOutlined />} onClick={() => generateMutation.mutate()} loading={generateMutation.isPending}>
-          Создать черновик
-        </Button>
-      </Space>
-
-      <Table columns={columns} dataSource={drafts || []} rowKey="id" loading={isLoading} size="small" />
-
-      <Modal title="Просмотр черновика" open={!!selectedDraft} onCancel={() => setSelectedDraft(null)} footer={null} width={600}>
+      <LModal
+        open={!!selectedDraft}
+        onCancel={() => setSelectedDraft(null)}
+        title="Черновик"
+      >
         {selectedDraft && (
           <div>
-            <Text strong>Тема: </Text><Text>{selectedDraft.subject}</Text>
-            <br />
-            <Text strong>Статус: </Text><Tag>{selectedDraft.status}</Tag>
-            <br />
-            <Text strong>Создан: </Text><Text>{selectedDraft.created_at ? new Date(selectedDraft.created_at).toLocaleString('ru') : '—'}</Text>
+            <p><strong>Тема:</strong> {selectedDraft.subject}</p>
+            <p><strong>Статус:</strong> {selectedDraft.status}</p>
+            <p><strong>Создан:</strong> {new Date(selectedDraft.created_at).toLocaleString('ru')}</p>
+            {selectedDraft.approved_at && <p><strong>Одобрен:</strong> {new Date(selectedDraft.approved_at).toLocaleString('ru')}</p>}
+            {selectedDraft.sent_at && <p><strong>Отправлен:</strong> {new Date(selectedDraft.sent_at).toLocaleString('ru')}</p>}
           </div>
         )}
-      </Modal>
+      </LModal>
     </div>
   );
 }
 
-// ── Subscribers Panel ──────────────────────────────
-
 function SubscribersPanel() {
-  const { data: subscribers, isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['subscribers'],
-    queryFn: () => api.get<Array<{ email: string; name?: string; subscribed_at: string }>>('/book/email/subscribers'),
+    queryFn: () => api.get('/notifications/email/subscribers') as Promise<{ data: { email: string; subscribed_at: string }[] }>,
   });
+
+  const subscribers = (data as any)?.data || [];
 
   const columns = [
     { title: 'Email', dataIndex: 'email', key: 'email' },
-    { title: 'Имя', dataIndex: 'name', key: 'name', render: (v: string) => v || '—' },
-    { title: 'Дата подписки', dataIndex: 'subscribed_at', key: 'date', render: (v: string) => v ? new Date(v).toLocaleString('ru') : '—' },
+    {
+      title: 'Подписан', dataIndex: 'subscribed_at', key: 'subscribed_at',
+      render: (v: unknown) => (v as string) ? new Date(v as string).toLocaleDateString('ru') : '—',
+    },
   ];
 
   return (
-    <Table columns={columns} dataSource={subscribers || []} rowKey="email" loading={isLoading} size="small" pagination={{ pageSize: 20 }} />
+    <LTable columns={columns} dataSource={subscribers} rowKey="email" loading={isLoading} size="small" pagination={{ pageSize: 20 }} />
   );
 }
-
-// ── Main Page ──────────────────────────────────
 
 function NotificationsContent() {
   const items = [
     { key: 'suggestions', label: <><BulbOutlined /> Предложения</>, children: <SuggestionsPanel /> },
-    { key: 'trending', label: 'Тренды', children: <TrendingPanel /> },
+    { key: 'trending', label: <><BellOutlined /> Тренды</>, children: <TrendingPanel /> },
     { key: 'email', label: <><MailOutlined /> Email</>, children: <EmailDraftsPanel /> },
     { key: 'subscribers', label: <><TeamOutlined /> Подписчики</>, children: <SubscribersPanel /> },
   ];
 
   return (
-    <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-      <Title level={2}><BellOutlined /> Уведомления</Title>
-      <Paragraph type="secondary">Предложения Presence, трендовые темы, email-рассылки</Paragraph>
-      <Tabs items={items} />
+    <div style={{ maxWidth: 900, margin: '0 auto' }}>
+      <h2><BellOutlined /> Уведомления</h2>
+      <p style={{ color: '#666' }}>Предложения, тренды и email-рассылка</p>
+      <LTabs items={items} />
     </div>
   );
 }

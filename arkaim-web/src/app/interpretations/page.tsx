@@ -1,15 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Typography, List, Button, Space, Tag, Input, Form, message, Empty, Statistic, Row, Col, Select } from 'antd';
 import { BulbOutlined, LikeOutlined, PlusOutlined, UserOutlined, CommentOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
 import { ProtectedRoute } from '@/shared/lib/guards';
 import { Comments } from '@/shared/ui/Comments';
-
-const { Title, Text, Paragraph } = Typography;
-const { TextArea } = Input;
+import { LCard } from '@/shared/ui/light/LCard';
+import { LTag } from '@/shared/ui/light/LTag';
+import { LButton } from '@/shared/ui/light/LButton';
+import { LSpin } from '@/shared/ui/light/LSpin';
+import { LEmpty } from '@/shared/ui/light/LEmpty';
+import { LStatistic } from '@/shared/ui/light/LStatistic';
 
 type Interpretation = {
   id: string;
@@ -25,39 +27,67 @@ type Interpretation = {
 
 function InterpretationForm({ onClose }: { onClose: () => void }) {
   const queryClient = useQueryClient();
-  const [form] = Form.useForm();
+  const [form, setForm] = useState({ text: '', themes: '', characters: '' });
 
   const submitMutation = useMutation({
-    mutationFn: (values: any) => api.post('/book/community/interpretations', {
+    mutationFn: (values: { text: string; themes?: string; characters?: string }) => api.post('/book/community/interpretations', {
       text: values.text,
       themes: values.themes ? values.themes.split(',').map((t: string) => t.trim()).filter(Boolean) : [],
       characters: values.characters ? values.characters.split(',').map((c: string) => c.trim()).filter(Boolean) : [],
     }),
     onSuccess: () => {
-      message.success('Интерпретация отправлена на модерацию');
+      alert('Интерпретация отправлена на модерацию');
       queryClient.invalidateQueries({ queryKey: ['interpretations'] });
       onClose();
     },
   });
 
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '8px 12px',
+    border: '1px solid #d9d9d9',
+    borderRadius: 6,
+    fontSize: 14,
+    outline: 'none',
+  };
+
   return (
-    <Card title="Новая интерпретация" size="small" style={{ marginBottom: 16 }}>
-      <Form form={form} layout="vertical" onFinish={submitMutation.mutate}>
-        <Form.Item name="text" label="Ваша интерпретация" rules={[{ required: true }]}>
-          <TextArea rows={4} placeholder="Что вы нашли в книге? Какие связи обнаружили?" />
-        </Form.Item>
-        <Form.Item name="themes" label="Связанные темы (через запятую)">
-          <Input placeholder="Гиперборея, звукознание, пробуждение" />
-        </Form.Item>
-        <Form.Item name="characters" label="Связанные персонажи (через запятую)">
-          <Input placeholder="Велик, Учитель, Славный" />
-        </Form.Item>
-        <Space>
-          <Button type="primary" htmlType="submit" loading={submitMutation.isPending}>Отправить</Button>
-          <Button onClick={onClose}>Отмена</Button>
-        </Space>
-      </Form>
-    </Card>
+    <LCard title="Новая интерпретация" size="small" style={{ marginBottom: 16 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div>
+          <label style={{ display: 'block', fontSize: 14, marginBottom: 4 }}>Ваша интерпретация *</label>
+          <textarea
+            value={form.text}
+            onChange={e => setForm({ ...form, text: e.target.value })}
+            placeholder="Что вы нашли в книге? Какие связи обнаружили?"
+            rows={4}
+            style={{ ...inputStyle, resize: 'vertical' }}
+          />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 14, marginBottom: 4 }}>Связанные темы (через запятую)</label>
+          <input
+            value={form.themes}
+            onChange={e => setForm({ ...form, themes: e.target.value })}
+            placeholder="Гиперборея, звукознание, пробуждение"
+            style={inputStyle}
+          />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 14, marginBottom: 4 }}>Связанные персонажи (через запятую)</label>
+          <input
+            value={form.characters}
+            onChange={e => setForm({ ...form, characters: e.target.value })}
+            placeholder="Велик, Учитель, Славный"
+            style={inputStyle}
+          />
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <LButton type="primary" onClick={() => submitMutation.mutate(form)} loading={submitMutation.isPending}>Отправить</LButton>
+          <LButton onClick={onClose}>Отмена</LButton>
+        </div>
+      </div>
+    </LCard>
   );
 }
 
@@ -87,81 +117,71 @@ function InterpretationsContent() {
   const toggleComments = (id: string) => {
     setExpandedComments(prev => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
+      if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
   };
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto' }}>
-      <Title level={2}><BulbOutlined /> Интерпретации</Title>
-      <Paragraph type="secondary">Читатели делятся своим пониманием книги. Каждая интерпретация — новый взгляд на сокрытые знания.</Paragraph>
+      <h2><BulbOutlined /> Интерпретации</h2>
+      <p style={{ color: '#999', marginBottom: 16 }}>Читатели делятся своим пониманием книги. Каждая интерпретация — новый взгляд на сокрытые знания.</p>
 
-      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-        <Col span={8}><Card size="small"><Statistic title="Всего" value={stats?.total ?? 0} /></Card></Col>
-        <Col span={8}><Card size="small"><Statistic title="Одобрено" value={stats?.approved ?? 0} valueStyle={{ color: '#16a34a' }} /></Card></Col>
-        <Col span={8}><Card size="small"><Statistic title="Ожидают" value={stats?.pending ?? 0} valueStyle={{ color: '#f59e0b' }} /></Card></Col>
-      </Row>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 16 }}>
+        <LCard size="small"><LStatistic title="Всего" value={stats?.total ?? 0} /></LCard>
+        <LCard size="small"><LStatistic title="Одобрено" value={stats?.approved ?? 0} valueStyle={{ color: '#16a34a' }} /></LCard>
+        <LCard size="small"><LStatistic title="Ожидают" value={stats?.pending ?? 0} valueStyle={{ color: '#f59e0b' }} /></LCard>
+      </div>
 
-      <Space style={{ marginBottom: 16 }}>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowForm(true)}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <LButton type="primary" icon={<PlusOutlined />} onClick={() => setShowForm(true)}>
           Поделиться интерпретацией
-        </Button>
-        <Select
+        </LButton>
+        <select
           value={sort}
-          onChange={setSort}
-          style={{ width: 180 }}
-          options={[
-            { value: 'newest', label: 'Сначала новые' },
-            { value: 'oldest', label: 'Сначала старые' },
-            { value: 'popular', label: 'По популярности' },
-          ]}
-        />
-      </Space>
+          onChange={e => setSort(e.target.value)}
+          style={{ padding: '8px 12px', border: '1px solid #d9d9d9', borderRadius: 6, fontSize: 14 }}
+        >
+          <option value="newest">Сначала новые</option>
+          <option value="oldest">Сначала старые</option>
+          <option value="popular">По популярности</option>
+        </select>
+      </div>
 
       {showForm && <InterpretationForm onClose={() => setShowForm(false)} />}
 
-      {interpretations.length === 0 ? (
-        <Empty description="Пока нет интерпретаций. Будьте первым!" />
+      {isLoading ? (
+        <div style={{ textAlign: 'center', padding: 48 }}><LSpin /></div>
+      ) : interpretations.length === 0 ? (
+        <LEmpty description="Пока нет интерпретаций. Будьте первым!" />
       ) : (
-        <List
-          dataSource={interpretations}
-          renderItem={(item: Interpretation) => (
-            <Card size="small" style={{ marginBottom: 8 }}>
-              <Space direction="vertical" size={4} style={{ width: '100%' }}>
-                <Space>
-                  <UserOutlined />
-                  <Text strong>{item.reader_name || 'Читатель'}</Text>
-                  <Text type="secondary" style={{ fontSize: 12 }}>{new Date(item.created_at).toLocaleString('ru')}</Text>
-                </Space>
-                <Paragraph style={{ margin: 0 }}>{item.text}</Paragraph>
-                <Space wrap>
-                  {item.themes.map((t, i) => <Tag key={i}>{t}</Tag>)}
-                  {item.characters.map((c, i) => <Tag key={i} color="blue">{c}</Tag>)}
-                </Space>
-                <Space>
-                  <Button size="small" icon={<LikeOutlined />} onClick={() => likeMutation.mutate(item.id)}>
-                    {item.likes}
-                  </Button>
-                  <Button
-                    size="small"
-                    icon={<CommentOutlined />}
-                    onClick={() => toggleComments(item.id)}
-                  >
-                    {expandedComments.has(item.id) ? 'Скрыть' : 'Комментарии'}
-                  </Button>
-                </Space>
-                {expandedComments.has(item.id) && (
-                  <Comments parentType="interpretation" parentId={item.id} />
-                )}
-              </Space>
-            </Card>
-          )}
-        />
+        interpretations.map((item: Interpretation) => (
+          <LCard key={item.id} size="small" style={{ marginBottom: 8 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <UserOutlined />
+                <strong>{item.reader_name || 'Читатель'}</strong>
+                <span style={{ fontSize: 12, color: '#999' }}>{new Date(item.created_at).toLocaleString('ru')}</span>
+              </div>
+              <p style={{ margin: 0 }}>{item.text}</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                {item.themes.map((t, i) => <LTag key={i}>{t}</LTag>)}
+                {item.characters.map((c, i) => <LTag key={i} color="blue">{c}</LTag>)}
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <LButton size="small" icon={<LikeOutlined />} onClick={() => likeMutation.mutate(item.id)}>
+                  {item.likes}
+                </LButton>
+                <LButton size="small" icon={<CommentOutlined />} onClick={() => toggleComments(item.id)}>
+                  {expandedComments.has(item.id) ? 'Скрыть' : 'Комментарии'}
+                </LButton>
+              </div>
+              {expandedComments.has(item.id) && (
+                <Comments parentType="interpretation" parentId={item.id} />
+              )}
+            </div>
+          </LCard>
+        ))
       )}
     </div>
   );

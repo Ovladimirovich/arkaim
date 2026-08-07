@@ -15,7 +15,7 @@ _BASE_URL = "https://gigachat.devices.sberbank.ru/api/v1"
 
 
 class GigaChatToken:
-    def __init__(self):
+    def __init__(self) -> None:
         self._access_token = ""
         self._expires_at = 0.0
         self._lock = asyncio.Lock()
@@ -26,7 +26,7 @@ class GigaChatToken:
 
 
 class GigaChatProvider(BaseProvider):
-    def __init__(self):
+    def __init__(self) -> None:
         self.base_url = _BASE_URL
         self.verify = settings.GIGACHAT_VERIFY_SSL
         self.token = GigaChatToken()
@@ -64,7 +64,7 @@ class GigaChatProvider(BaseProvider):
         log.info("token_refresh refresh_time=%.2fs", refresh_time)
         return self.token._access_token
 
-    async def chat(self, messages, context=None, trace_id="", xray_headers=None):
+    async def chat(self, messages, context=None, trace_id="", xray_headers=None) -> str:
         token = await self._acquire_token()
         headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
         if xray_headers:
@@ -121,5 +121,5 @@ class GigaChatProvider(BaseProvider):
         except Exception as exc:
             return {"status": "error", "provider": "gigachat", "error": str(exc)}
 
-    async def close(self):
+    async def close(self) -> None:
         await self._client.aclose()

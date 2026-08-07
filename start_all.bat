@@ -1,97 +1,77 @@
 @echo off
 chcp 65001 >nul
+title Arkaim Launcher
 echo ========================================
 echo   Arkaim Digital Consciousness
-echo   Full Stack Startup
+echo   Запуск всех сервисов
 echo ========================================
 echo.
 
-:: =============================================
-:: 1. BACKEND (FastAPI)
-:: =============================================
-echo [1/5] Starting Backend (FastAPI)...
-cd /d "%~dp0runtime"
+set ROOT=%~dp0
+set RUNTIME=%ROOT%runtime
+set WEB=%ROOT%arkaim-web
 
-if not exist ".venv\Scripts\python.exe" (
-    echo ERROR: Python venv not found in runtime\
-    echo Run: cd runtime ^&^& python -m venv .venv ^&^& .venv\Scripts\pip install -r requirements.txt
+:: -- Проверка виртуального окружения Python --------------------------------
+if not exist "%RUNTIME%\.venv\Scripts\python.exe" (
+    echo [ERROR] Python .venv не найден: %RUNTIME%\.venv
+    echo   Создай его:
+    echo     cd runtime
+    echo     python -m venv .venv
+    echo     .venv\Scripts\pip install -r requirements.txt
     pause
     exit /b 1
 )
 
-if not exist ".env" (
-    if exist ".env.example" (
-        echo WARNING: .env not found! Copying from .env.example...
-        copy .env.example .env >nul
-    )
+:: -- Проверка node_modules фронтенда ---------------------------------------
+if not exist "%WEB%\node_modules" (
+    echo [ERROR] node_modules не найден: %WEB%\node_modules
+    echo   Установи зависимости:
+    echo     cd arkaim-web
+    echo     npm install
+    pause
+    exit /b 1
 )
 
-set PYTHONPATH=%CD%
-start "Arkaim Backend :8642" cmd /c ".venv\Scripts\python.exe -m uvicorn core.main:app --host 127.0.0.1 --port 8642 --log-level info"
-echo   Backend starting on http://127.0.0.1:8642
-timeout /t 3 /nobreak >nul
+:: -- Переменные окружения (значения по умолчанию) --------------------------
+if "%CORE_HOST%"=="" set CORE_HOST=127.0.0.1
+if "%CORE_PORT%"=="" set CORE_PORT=8642
 
-:: =============================================
-:: 2. FRONTEND (Next.js)
-:: =============================================
-echo [2/5] Starting Frontend (Next.js)...
-cd /d "%~dp0arkaim-web"
-
-if not exist "node_modules\.package-lock.json" (
-    echo Installing frontend dependencies...
-    call npm install
-    if errorlevel 1 (
-        echo ERROR: Failed to install frontend dependencies!
-        pause
-        exit /b 1
+:: -- Очистка портов перед запуском -----------------------------------------
+echo [1/3] Очистка портов %CORE_PORT%, 3000...
+for %%p in (%CORE_PORT% 3000) do (
+    for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":%%p " ^| findstr "LISTENING"') do (
+        if not "%%a"=="" (
+            taskkill /f /pid %%a >nul 2>&1 && echo   Порт %%p освобождён (PID %%a)
+        )
     )
 )
-
-start "Arkaim Frontend :3000" cmd /c "npm run dev"
-echo   Frontend starting on http://localhost:3000
-timeout /t 5 /nobreak >nul
-
-:: =============================================
-:: 3. OPEN BROWSER
-:: =============================================
-echo [3/5] Opening browser...
-start http://localhost:3000
-
-:: =============================================
-:: 4. STATUS
-:: =============================================
-echo [4/5] Checking services...
 timeout /t 2 /nobreak >nul
 
-set "BACKEND_OK="
-set "FRONTEND_OK="
-netstat -ano | findstr ":8642 " | findstr LISTENING >nul 2>&1 && set BACKEND_OK=1
-netstat -ano | findstr ":3000 " | findstr LISTENING >nul 2>&1 && set FRONTEND_OK=1
+:: -- Запуск Core (Backend :8642) -------------------------------------------
+echo [2/3] Запуск Core (:%CORE_PORT%)...
+start "Arkaim Core :%CORE_PORT%" cmd /c "cd /d %RUNTIME% & set PYTHONPATH=%RUNTIME% & .venv\Scripts\python.exe -m uvicorn core.main:app --host %CORE_HOST% --port %CORE_PORT% --log-level info"
+timeout /t 3 /nobreak >nul
 
-if defined BACKEND_OK (
-    echo   [OK] Backend:  http://127.0.0.1:8642
-) else (
-    echo   [..] Backend:  starting...
-)
+:: -- Запуск Frontend (Next.js :3000) ---------------------------------------
+echo [3/3] Запуск Frontend (Next.js :3000)...
+start "Arkaim Frontend :3000" cmd /c "cd /d %WEB% & npm run dev"
 
-if defined FRONTEND_OK (
-    echo   [OK] Frontend: http://localhost:3000
-) else (
-    echo   [..] Frontend: starting...
-)
-
-:: =============================================
-:: 5. DONE
-:: =============================================
+:: -- Проверка статуса ------------------------------------------------------
+timeout /t 3 /nobreak >nul
 echo.
 echo ========================================
-echo   All services started!
-echo.
-echo   Frontend:  http://localhost:3000
-echo   Backend:   http://127.0.0.1:8642
-echo   API Docs:  http://127.0.0.1:8642/docs
-echo.
-echo   Run stop_all.bat to stop everything.
+echo  Статус запуска:
+netstat -ano | findstr ":%CORE_PORT% " | findstr "LISTENING" >nul && echo   [OK] Core    :%CORE_PORT% || echo   [--] Core    :%CORE_PORT%
+netstat -ano | findstr ":3000 " | findstr "LISTENING" >nul && echo   [OK] Frontend :3000 || echo   [--] Frontend :3000
 echo ========================================
 echo.
+echo  Backend:  http://%CORE_HOST%:%CORE_PORT%
+echo  API Docs: http://%CORE_HOST%:%CORE_PORT%/docs
+echo  Web UI:   http://%CORE_HOST%:%CORE_PORT%/_ui/book
+echo  Frontend: http://localhost:3000
+echo.
+echo  Закрой это окно, чтобы оставить сервисы работать в фоне.
+echo  Для остановки закрой окны "Arkaim Core" и "Arkaim Frontend".
+echo.
+start http://localhost:3000
 pause

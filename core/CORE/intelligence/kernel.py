@@ -14,7 +14,7 @@ from typing import List, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
-from intelligence.chunker import SemanticChunker
+from intelligence.chunker import SemanticChunker, ScreenplayChunker
 from intelligence.enricher import GenomeEnricher
 from intelligence.retriever import BookRetriever
 from intelligence.cleaner import TextCleaner
@@ -68,6 +68,13 @@ class KnowledgeKernel:
             chunks = self.chunker.chunk_by_paragraph()
         elif mode == "chapter":
             chunks = self.chunker.chunk_by_chapter()
+        elif mode == "dense":
+            # Dense mode: paragraph + chapter + sliding window for 2000+ chunks
+            chunks = (
+                self.chunker.chunk_by_paragraph()
+                + self.chunker.chunk_by_chapter()
+                + self.chunker.chunk_by_sliding_window(chunk_size=120, overlap=30)
+            )
         else:
             chunks = self.chunker.chunk_hybrid()
 
@@ -303,3 +310,30 @@ class KnowledgeKernel:
             "chroma": self.retriever.get_collection_stats(),
             "nameresolver": self.nameresolver.get_stats(),
         }
+
+    def index_screenplay(self) -> Dict:
+        """Index screenplay scenes into ChromaDB."""
+        sp_chunker = ScreenplayChunker()
+        stats = sp_chunker.get_stats()
+        if stats["status"] != "loaded":
+            return {"status": "no_screenplay", "scenes": 0}
+
+        scenes = sp_chunker.chunk_by_scene()
+        batch = []
+        for scene in scenes:
+            metadata = {
+                "chunk_id": scene["id"],
+                "scene_id": scene.get("scene_id", ""),
+                "scene_title": scene.get("scene_title", ""),
+                "location": scene.get("location", ""),
+                "scene_type": scene.get("scene_type", ""),
+                "source": "screenplay",
+            }
+            batch.append({
+                "id": scene["id"],
+                "text": scene["text"],
+                "metadata": metadata,
+            })
+        self.retriever.batch_index(batch)
+        logger.info("screenplay_indexed scenes=%d", len(scenes))
+        return {"status": "ok", "scenes": len(scenes)}

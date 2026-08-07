@@ -1,14 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Typography, Row, Col, Tabs, List, Empty, Spin, Space, Input, Button, Tag, Form, Select, InputNumber, Modal, message, Descriptions, Popconfirm, Divider, Avatar } from 'antd';
+import { LCard, LTag, LTabs, LEmpty, LSpin, LSpace, LInput, LButton, LForm, useLForm, LSelect, LInputNumber, LModal, LDivider, LAvatar, LTextArea, toast } from '@/shared/ui/light';
 import { EditOutlined, PlusOutlined, DeleteOutlined, SaveOutlined, BookOutlined, TeamOutlined, EnvironmentOutlined, BulbOutlined, AudioOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
 import { ProtectedRoute, RoleGuard } from '@/shared/lib/guards';
-
-const { Title, Text, Paragraph } = Typography;
-const { TextArea } = Input;
 
 type GenomeData = {
   modules?: {
@@ -26,101 +23,101 @@ type GenomeData = {
 function ScenesEditor({ genome, isLoading }: { genome?: GenomeData; isLoading: boolean }) {
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
-  const [editScene, setEditScene] = useState<any>(null);
-  const [form] = Form.useForm();
+  const [editScene, setEditScene] = useState<{ chapter: number; scene_id: string; title: string; characters: string[]; location: string; emotion: string; meaning_tags: string[]; source?: string } | null>(null);
+  const [form, formRef] = useLForm();
 
   const scenes = genome?.modules?.scenes || [];
+  const [createLoading, setCreateLoading] = useState(false);
 
   const createMutation = useMutation({
-    mutationFn: (values: any) => api.post('/book/visual-genome/scene', values),
+    mutationFn: (values: { chapter: number; title: string; characters?: string[]; location?: string; emotion?: string; meaning_tags?: string[] }) => api.post('/book/visual-genome/scene', values),
     onSuccess: () => {
-      message.success('Сцена создана');
+      toast.success('Сцена создана');
       setCreateOpen(false);
       form.resetFields();
       queryClient.invalidateQueries({ queryKey: ['genome-full'] });
     },
-    onError: () => message.error('Ошибка создания'),
+    onError: () => toast.error('Ошибка создания'),
   });
 
   const handleCreate = () => {
-    form.validateFields().then(values => createMutation.mutate(values));
+    form.validateFields().then((values: any) => createMutation.mutate(values));
   };
 
-  if (isLoading) return <div style={{ textAlign: 'center', padding: 48 }}><Spin size="large" /></div>;
+  if (isLoading) return <div style={{ textAlign: 'center', padding: 48 }}><LSpin size="large" /></div>;
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <Space>
-          <Text strong>Сцен: {scenes.length}</Text>
-        </Space>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
+        <LSpace>
+          <strong>Сцен: {scenes.length}</strong>
+        </LSpace>
+        <LButton type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
           Новая сцена
-        </Button>
+        </LButton>
       </div>
 
       {scenes.length === 0 ? (
-        <Empty description="Сцены ещё не созданы" />
+        <LEmpty description="Сцены ещё не созданы" />
       ) : (
-        <Row gutter={[12, 12]}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
           {scenes.map((scene, i) => (
-            <Col xs={24} sm={12} lg={8} key={scene.scene_id || i}>
-              <Card
-                size="small"
-                hoverable
-                onClick={() => setEditScene(scene)}
-                title={<Space><Tag color="blue">Гл. {scene.chapter}</Tag> <Text strong style={{ fontSize: 13 }}>{scene.title}</Text></Space>}
-                extra={<Tag>{scene.emotion}</Tag>}
-              >
-                <Space direction="vertical" size={2} style={{ width: '100%' }}>
-                  {scene.characters?.length > 0 && (
-                    <div><TeamOutlined style={{ marginRight: 4, color: '#2563eb' }} />
-                      <Text type="secondary" style={{ fontSize: 12 }}>{scene.characters.join(', ')}</Text>
-                    </div>
-                  )}
-                  {scene.location && (
-                    <div><EnvironmentOutlined style={{ marginRight: 4, color: '#d97706' }} />
-                      <Text type="secondary" style={{ fontSize: 12 }}>{scene.location}</Text>
-                    </div>
-                  )}
-                  {scene.meaning_tags?.length > 0 && (
-                    <div style={{ marginTop: 4 }}>
-                      {scene.meaning_tags.slice(0, 3).map((t: string, j: number) => (
-                        <Tag key={j} style={{ fontSize: 10 }}>{t}</Tag>
-                      ))}
-                    </div>
-                  )}
-                </Space>
-              </Card>
-            </Col>
+            <LCard
+              key={scene.scene_id || i}
+              size="small"
+              hoverable
+              onClick={() => setEditScene(scene)}
+              title={<LSpace><LTag color="blue">Гл. {scene.chapter}</LTag> <strong style={{ fontSize: 13 }}>{scene.title}</strong></LSpace>}
+              extra={<LTag>{scene.emotion}</LTag>}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {scene.characters?.length > 0 && (
+                  <div><TeamOutlined style={{ marginRight: 4, color: '#2563eb' }} />
+                    <span style={{ fontSize: 12, color: '#999' }}>{scene.characters.join(', ')}</span>
+                  </div>
+                )}
+                {scene.location && (
+                  <div><EnvironmentOutlined style={{ marginRight: 4, color: '#d97706' }} />
+                    <span style={{ fontSize: 12, color: '#999' }}>{scene.location}</span>
+                  </div>
+                )}
+                {scene.meaning_tags?.length > 0 && (
+                  <div style={{ marginTop: 4 }}>
+                    {scene.meaning_tags.slice(0, 3).map((t: string, j: number) => (
+                      <LTag key={j} style={{ fontSize: 10 }}>{t}</LTag>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </LCard>
           ))}
-        </Row>
+        </div>
       )}
 
-      {/* Create Modal */}
-      <Modal
+      <LModal
         title="Новая сцена"
         open={createOpen}
         onCancel={() => setCreateOpen(false)}
-        onOk={handleCreate}
-        confirmLoading={createMutation.isPending}
-        okText="Создать"
+        footer={<div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <LButton onClick={() => setCreateOpen(false)}>Отмена</LButton>
+          <LButton type="primary" loading={createMutation.isPending} onClick={handleCreate}>Создать</LButton>
+        </div>}
       >
-        <Form form={form} layout="vertical">
-          <Form.Item name="chapter" label="Глава" rules={[{ required: true }]}>
-            <InputNumber min={1} max={100} style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="title" label="Название" rules={[{ required: true }]}>
-            <Input placeholder="Название сцены" />
-          </Form.Item>
-          <Form.Item name="characters" label="Персонажи">
-            <Select mode="tags" placeholder="Введите имена" />
-          </Form.Item>
-          <Form.Item name="location" label="Локация">
-            <Input placeholder="Место действия" />
-          </Form.Item>
-          <Form.Item name="emotion" label="Эмоция">
-            <Select options={[
+        <LForm ref={formRef} layout="vertical">
+          <LForm.Item name="chapter" label="Глава" rules={[{ required: true }]}>
+            <LInputNumber min={1} max={100} style={{ width: '100%' }} />
+          </LForm.Item>
+          <LForm.Item name="title" label="Название" rules={[{ required: true }]}>
+            <LInput placeholder="Название сцены" />
+          </LForm.Item>
+          <LForm.Item name="characters" label="Персонажи">
+            <LInput placeholder="Введите имена через запятую" />
+          </LForm.Item>
+          <LForm.Item name="location" label="Локация">
+            <LInput placeholder="Место действия" />
+          </LForm.Item>
+          <LForm.Item name="emotion" label="Эмоция">
+            <LSelect options={[
               { value: 'neutral', label: 'Нейтральная' },
               { value: 'joy', label: 'Радость' },
               { value: 'sadness', label: 'Грусть' },
@@ -129,38 +126,33 @@ function ScenesEditor({ genome, isLoading }: { genome?: GenomeData; isLoading: b
               { value: 'surprise', label: 'Удивление' },
               { value: 'mystery', label: 'Таинственность' },
             ]} />
-          </Form.Item>
-          <Form.Item name="meaning_tags" label="Теги смысла">
-            <Select mode="tags" placeholder="Теги" />
-          </Form.Item>
-        </Form>
-      </Modal>
+          </LForm.Item>
+          <LForm.Item name="meaning_tags" label="Теги смысла">
+            <LInput placeholder="Теги через запятую" />
+          </LForm.Item>
+        </LForm>
+      </LModal>
 
-      {/* Edit Modal */}
-      <Modal
-        title={<Space><EditOutlined /> {editScene?.title}</Space>}
+      <LModal
+        title={<LSpace><EditOutlined /> {editScene?.title}</LSpace>}
         open={!!editScene}
         onCancel={() => setEditScene(null)}
         footer={null}
         width={600}
       >
         {editScene && (
-          <Descriptions bordered size="small" column={1}>
-            <Descriptions.Item label="Глава">{editScene.chapter}</Descriptions.Item>
-            <Descriptions.Item label="Сцена ID"><Text code>{editScene.scene_id}</Text></Descriptions.Item>
-            <Descriptions.Item label="Название">{editScene.title}</Descriptions.Item>
-            <Descriptions.Item label="Персонажи">
-              {editScene.characters?.map((c: string, i: number) => <Tag key={i}>{c}</Tag>) || '—'}
-            </Descriptions.Item>
-            <Descriptions.Item label="Локация">{editScene.location || '—'}</Descriptions.Item>
-            <Descriptions.Item label="Эмоция"><Tag>{editScene.emotion}</Tag></Descriptions.Item>
-            <Descriptions.Item label="Теги">
-              {editScene.meaning_tags?.map((t: string, i: number) => <Tag key={i} color="purple">{t}</Tag>) || '—'}
-            </Descriptions.Item>
-            <Descriptions.Item label="Источник">{editScene.source || '—'}</Descriptions.Item>
-          </Descriptions>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div><strong>Глава:</strong> {editScene.chapter}</div>
+            <div><strong>Сцена ID:</strong> <code>{editScene.scene_id}</code></div>
+            <div><strong>Название:</strong> {editScene.title}</div>
+            <div><strong>Персонажи:</strong> {editScene.characters?.map((c: string, i: number) => <LTag key={i}>{c}</LTag>) || '—'}</div>
+            <div><strong>Локация:</strong> {editScene.location || '—'}</div>
+            <div><strong>Эмоция:</strong> <LTag>{editScene.emotion}</LTag></div>
+            <div><strong>Теги:</strong> {editScene.meaning_tags?.map((t: string, i: number) => <LTag key={i} color="purple">{t}</LTag>) || '—'}</div>
+            <div><strong>Источник:</strong> {editScene.source || '—'}</div>
+          </div>
         )}
-      </Modal>
+      </LModal>
     </div>
   );
 }
@@ -171,87 +163,86 @@ function CharactersEditor({ genome, isLoading }: { genome?: GenomeData; isLoadin
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
   const [editChar, setEditChar] = useState<any>(null);
-  const [form] = Form.useForm();
+  const [form, formRef] = useLForm();
 
   const characters = genome?.modules?.character_visuals || [];
   const bookCharacters = genome?.characters || [];
 
   const createMutation = useMutation({
-    mutationFn: (values: any) => api.post('/book/visual-genome/character', values),
+    mutationFn: (values: { character_id: string; name: string; archetype?: string; visual_description?: string; color_palette?: string[] }) => api.post('/book/visual-genome/character', values),
     onSuccess: () => {
-      message.success('Персонаж создан');
+      toast.success('Персонаж создан');
       setCreateOpen(false);
       form.resetFields();
       queryClient.invalidateQueries({ queryKey: ['genome-full'] });
     },
-    onError: () => message.error('Ошибка создания'),
+    onError: () => toast.error('Ошибка создания'),
   });
 
   const handleCreate = () => {
-    form.validateFields().then(values => createMutation.mutate(values));
+    form.validateFields().then((values: any) => createMutation.mutate(values));
   };
 
-  if (isLoading) return <div style={{ textAlign: 'center', padding: 48 }}><Spin size="large" /></div>;
+  if (isLoading) return <div style={{ textAlign: 'center', padding: 48 }}><LSpin size="large" /></div>;
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <Space>
-          <Text strong>Визуалов: {characters.length}</Text>
-          <Text type="secondary">· Книжных: {bookCharacters.length}</Text>
-        </Space>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
+        <LSpace>
+          <strong>Визуалов: {characters.length}</strong>
+          <span style={{ color: '#999' }}>· Книжных: {bookCharacters.length}</span>
+        </LSpace>
+        <LButton type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
           Новый персонаж
-        </Button>
+        </LButton>
       </div>
 
       {characters.length === 0 ? (
-        <Empty description="Визуалы персонажей ещё не созданы" />
+        <LEmpty description="Визуалы персонажей ещё не созданы" />
       ) : (
-        <Row gutter={[12, 12]}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
           {characters.map((char, i) => (
-            <Col xs={24} sm={12} lg={8} key={char.character_id || i}>
-              <Card
-                size="small"
-                hoverable
-                onClick={() => setEditChar(char)}
-                title={<Space><Avatar size={24} style={{ backgroundColor: char.color_palette?.[0] || '#2563eb' }}>{char.name?.[0]}</Avatar> <Text strong style={{ fontSize: 13 }}>{char.name}</Text></Space>}
-                extra={char.archetype && <Tag color="purple">{char.archetype}</Tag>}
-              >
-                <Paragraph ellipsis={{ rows: 2 }} style={{ margin: 0, fontSize: 12 }}>
-                  {char.visual_description || 'Нет описания'}
-                </Paragraph>
-                {char.color_palette?.length > 0 && (
-                  <div style={{ marginTop: 8, display: 'flex', gap: 4 }}>
-                    {char.color_palette.slice(0, 5).map((c: string, j: number) => (
-                      <div key={j} style={{ width: 16, height: 16, borderRadius: 4, background: c, border: '1px solid #ddd' }} />
-                    ))}
-                  </div>
-                )}
-              </Card>
-            </Col>
+            <LCard
+              key={char.character_id || i}
+              size="small"
+              hoverable
+              onClick={() => setEditChar(char)}
+              title={<LSpace><LAvatar size={24} style={{ backgroundColor: char.color_palette?.[0] || '#2563eb' }}>{char.name?.[0]}</LAvatar> <strong style={{ fontSize: 13 }}>{char.name}</strong></LSpace>}
+              extra={char.archetype && <LTag color="purple">{char.archetype}</LTag>}
+            >
+              <p style={{ margin: 0, fontSize: 12, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                {char.visual_description || 'Нет описания'}
+              </p>
+              {char.color_palette?.length > 0 && (
+                <div style={{ marginTop: 8, display: 'flex', gap: 4 }}>
+                  {char.color_palette.slice(0, 5).map((c: string, j: number) => (
+                    <div key={j} style={{ width: 16, height: 16, borderRadius: 4, background: c, border: '1px solid #ddd' }} />
+                  ))}
+                </div>
+              )}
+            </LCard>
           ))}
-        </Row>
+        </div>
       )}
 
-      {/* Create Modal */}
-      <Modal
+      <LModal
         title="Новый персонаж"
         open={createOpen}
         onCancel={() => setCreateOpen(false)}
-        onOk={handleCreate}
-        confirmLoading={createMutation.isPending}
-        okText="Создать"
+        footer={<div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <LButton onClick={() => setCreateOpen(false)}>Отмена</LButton>
+          <LButton type="primary" loading={createMutation.isPending} onClick={handleCreate}>Создать</LButton>
+        </div>}
       >
-        <Form form={form} layout="vertical">
-          <Form.Item name="character_id" label="ID персонажа" rules={[{ required: true }]}>
-            <Input placeholder="unique-id" />
-          </Form.Item>
-          <Form.Item name="name" label="Имя" rules={[{ required: true }]}>
-            <Input placeholder="Имя персонажа" />
-          </Form.Item>
-          <Form.Item name="archetype" label="Архетип">
-            <Select options={[
+        <LForm ref={formRef} layout="vertical">
+          <LForm.Item name="character_id" label="ID персонажа" rules={[{ required: true }]}>
+            <LInput placeholder="unique-id" />
+          </LForm.Item>
+          <LForm.Item name="name" label="Имя" rules={[{ required: true }]}>
+            <LInput placeholder="Имя персонажа" />
+          </LForm.Item>
+          <LForm.Item name="archetype" label="Архетип">
+            <LSelect options={[
               { value: 'Герой', label: 'Герой' },
               { value: 'Мудрец', label: 'Мудрец' },
               { value: 'Тень', label: 'Тень' },
@@ -259,43 +250,42 @@ function CharactersEditor({ genome, isLoading }: { genome?: GenomeData; isLoadin
               { value: 'Искатель', label: 'Искатель' },
               { value: 'Бунтарь', label: 'Бунтарь' },
             ]} />
-          </Form.Item>
-          <Form.Item name="visual_description" label="Описание">
-            <TextArea rows={3} placeholder="Внешний вид персонажа" />
-          </Form.Item>
-          <Form.Item name="color_palette" label="Цветовая палитра">
-            <Select mode="tags" placeholder="#hex цвета" />
-          </Form.Item>
-        </Form>
-      </Modal>
+          </LForm.Item>
+          <LForm.Item name="visual_description" label="Описание">
+            <LTextArea rows={3} placeholder="Внешний вид персонажа" />
+          </LForm.Item>
+          <LForm.Item name="color_palette" label="Цветовая палитра">
+            <LInput placeholder="#hex цвета через запятую" />
+          </LForm.Item>
+        </LForm>
+      </LModal>
 
-      {/* Edit Modal */}
-      <Modal
-        title={<Space><EditOutlined /> {editChar?.name}</Space>}
+      <LModal
+        title={<LSpace><EditOutlined /> {editChar?.name}</LSpace>}
         open={!!editChar}
         onCancel={() => setEditChar(null)}
         footer={null}
         width={600}
       >
         {editChar && (
-          <Descriptions bordered size="small" column={1}>
-            <Descriptions.Item label="ID"><Text code>{editChar.character_id}</Text></Descriptions.Item>
-            <Descriptions.Item label="Имя">{editChar.name}</Descriptions.Item>
-            <Descriptions.Item label="Архетип">{editChar.archetype || '—'}</Descriptions.Item>
-            <Descriptions.Item label="Описание">{editChar.visual_description || '—'}</Descriptions.Item>
-            <Descriptions.Item label="Палитра">
-              <Space>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div><strong>ID:</strong> <code>{editChar.character_id}</code></div>
+            <div><strong>Имя:</strong> {editChar.name}</div>
+            <div><strong>Архетип:</strong> {editChar.archetype || '—'}</div>
+            <div><strong>Описание:</strong> {editChar.visual_description || '—'}</div>
+            <div><strong>Палитра:</strong>
+              <LSpace>
                 {editChar.color_palette?.map((c: string, i: number) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <div style={{ width: 20, height: 20, borderRadius: 4, background: c, border: '1px solid #ddd' }} />
-                    <Text code style={{ fontSize: 11 }}>{c}</Text>
-                  </div>
+                  <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ width: 20, height: 20, borderRadius: 4, background: c, border: '1px solid #ddd', display: 'inline-block' }} />
+                    <code style={{ fontSize: 11 }}>{c}</code>
+                  </span>
                 ))}
-              </Space>
-            </Descriptions.Item>
-          </Descriptions>
+              </LSpace>
+            </div>
+          </div>
         )}
-      </Modal>
+      </LModal>
     </div>
   );
 }
@@ -306,105 +296,103 @@ function LocationsEditor({ genome, isLoading }: { genome?: GenomeData; isLoading
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
   const [editLoc, setEditLoc] = useState<any>(null);
-  const [form] = Form.useForm();
+  const [form, formRef] = useLForm();
 
   const locations = genome?.modules?.location_visuals || [];
 
   const createMutation = useMutation({
-    mutationFn: (values: any) => api.post('/book/visual-genome/location', values),
+    mutationFn: (values: { location_id: string; name: string; atmosphere?: string; architecture?: string; lighting?: string }) => api.post('/book/visual-genome/location', values),
     onSuccess: () => {
-      message.success('Локация создана');
+      toast.success('Локация создана');
       setCreateOpen(false);
       form.resetFields();
       queryClient.invalidateQueries({ queryKey: ['genome-full'] });
     },
-    onError: () => message.error('Ошибка создания'),
+    onError: () => toast.error('Ошибка создания'),
   });
 
   const handleCreate = () => {
-    form.validateFields().then(values => createMutation.mutate(values));
+    form.validateFields().then((values: any) => createMutation.mutate(values));
   };
 
-  if (isLoading) return <div style={{ textAlign: 'center', padding: 48 }}><Spin size="large" /></div>;
+  if (isLoading) return <div style={{ textAlign: 'center', padding: 48 }}><LSpin size="large" /></div>;
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <Text strong>Локаций: {locations.length}</Text>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
+        <strong>Локаций: {locations.length}</strong>
+        <LButton type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
           Новая локация
-        </Button>
+        </LButton>
       </div>
 
       {locations.length === 0 ? (
-        <Empty description="Локации ещё не созданы" />
+        <LEmpty description="Локации ещё не созданы" />
       ) : (
-        <Row gutter={[12, 12]}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
           {locations.map((loc, i) => (
-            <Col xs={24} sm={12} lg={8} key={loc.location_id || i}>
-              <Card
-                size="small"
-                hoverable
-                onClick={() => setEditLoc(loc)}
-                title={<Text strong style={{ fontSize: 13 }}>{loc.name}</Text>}
-                extra={<EnvironmentOutlined style={{ color: '#d97706' }} />}
-              >
-                <Space direction="vertical" size={2}>
-                  {loc.atmosphere && <Text type="secondary" style={{ fontSize: 12 }}>Атмосфера: {loc.atmosphere}</Text>}
-                  {loc.architecture && <Text type="secondary" style={{ fontSize: 12 }}>Архитектура: {loc.architecture}</Text>}
-                  {loc.lighting && <Text type="secondary" style={{ fontSize: 12 }}>Освещение: {loc.lighting}</Text>}
-                </Space>
-              </Card>
-            </Col>
+            <LCard
+              key={loc.location_id || i}
+              size="small"
+              hoverable
+              onClick={() => setEditLoc(loc)}
+              title={<strong style={{ fontSize: 13 }}>{loc.name}</strong>}
+              extra={<EnvironmentOutlined style={{ color: '#d97706' }} />}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {loc.atmosphere && <span style={{ fontSize: 12, color: '#999' }}>Атмосфера: {loc.atmosphere}</span>}
+                {loc.architecture && <span style={{ fontSize: 12, color: '#999' }}>Архитектура: {loc.architecture}</span>}
+                {loc.lighting && <span style={{ fontSize: 12, color: '#999' }}>Освещение: {loc.lighting}</span>}
+              </div>
+            </LCard>
           ))}
-        </Row>
+        </div>
       )}
 
-      {/* Create Modal */}
-      <Modal
+      <LModal
         title="Новая локация"
         open={createOpen}
         onCancel={() => setCreateOpen(false)}
-        onOk={handleCreate}
-        confirmLoading={createMutation.isPending}
-        okText="Создать"
+        footer={<div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <LButton onClick={() => setCreateOpen(false)}>Отмена</LButton>
+          <LButton type="primary" loading={createMutation.isPending} onClick={handleCreate}>Создать</LButton>
+        </div>}
       >
-        <Form form={form} layout="vertical">
-          <Form.Item name="location_id" label="ID локации" rules={[{ required: true }]}>
-            <Input placeholder="unique-id" />
-          </Form.Item>
-          <Form.Item name="name" label="Название" rules={[{ required: true }]}>
-            <Input placeholder="Название локации" />
-          </Form.Item>
-          <Form.Item name="atmosphere" label="Атмосфера">
-            <Input placeholder="Мрачная, светлая, таинственная..." />
-          </Form.Item>
-          <Form.Item name="architecture" label="Архитектура">
-            <Input placeholder="Описание архитектуры" />
-          </Form.Item>
-          <Form.Item name="lighting" label="Освещение">
-            <Input placeholder="Тёплое, холодное, контровое..." />
-          </Form.Item>
-        </Form>
-      </Modal>
+        <LForm ref={formRef} layout="vertical">
+          <LForm.Item name="location_id" label="ID локации" rules={[{ required: true }]}>
+            <LInput placeholder="unique-id" />
+          </LForm.Item>
+          <LForm.Item name="name" label="Название" rules={[{ required: true }]}>
+            <LInput placeholder="Название локации" />
+          </LForm.Item>
+          <LForm.Item name="atmosphere" label="Атмосфера">
+            <LInput placeholder="Мрачная, светлая, таинственная..." />
+          </LForm.Item>
+          <LForm.Item name="architecture" label="Архитектура">
+            <LInput placeholder="Описание архитектуры" />
+          </LForm.Item>
+          <LForm.Item name="lighting" label="Освещение">
+            <LInput placeholder="Тёплое, холодное, контровое..." />
+          </LForm.Item>
+        </LForm>
+      </LModal>
 
-      {/* Edit Modal */}
-      <Modal
-        title={<Space><EditOutlined /> {editLoc?.name}</Space>}
+      <LModal
+        title={<LSpace><EditOutlined /> {editLoc?.name}</LSpace>}
         open={!!editLoc}
         onCancel={() => setEditLoc(null)}
         footer={null}
       >
         {editLoc && (
-          <Descriptions bordered size="small" column={1}>
-            <Descriptions.Item label="ID"><Text code>{editLoc.location_id}</Text></Descriptions.Item>
-            <Descriptions.Item label="Название">{editLoc.name}</Descriptions.Item>
-            <Descriptions.Item label="Атмосфера">{editLoc.atmosphere || '—'}</Descriptions.Item>
-            <Descriptions.Item label="Архитектура">{editLoc.architecture || '—'}</Descriptions.Item>
-            <Descriptions.Item label="Освещение">{editLoc.lighting || '—'}</Descriptions.Item>
-          </Descriptions>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div><strong>ID:</strong> <code>{editLoc.location_id}</code></div>
+            <div><strong>Название:</strong> {editLoc.name}</div>
+            <div><strong>Атмосфера:</strong> {editLoc.atmosphere || '—'}</div>
+            <div><strong>Архитектура:</strong> {editLoc.architecture || '—'}</div>
+            <div><strong>Освещение:</strong> {editLoc.lighting || '—'}</div>
+          </div>
         )}
-      </Modal>
+      </LModal>
     </div>
   );
 }
@@ -418,26 +406,26 @@ function VoiceInputSection() {
   const processMutation = useMutation({
     mutationFn: (text: string) => api.post('/book/visual-genome/from-speech', { text }),
     onSuccess: () => {
-      message.success('Описание обработано');
+      toast.success('Описание обработано');
       setText('');
       queryClient.invalidateQueries({ queryKey: ['genome-full'] });
     },
-    onError: () => message.error('Ошибка обработки'),
+    onError: () => toast.error('Ошибка обработки'),
   });
 
   return (
-    <Card title={<><AudioOutlined /> Голосовой ввод</>}>
-      <Paragraph type="secondary" style={{ fontSize: 13 }}>
+    <LCard title={<><AudioOutlined /> Голосовой ввод</>}>
+      <p style={{ fontSize: 13, color: '#999' }}>
         Опишите сцену текстом — AI преобразует описание в структурированные элементы.
-      </Paragraph>
-      <TextArea
+      </p>
+      <LTextArea
         value={text}
         onChange={e => setText(e.target.value)}
         rows={4}
         placeholder="Опишите сцену: «Старый воин стоит на берегу реки, закатное освещение, атмосфера меланхолии...»"
         style={{ marginBottom: 12 }}
       />
-      <Button
+      <LButton
         type="primary"
         icon={<AudioOutlined />}
         onClick={() => processMutation.mutate(text)}
@@ -445,8 +433,8 @@ function VoiceInputSection() {
         disabled={!text.trim()}
       >
         Обработать
-      </Button>
-    </Card>
+      </LButton>
+    </LCard>
   );
 }
 
@@ -484,11 +472,11 @@ function EditorContent() {
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
       <div style={{ marginBottom: 16 }}>
-        <Title level={2} style={{ marginBottom: 4 }}>Редактор глав</Title>
-        <Text type="secondary">Создавайте и редактируйте сцены, персонажей и локации книги</Text>
+        <h2 style={{ marginBottom: 4 }}>Редактор глав</h2>
+        <span style={{ color: '#999' }}>Создавайте и редактируйте сцены, персонажей и локации книги</span>
       </div>
 
-      <Tabs items={items} />
+      <LTabs items={items} />
     </div>
   );
 }

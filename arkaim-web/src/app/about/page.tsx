@@ -1,10 +1,12 @@
 'use client';
 
-import { Card, Typography, Row, Col, Tag, Spin, Tabs, Descriptions, Empty, Timeline } from 'antd';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
-
-const { Title, Text, Paragraph } = Typography;
+import { LCard } from '@/shared/ui/light/LCard';
+import { LTag } from '@/shared/ui/light/LTag';
+import { LSpin } from '@/shared/ui/light/LSpin';
+import { LEmpty } from '@/shared/ui/light/LEmpty';
 
 type GenomeData = {
   themes: Array<{ name: string; description?: string }>;
@@ -49,148 +51,167 @@ const LAYER_LABELS: Record<string, string> = {
 };
 
 export default function AboutPage() {
+  const [activeTab, setActiveTab] = useState('genome');
   const { data: genome, isLoading } = useQuery({
     queryKey: ['genome-full'],
     queryFn: () => api.get<GenomeData>('/book/genome'),
+    staleTime: 600_000,
   });
 
   const { data: layers } = useQuery({
     queryKey: ['book-layers'],
     queryFn: () => api.get<LayersData>('/book/layers'),
+    staleTime: 600_000,
   });
 
   const { data: evolution } = useQuery({
     queryKey: ['evolution-status'],
     queryFn: () => api.get<EvolutionData>('/book/evolution/status'),
+    staleTime: 600_000,
   });
 
-  const genomeTab = (
-    <>
-      {isLoading ? (
-        <div style={{ textAlign: 'center', padding: 48 }}><Spin size="large" /></div>
-      ) : (
-        <Row gutter={[16, 16]}>
-          {CARDS.map(card => {
-            const items = genome?.[card.key as keyof GenomeData];
-            const isArray = Array.isArray(items);
-            const count = isArray ? items.length : items ? Object.keys(items).length : 0;
+  const tabs = [
+    { key: 'genome', label: 'Геном книги' },
+    { key: 'layers', label: 'Слои сознания' },
+    { key: 'evolution', label: 'Эволюция' },
+  ];
 
-            return (
-              <Col xs={24} sm={12} lg={8} key={card.key}>
-                <Card
+  return (
+    <div style={{ maxWidth: 960, margin: '0 auto' }}>
+      <div style={{ marginBottom: 32 }}>
+        <h2 style={{ fontSize: 24, fontWeight: 600, marginBottom: 8 }}>О книге «Наследие Аркаима»</h2>
+        <p style={{ maxWidth: 720, fontSize: 16, lineHeight: 1.7, color: '#666' }}>
+          Интерактивное исследование содержания книги. Изучайте персонажей, темы,
+          ценности и мир, в котором происходит действие. Следите за эволюцией
+          цифрового сознания книги.
+        </p>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--divider-color)', marginBottom: 24 }}>
+        {tabs.map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            style={{
+              padding: '12px 16px',
+              border: 'none',
+              background: 'transparent',
+              cursor: 'pointer',
+              fontSize: 14,
+              color: activeTab === tab.key ? '#1677ff' : '#666',
+              borderBottom: activeTab === tab.key ? '2px solid #1677ff' : '2px solid transparent',
+              marginBottom: -1,
+              fontWeight: activeTab === tab.key ? 500 : 400,
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Genome Tab */}
+      {activeTab === 'genome' && (
+        isLoading ? (
+          <div style={{ textAlign: 'center', padding: 48 }}><LSpin size="large" /></div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+            {CARDS.map(card => {
+              const items = genome?.[card.key as keyof GenomeData];
+              const isArray = Array.isArray(items);
+              const count = isArray ? items.length : items ? Object.keys(items).length : 0;
+
+              return (
+                <LCard
+                  key={card.key}
                   title={<span style={{ color: card.color }}>{card.title}</span>}
-                  extra={<Tag>{count} шт.</Tag>}
+                  extra={<LTag>{count} шт.</LTag>}
                   style={{ height: '100%' }}
                 >
                   {isArray ? (
                     <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                      {items.slice(0, 8).map((item: any, i: number) => (
+                      {items.slice(0, 8).map((item: { name?: string; id?: string; role?: string }, i: number) => (
                         <li key={i} style={{ padding: '4px 0', borderBottom: '1px solid #f1f5f9', fontSize: 14 }}>
-                          <Text strong>{item.name || item.id}</Text>
-                          {item.role && <Text type="secondary"> — {item.role}</Text>}
+                          <strong>{item.name || item.id}</strong>
+                          {item.role && <span style={{ color: '#999' }}> — {item.role}</span>}
                         </li>
                       ))}
                     </ul>
                   ) : items && typeof items === 'object' ? (
-                    <Text type="secondary" style={{ fontSize: 14 }}>
+                    <div style={{ fontSize: 14, color: '#666' }}>
                       {Object.entries(items).slice(0, 5).map(([k, v]) => (
-                        <div key={k}><Text strong>{k}:</Text> {String(v)}</div>
+                        <div key={k}><strong>{k}:</strong> {String(v)}</div>
                       ))}
-                    </Text>
+                    </div>
                   ) : (
-                    <Text type="secondary">Нет данных</Text>
+                    <div style={{ color: '#999' }}>Нет данных</div>
                   )}
-                </Card>
-              </Col>
-            );
-          })}
-        </Row>
+                </LCard>
+              );
+            })}
+          </div>
+        )
       )}
-    </>
-  );
 
-  const layersTab = (
-    <Row gutter={[16, 16]}>
-      {layers ? (
-        Object.entries(layers).map(([key, value]) => {
-          const layerKey = key.replace('_layer', '');
-          return (
-            <Col xs={24} sm={12} key={key}>
-              <Card
-                size="small"
-                title={<span style={{ color: LAYER_COLORS[layerKey] || '#333' }}>{LAYER_LABELS[layerKey] || layerKey}</span>}
-                style={{ height: '100%' }}
-              >
-                <Paragraph style={{ margin: 0, fontSize: 14, lineHeight: 1.6 }}>
-                  {value || <Text type="secondary">Слой пока не определён</Text>}
-                </Paragraph>
-              </Card>
-            </Col>
-          );
-        })
-      ) : (
-        <Col span={24}>
-          <Card>
-            <Empty description="Слои сознания ещё не сформированы. Задавайте вопросы книге — и слои начнут формироваться." />
-          </Card>
-        </Col>
-      )}
-    </Row>
-  );
-
-  const evolutionTab = (
-    <Card>
-      {evolution ? (
-        <>
-          <Descriptions bordered size="small" style={{ marginBottom: 24 }}>
-            <Descriptions.Item label="Текущая версия">
-              <Tag color="blue" style={{ fontSize: 14 }}>{evolution.current_version}</Tag>
-            </Descriptions.Item>
-          </Descriptions>
-          {evolution.snapshots && evolution.snapshots.length > 0 ? (
-            <Timeline
-              items={evolution.snapshots.map((s) => ({
-                color: 'green',
-                children: (
-                  <div>
-                    <Text strong>{s.version}</Text>
-                    <br />
-                    <Text type="secondary" style={{ fontSize: 12 }}>
-                      {new Date(s.created_at).toLocaleString('ru')}
-                    </Text>
-                    {s.description && <div><Text style={{ fontSize: 13 }}>{s.description}</Text></div>}
-                  </div>
-                ),
-              }))}
-            />
+      {/* Layers Tab */}
+      {activeTab === 'layers' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+          {layers ? (
+            Object.entries(layers).map(([key, value]) => {
+              const layerKey = key.replace('_layer', '');
+              return (
+                <LCard
+                  key={key}
+                  size="small"
+                  title={<span style={{ color: LAYER_COLORS[layerKey] || '#333' }}>{LAYER_LABELS[layerKey] || layerKey}</span>}
+                  style={{ height: '100%' }}
+                >
+                  <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6 }}>
+                    {value || <span style={{ color: '#999' }}>Слой пока не определён</span>}
+                  </p>
+                </LCard>
+              );
+            })
           ) : (
-            <Empty description="Пока нет снапшотов эволюции" />
+            <LCard>
+              <LEmpty description="Слои сознания ещё не сформированы. Задавайте вопросы книге — и слои начнут формироваться." />
+            </LCard>
           )}
-        </>
-      ) : (
-        <Empty description="Информация об эволюции недоступна" />
+        </div>
       )}
-    </Card>
-  );
 
-  const items = [
-    { key: 'genome', label: 'Геном книги', children: genomeTab },
-    { key: 'layers', label: 'Слои сознания', children: layersTab },
-    { key: 'evolution', label: 'Эволюция', children: evolutionTab },
-  ];
-
-  return (
-    <div>
-      <div style={{ marginBottom: 32 }}>
-        <Title level={2}>О книге «Наследие Аркаима»</Title>
-        <Paragraph style={{ maxWidth: 720, fontSize: 16, lineHeight: 1.7 }}>
-          Интерактивное исследование содержания книги. Изучайте персонажей, темы,
-          ценности и мир, в котором происходит действие. Следите за эволюцией
-          цифрового сознания книги.
-        </Paragraph>
-      </div>
-
-      <Tabs items={items} />
+      {/* Evolution Tab */}
+      {activeTab === 'evolution' && (
+        <LCard>
+          {evolution ? (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, padding: '8px 12px', background: '#f6f8fa', borderRadius: 6 }}>
+                <span style={{ fontSize: 14, color: '#666' }}>Текущая версия:</span>
+                <LTag color="blue" style={{ fontSize: 14 }}>{evolution.current_version}</LTag>
+              </div>
+              {evolution.snapshots && evolution.snapshots.length > 0 ? (
+                <div style={{ position: 'relative', paddingLeft: 20 }}>
+                  <div style={{ position: 'absolute', left: 6, top: 0, bottom: 0, width: 2, background: '#f0f0f0' }} />
+                  {evolution.snapshots.map((s, i) => (
+                    <div key={i} style={{ position: 'relative', marginBottom: 16, paddingLeft: 16 }}>
+                      <div style={{ position: 'absolute', left: -17, top: 4, width: 10, height: 10, borderRadius: '50%', background: '#52c41a', border: '2px solid #fff' }} />
+                      <div style={{ fontWeight: 500 }}>{s.version}</div>
+                      <div style={{ fontSize: 12, color: '#999' }}>
+                        {new Date(s.created_at).toLocaleString('ru')}
+                      </div>
+                      {s.description && <div style={{ fontSize: 13, marginTop: 4 }}>{s.description}</div>}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <LEmpty description="Пока нет снапшотов эволюции" />
+              )}
+            </>
+          ) : (
+            <LEmpty description="Информация об эволюции недоступна" />
+          )}
+        </LCard>
+      )}
     </div>
   );
 }

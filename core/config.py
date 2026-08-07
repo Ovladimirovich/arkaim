@@ -60,6 +60,9 @@ class Config:
     TELEGRAM_BOT_USERNAME: str = os.getenv("TELEGRAM_BOT_USERNAME", "")
     TELEGRAM_ADMIN_CHAT_ID: str = os.getenv("TELEGRAM_ADMIN_CHAT_ID", "")
     GENOME_VERSION: str = "1.0.0"
+
+    # ── ComfyUI (локальный или Colab Cloudflare Tunnel) ──────────────
+    COMFYUI_URL: str = os.getenv("COMFYUI_URL", "http://127.0.0.1:8188")
     MIN_VALIDATION_SCORE: float = 0.7
 
     # ── Email / SMTP ───────────────────────────────────

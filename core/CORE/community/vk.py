@@ -65,7 +65,46 @@ class VKBot:
             user_id = message.get("from_id")
             text = message.get("text", "")
             logger.info(f"VK сообщение от {user_id}: {text}")
-            # TODO: Обработка сообщения через KeeperAgent
+
+            # Process message through orchestrator
+            try:
+                from core.orchestrator import Orchestrator
+                from core.providers.registry import ProviderRegistry
+
+                orchestrator = Orchestrator(
+                    memory=None,
+                    skills=[],
+                    config=self.config,
+                )
+
+                # Build request for orchestrator
+                req = {
+                    "messages": [{"role": "user", "content": text}],
+                    "provider": "gigachat",
+                    "model": "GigaChat",
+                    "metadata": {"session_id": f"vk_{user_id}", "source": "vk"},
+                }
+
+                # Get user info from VK
+                user_info = {
+                    "sub": f"vk_{user_id}",
+                    "username": f"vk_{user_id}",
+                    "provider": "vk",
+                }
+
+                # Process through orchestrator
+                response = await orchestrator.run(req, user_info)
+
+                if response and "choices" in response:
+                    reply_text = response["choices"][0]["message"]["content"]
+                    await self.send_message(user_id, reply_text)
+                else:
+                    await self.send_message(user_id, "Извините, не удалось обработать сообщение.")
+
+            except Exception as e:
+                logger.error(f"VK message processing error: {e}")
+                await self.send_message(user_id, "Произошла ошибка при обработке сообщения.")
+
             return "ok"
 
         elif event_type == "group_join":

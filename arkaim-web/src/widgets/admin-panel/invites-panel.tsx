@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Table, Button, InputNumber, Select, Input, Space, Popconfirm, message, Form, Card } from 'antd';
+import { Table, Button, InputNumber, Select, Input, Space, Popconfirm, message, Form, Card, Empty } from 'antd';
 import { PlusOutlined, CopyOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
@@ -18,7 +18,7 @@ export function InvitesPanel() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (values: any) => api.post<{ url: string }>(
+    mutationFn: (values: { role: string; max_uses: number; note?: string }) => api.post<{ url: string }>(
       `/auth/admin/invites?role=${values.role}&max_uses=${values.max_uses}&note=${values.note || ''}`
     ),
     onSuccess: (data) => {
@@ -28,11 +28,13 @@ export function InvitesPanel() {
       setFormOpen(false);
       form.resetFields();
     },
+    onError: () => message.error('Ошибка'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/auth/admin/invites/${id}`),
     onSuccess: () => { message.success('Инвайт удалён'); queryClient.invalidateQueries({ queryKey: ['admin-invites'] }); },
+    onError: () => message.error('Ошибка'),
   });
 
   const copyUrl = (url: string) => {
@@ -43,7 +45,7 @@ export function InvitesPanel() {
   const columns = [
     {
       title: 'Ссылка', key: 'url', width: 300,
-      render: (_: any, r: Invite) => (
+      render: (_: unknown, r: Invite) => (
         <Space>
           <code style={{ fontSize: 11 }}>{r.url?.slice(0, 40)}...</code>
           <Button size="small" icon={<CopyOutlined />} onClick={() => copyUrl(r.url)} />
@@ -51,18 +53,18 @@ export function InvitesPanel() {
       ),
     },
     { title: 'Роль', dataIndex: 'role', key: 'role', render: (v: string) => <span>{v}</span> },
-    { title: 'Использовано', key: 'uses', render: (_: any, r: Invite) => `${r.use_count} / ${r.max_uses}` },
+    { title: 'Использовано', key: 'uses', render: (_: unknown, r: Invite) => `${r.use_count} / ${r.max_uses}` },
     { title: 'Заметка', dataIndex: 'note', key: 'note', render: (v: string) => v || '—' },
     {
       title: 'Статус', key: 'status',
-      render: (_: any, r: Invite) => {
+      render: (_: unknown, r: Invite) => {
         const active = r.is_active && r.use_count < r.max_uses;
         return active ? <span style={{ color: '#16a34a' }}>Активен</span> : <span style={{ color: '#dc2626' }}>Использован</span>;
       },
     },
     {
       title: '', key: 'actions',
-      render: (_: any, r: Invite) => (
+      render: (_: unknown, r: Invite) => (
         <Popconfirm title="Удалить инвайт?" onConfirm={() => deleteMutation.mutate(r.id)}>
           <Button size="small" danger icon={<DeleteOutlined />} />
         </Popconfirm>
@@ -103,7 +105,11 @@ export function InvitesPanel() {
         </Card>
       )}
 
-      <Table columns={columns} dataSource={invites || []} rowKey="id" loading={isLoading} size="small" />
+      {Array.isArray(invites) && invites.length === 0 ? (
+        <Empty description="Нет инвайтов" />
+      ) : (
+        <Table columns={columns} dataSource={invites || []} rowKey="id" loading={isLoading} size="small" />
+      )}
     </>
   );
 }

@@ -8,14 +8,14 @@ echo.
 :: =============================================
 :: 1. Stop Backend (port 8642)
 :: =============================================
-echo [1/3] Stopping Backend...
+echo [1/3] Stopping Core...
 for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":8642 " ^| findstr LISTENING 2^>nul') do (
     if not "%%a"=="0" (
         echo   Killing PID %%a on port 8642
         taskkill /f /pid %%a >nul 2>&1
     )
 )
-taskkill /fi "WINDOWTITLE eq Arkaim Backend*" /f >nul 2>&1
+taskkill /fi "WINDOWTITLE eq Arkaim Core*" /f >nul 2>&1
 
 :: =============================================
 :: 2. Stop Frontend (port 3000)

@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Card, Typography, Spin, Space, Button, List, Divider, Segmented, Empty } from 'antd';
 import { VideoCameraOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
 import { ProtectedRoute } from '@/shared/lib/guards';
-
-const { Title, Text, Paragraph } = Typography;
+import { LCard } from '@/shared/ui/light/LCard';
+import { LButton } from '@/shared/ui/light/LButton';
+import { LSpin } from '@/shared/ui/light/LSpin';
+import { LEmpty } from '@/shared/ui/light/LEmpty';
+import { LDivider } from '@/shared/ui/light/LDivider';
 
 type SceneMeta = {
   id: string;
@@ -30,49 +32,30 @@ function SceneView({ scene, fontSize }: { scene: SceneFull; fontSize: number }) 
   const lines = scene.content.split('\n');
   return (
     <div style={{ maxWidth: 700, margin: '0 auto' }}>
-      <Title level={3} style={{ marginBottom: 24, textAlign: 'center' }}>
+      <h3 style={{ marginBottom: 24, textAlign: 'center' }}>
         <VideoCameraOutlined style={{ marginRight: 8, color: '#dc2626' }} />
         {scene.title}
-      </Title>
-      <Divider />
+      </h3>
+      <LDivider />
       <div style={{ fontSize, lineHeight: 1.8, color: '#374151' }}>
         {lines.map((line, i) => {
           const trimmed = line.trim();
           if (!trimmed) return <div key={i} style={{ height: '0.8em' }} />;
-          // Ремарки камеры в скобках — курсив
           if (trimmed.startsWith('(') && trimmed.endsWith(')')) {
-            return (
-              <Paragraph key={i} style={{ fontSize, fontStyle: 'italic', color: '#6b7280', marginBottom: '0.6em' }}>
-                {trimmed}
-              </Paragraph>
-            );
+            return <p key={i} style={{ fontSize, fontStyle: 'italic', color: '#6b7280', marginBottom: '0.6em' }}>{trimmed}</p>;
           }
-          // Имя персонажа (заглавными) — жирный
           if (/^[А-ЯЁ\s-]+$/.test(trimmed) && trimmed.length < 40) {
-            return (
-              <Paragraph key={i} style={{ fontSize, fontWeight: 700, textAlign: 'center', marginTop: '1em', marginBottom: '0.3em' }}>
-                {trimmed}
-              </Paragraph>
-            );
+            return <p key={i} style={{ fontSize, fontWeight: 700, textAlign: 'center', marginTop: '1em', marginBottom: '0.3em' }}>{trimmed}</p>;
           }
-          // Реплика начинается с тире
           if (trimmed.startsWith('-')) {
-            return (
-              <Paragraph key={i} style={{ fontSize, marginLeft: '2em', marginBottom: '0.6em' }}>
-                {trimmed}
-              </Paragraph>
-            );
+            return <p key={i} style={{ fontSize, marginLeft: '2em', marginBottom: '0.6em' }}>{trimmed}</p>;
           }
-          return (
-            <Paragraph key={i} style={{ fontSize, marginBottom: '0.6em' }}>
-              {trimmed}
-            </Paragraph>
-          );
+          return <p key={i} style={{ fontSize, marginBottom: '0.6em' }}>{trimmed}</p>;
         })}
       </div>
-      <Divider />
+      <LDivider />
       <div style={{ textAlign: 'center' }}>
-        <Text type="secondary" style={{ fontSize: 12 }}>Конец сцены</Text>
+        <span style={{ fontSize: 12, color: '#999' }}>Конец сцены</span>
       </div>
     </div>
   );
@@ -110,76 +93,90 @@ function ScreenplayContent() {
   if (scenesLoading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
-        <Spin size="large" tip="Загрузка сценария..." />
+        <LSpin size="large" tip="Загрузка сценария..." />
       </div>
     );
   }
 
   if (scenes.length === 0) {
-    return <Empty description="Сценарий не найден" />;
+    return <LEmpty description="Сценарий не найден" />;
   }
 
   return (
     <div style={{ display: 'flex', gap: '1rem', height: 'calc(100vh - 100px)' }}>
       {showToc && (
         <div style={{ width: 280, flexShrink: 0, overflow: 'auto' }}>
-          <Card size="small" title={<><VideoCameraOutlined /> Сцены</>} extra={<Text type="secondary">{scenes.length}</Text>} style={{ marginBottom: 8 }}>
-            <List
-              size="small"
-              dataSource={scenes}
-              renderItem={(item, i) => (
-                <List.Item
-                  style={{ cursor: 'pointer', background: i === sceneIndex ? '#fef2f2' : undefined, borderRadius: 4, padding: '6px 8px' }}
-                  onClick={() => setSceneIndex(i)}
-                >
-                  <Text style={{ fontSize: 11, color: i === sceneIndex ? '#dc2626' : undefined }}>
-                    {item.title}
-                  </Text>
-                </List.Item>
-              )}
-            />
-          </Card>
+          <LCard size="small" title={<span><VideoCameraOutlined /> Сцены</span>} extra={<span style={{ fontSize: 12, color: '#999' }}>{scenes.length}</span>}>
+            {scenes.map((item, i) => (
+              <div
+                key={item.id}
+                onClick={() => setSceneIndex(i)}
+                style={{
+                  cursor: 'pointer',
+                  background: i === sceneIndex ? '#fef2f2' : undefined,
+                  borderRadius: 4,
+                  padding: '6px 8px',
+                  fontSize: 11,
+                  color: i === sceneIndex ? '#dc2626' : undefined,
+                }}
+              >
+                {item.title}
+              </div>
+            ))}
+          </LCard>
         </div>
       )}
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <Space>
-            <Button size="small" onClick={() => setShowToc(!showToc)}>
-              {showToc ? 'Скрыть' : 'Сцены'}
-            </Button>
-          </Space>
-          <Space>
-            <Text type="secondary" style={{ fontSize: 12 }}>Шрифт:</Text>
-            <Segmented
-              size="small"
-              options={FONT_SIZES.map(f => ({ label: f.label, value: f.value }))}
-              value={fontSize}
-              onChange={(v) => setFontSize(v as number)}
-            />
-          </Space>
+          <LButton size="small" onClick={() => setShowToc(!showToc)}>
+            {showToc ? 'Скрыть' : 'Сцены'}
+          </LButton>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 12, color: '#999' }}>Шрифт:</span>
+            <div style={{ display: 'flex', border: '1px solid var(--input-border)', borderRadius: 6, overflow: 'hidden' }}>
+              {FONT_SIZES.map(f => (
+                <button
+                  key={f.value}
+                  onClick={() => setFontSize(f.value)}
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: 12,
+                    border: 'none',
+                    background: fontSize === f.value ? '#1677ff' : 'var(--surface-bg)',
+                    color: fontSize === f.value ? '#fff' : '#333',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
-        <Card size="small" ref={contentRef} style={{ flex: 1, overflow: 'auto' }} bodyStyle={{ padding: '24px 32px' }}>
+        <div ref={contentRef} style={{ flex: 1, overflow: 'auto' }}>
+        <LCard size="small" style={{ height: '100%' }}>
           {sceneLoading ? (
-            <div style={{ textAlign: 'center', padding: 48 }}><Spin /></div>
+            <div style={{ textAlign: 'center', padding: 48 }}><LSpin /></div>
           ) : sceneContent ? (
             <SceneView scene={sceneContent} fontSize={fontSize} />
           ) : (
-            <Empty description="Сцена не найдена" />
+            <LEmpty description="Сцена не найдена" />
           )}
-        </Card>
+        </LCard>
+        </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-          <Button icon={<LeftOutlined />} onClick={prevScene} disabled={sceneIndex === 0}>
+          <LButton icon={<LeftOutlined />} onClick={prevScene} disabled={sceneIndex === 0}>
             Предыдущая
-          </Button>
-          <Text type="secondary" style={{ fontSize: 12 }}>
+          </LButton>
+          <span style={{ fontSize: 12, color: '#999' }}>
             {sceneIndex + 1} / {scenes.length}
-          </Text>
-          <Button onClick={nextScene} disabled={sceneIndex === scenes.length - 1}>
+          </span>
+          <LButton onClick={nextScene} disabled={sceneIndex === scenes.length - 1}>
             Следующая <RightOutlined />
-          </Button>
+          </LButton>
         </div>
       </div>
     </div>

@@ -12,7 +12,7 @@ _BASE_URL = "https://api-inference.huggingface.co/models"
 
 
 class HuggingFaceProvider(BaseProvider):
-    def __init__(self):
+    def __init__(self) -> None:
         self.model = settings.HF_MODEL
         self.base_url = f"{_BASE_URL}/{self.model}"
         self._client = httpx.AsyncClient(timeout=120)
@@ -31,7 +31,7 @@ class HuggingFaceProvider(BaseProvider):
         prompt += "<|assistant|>\n"
         return {"inputs": prompt, "parameters": {"max_new_tokens": 1024, "temperature": 0.7, "do_sample": True}}
 
-    async def chat(self, messages, context=None, trace_id="", xray_headers=None):
+    async def chat(self, messages, context=None, trace_id="", xray_headers=None) -> str:
         headers = dict(self._headers)
         if xray_headers:
             headers.update(xray_headers)
@@ -62,7 +62,13 @@ class HuggingFaceProvider(BaseProvider):
         return str(data)
 
     async def stream(self, messages, trace_id=""):
-        raise NotImplementedError("HuggingFace streaming not supported")
+        # HuggingFace doesn't support native streaming, fall back to full response
+        try:
+            full_response = await self.generate(messages, trace_id=trace_id)
+            yield full_response
+        except Exception as exc:
+            log.error("huggingface_stream_fallback trace_id=%s error=%s", trace_id, exc)
+            raise
 
     async def health(self) -> dict:
         try:
@@ -73,5 +79,5 @@ class HuggingFaceProvider(BaseProvider):
         except Exception as exc:
             return {"status": "error", "provider": "huggingface", "error": str(exc)}
 
-    async def close(self):
+    async def close(self) -> None:
         await self._client.aclose()

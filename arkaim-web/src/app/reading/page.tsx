@@ -1,13 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Card, Typography, Row, Col, Tag, Tabs, Empty, Spin, Space, Button, List, Tooltip, Progress, Divider, Segmented } from 'antd';
-import { BookOutlined, LeftOutlined, RightOutlined, FontSizeOutlined, BulbOutlined, TeamOutlined, EnvironmentOutlined, StarOutlined } from '@ant-design/icons';
+import { LCard, LTag, LEmpty, LSpin, LSpace, LButton, LDivider, LSegmented } from '@/shared/ui/light';
+import { BookOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
 import { ProtectedRoute } from '@/shared/lib/guards';
-
-const { Title, Text, Paragraph } = Typography;
 
 type ChapterMeta = {
   id: string;
@@ -20,14 +18,6 @@ type ChapterFull = ChapterMeta & {
   content: string;
 };
 
-type GenomeData = {
-  themes: Array<{ name: string; description?: string }>;
-  characters: Array<{ id: string; name: string; role?: string; description?: string }>;
-  values: Array<{ name: string; description?: string }>;
-  world_entities: Array<{ id: string; name: string; type?: string }>;
-  author_intent: Record<string, unknown>;
-};
-
 const FONT_SIZES = [
   { label: 'Маленький', value: 14 },
   { label: 'Средний', value: 16 },
@@ -35,35 +25,29 @@ const FONT_SIZES = [
   { label: 'Очень большой', value: 20 },
 ];
 
-// ── Reading Content ──────────────────────────────
-
 function ReadingView({ chapter, fontSize }: { chapter: ChapterFull; fontSize: number }) {
   return (
     <div style={{ maxWidth: 700, margin: '0 auto' }}>
-      <Title level={2} style={{ marginBottom: 24, textAlign: 'center', lineHeight: 1.4 }}>{chapter.title}</Title>
+      <h2 style={{ marginBottom: 24, textAlign: 'center', lineHeight: 1.4, fontSize: 24 }}>{chapter.title}</h2>
 
-      <Divider />
+      <LDivider />
 
-      {/* Content */}
       <div style={{ fontSize, lineHeight: 1.8, color: '#374151' }}>
         {chapter.content.split('\n\n').map((paragraph, i) => (
-          <Paragraph key={i} style={{ fontSize, lineHeight: 1.8, marginBottom: '1.2em', textIndent: '2em' }}>
+          <p key={i} style={{ fontSize, lineHeight: 1.8, marginBottom: '1.2em', textIndent: '2em', margin: '0 0 1.2em 0' }}>
             {paragraph}
-          </Paragraph>
+          </p>
         ))}
       </div>
 
-      <Divider />
+      <LDivider />
 
-      {/* Navigation */}
       <div style={{ textAlign: 'center', marginTop: 32 }}>
-        <Text type="secondary" style={{ fontSize: 12 }}>Конец раздела</Text>
+        <span style={{ fontSize: 12, color: '#999' }}>Конец раздела</span>
       </div>
     </div>
   );
 }
-
-// ── Main Page ──────────────────────────────────
 
 function ReadingContent() {
   const [chapterIndex, setChapterIndex] = useState(0);
@@ -71,7 +55,6 @@ function ReadingContent() {
   const [showToc, setShowToc] = useState(true);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // Загрузка списка глав
   const { data: chaptersData, isLoading: chaptersLoading } = useQuery({
     queryKey: ['chapters'],
     queryFn: () => api.get<{ ok: boolean; data: ChapterMeta[]; total: number }>('/book/chapters'),
@@ -80,7 +63,6 @@ function ReadingContent() {
   const chapters: ChapterMeta[] = chaptersData?.data || [];
   const currentChapter = chapters[chapterIndex];
 
-  // Загрузка контента текущей главы
   const { data: chapterData, isLoading: chapterLoading } = useQuery({
     queryKey: ['chapter', currentChapter?.id],
     queryFn: () => api.get<{ ok: boolean; data: ChapterFull }>(`/book/chapters/${currentChapter?.id}`),
@@ -99,93 +81,85 @@ function ReadingContent() {
   if (chaptersLoading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
-        <Spin size="large" tip="Загрузка содержания..." />
+        <LSpin size="large" tip="Загрузка содержания..." />
       </div>
     );
   }
 
   if (chapters.length === 0) {
-    return <Empty description="Содержание книги не найдено" />;
+    return <LEmpty description="Содержание книги не найдено" />;
   }
 
   return (
     <div style={{ display: 'flex', gap: '1rem', height: 'calc(100vh - 100px)' }}>
-      {/* Table of Contents */}
       {showToc && (
         <div style={{ width: 260, flexShrink: 0, overflow: 'auto' }}>
-          <Card size="small" title={<><BookOutlined /> Содержание</>} extra={<Tag>{chapters.length}</Tag>} style={{ marginBottom: 8 }}>
-            <List
-              size="small"
-              dataSource={chapters}
-              renderItem={(item, i) => (
-                <List.Item
-                  style={{ cursor: 'pointer', background: i === chapterIndex ? '#eff6ff' : undefined, borderRadius: 4, padding: '6px 8px' }}
-                  onClick={() => setChapterIndex(i)}
-                >
-                  <Text style={{ fontSize: 12, color: i === chapterIndex ? '#2563eb' : undefined }}>
-                    {i + 1}. {item.title}
-                  </Text>
-                  <Text type="secondary" style={{ fontSize: 10, marginLeft: 'auto' }}>
-                    {Math.round(item.char_count / 1000)}k
-                  </Text>
-                </List.Item>
-              )}
-            />
-          </Card>
+          <LCard size="small" title={<><BookOutlined /> Содержание</>} extra={<LTag>{chapters.length}</LTag>} style={{ marginBottom: 8 }}>
+            {chapters.map((item, i) => (
+              <div key={item.id}
+                style={{ cursor: 'pointer', background: i === chapterIndex ? '#eff6ff' : undefined, borderRadius: 4, padding: '6px 8px', display: 'flex', alignItems: 'center' }}
+                onClick={() => setChapterIndex(i)}
+              >
+                <span style={{ fontSize: 12, color: i === chapterIndex ? '#2563eb' : undefined, flex: 1 }}>
+                  {i + 1}. {item.title}
+                </span>
+                <span style={{ fontSize: 10, color: '#999', marginLeft: 'auto' }}>
+                  {Math.round(item.char_count / 1000)}k
+                </span>
+              </div>
+            ))}
+          </LCard>
 
-          {/* Quick links */}
-          <Card size="small" title="Навигация">
-            <Space direction="vertical" size={4} style={{ width: '100%' }}>
+          <LCard size="small" title="Навигация">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <a href="/library" style={{ fontSize: 12 }}>📖 Библиотека</a>
               <a href="/book" style={{ fontSize: 12 }}>💬 Задать вопрос</a>
               <a href="/genres" style={{ fontSize: 12 }}>🏷 Жанры</a>
-            </Space>
-          </Card>
+            </div>
+          </LCard>
         </div>
       )}
 
-      {/* Main content */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        {/* Toolbar */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <Space>
-            <Button size="small" onClick={() => setShowToc(!showToc)}>
+          <LSpace>
+            <LButton size="small" onClick={() => setShowToc(!showToc)}>
               {showToc ? 'Скрыть оглавление' : 'Показать оглавление'}
-            </Button>
-          </Space>
-          <Space>
-            <Text type="secondary" style={{ fontSize: 12 }}>Размер:</Text>
-            <Segmented
+            </LButton>
+          </LSpace>
+          <LSpace>
+            <span style={{ fontSize: 12, color: '#999' }}>Размер:</span>
+            <LSegmented
               size="small"
               options={FONT_SIZES.map(f => ({ label: f.label, value: f.value }))}
               value={fontSize}
               onChange={(v) => setFontSize(v as number)}
             />
-          </Space>
+          </LSpace>
         </div>
 
-        {/* Content area */}
-        <Card size="small" ref={contentRef} style={{ flex: 1, overflow: 'auto' }} bodyStyle={{ padding: '24px 32px' }}>
-          {chapterLoading ? (
-            <div style={{ textAlign: 'center', padding: 48 }}><Spin /></div>
-          ) : chapterContent ? (
-            <ReadingView chapter={chapterContent} fontSize={fontSize} />
-          ) : (
-            <Empty description="Глава не найдена" />
-          )}
-        </Card>
+        <LCard size="small" ref={contentRef} style={{ flex: 1, overflow: 'auto' }}>
+          <div style={{ padding: '24px 32px' }}>
+            {chapterLoading ? (
+              <div style={{ textAlign: 'center', padding: 48 }}><LSpin /></div>
+            ) : chapterContent ? (
+              <ReadingView chapter={chapterContent} fontSize={fontSize} />
+            ) : (
+              <LEmpty description="Глава не найдена" />
+            )}
+          </div>
+        </LCard>
 
-        {/* Chapter navigation */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-          <Button icon={<LeftOutlined />} onClick={prevChapter} disabled={chapterIndex === 0}>
+          <LButton icon={<LeftOutlined />} onClick={prevChapter} disabled={chapterIndex === 0}>
             Предыдущая
-          </Button>
-          <Text type="secondary" style={{ fontSize: 12 }}>
+          </LButton>
+          <span style={{ fontSize: 12, color: '#999' }}>
             {chapterIndex + 1} / {chapters.length}
-          </Text>
-          <Button onClick={nextChapter} disabled={chapterIndex === chapters.length - 1}>
+          </span>
+          <LButton onClick={nextChapter} disabled={chapterIndex === chapters.length - 1}>
             Следующая <RightOutlined />
-          </Button>
+          </LButton>
         </div>
       </div>
     </div>

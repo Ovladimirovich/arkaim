@@ -34,22 +34,26 @@ export function useStreamingChat(opts?: UseStreamingChatOptions) {
     setStreamingText('');
 
     try {
-      const token = document.cookie.split('; ').find(c => c.startsWith('arkaim_session='))?.split('=')[1] || '';
       const resp = await fetch('/v1/stream', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ question: q }),
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ messages: [{ role: 'user', content: q }] }),
       });
 
       if (resp.ok && resp.headers.get('content-type')?.includes('text/event-stream')) {
         const reader = resp.body?.getReader();
         const decoder = new TextDecoder();
         let fullText = '';
+        let buffer = '';
         if (reader) {
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
-            for (const line of decoder.decode(value, { stream: true }).split('\n')) {
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+            for (const line of lines) {
               if (line.startsWith('data: ')) {
                 try {
                   const data = JSON.parse(line.slice(6));
@@ -57,6 +61,12 @@ export function useStreamingChat(opts?: UseStreamingChatOptions) {
                 } catch {}
               }
             }
+          }
+          if (buffer.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(buffer.slice(6));
+              if (data.text) { fullText += data.text; setStreamingText(fullText); }
+            } catch {}
           }
         }
         const assistantMsg: Message = { role: 'assistant', content: fullText || 'Получен пустой ответ.', sourceType: 'hybrid', time: now() };

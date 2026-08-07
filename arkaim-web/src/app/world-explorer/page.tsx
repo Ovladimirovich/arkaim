@@ -1,16 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Card, Typography, Input, Button, Select, Slider, Space, Tag, Tabs, List, Progress, Modal, Alert, Spin, Empty, Descriptions, Statistic, Tooltip, Badge, Divider, message, Rate } from 'antd';
+import { LCard, LButton, LSelect, LSlider, LSpace, LTag, LTabs, LProgress, LModal, LAlert, LSpin, LEmpty, LStatistic, LBadge, LDivider, LTextArea, LAvatar, toast } from '@/shared/ui/light';
 import { ExperimentOutlined, ThunderboltOutlined, HistoryOutlined, DeleteOutlined, SwapOutlined, BranchesOutlined, BulbOutlined, NodeIndexOutlined, StarOutlined } from '@ant-design/icons';
 import { api } from '@/shared/lib/api';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { ProtectedRoute } from '@/shared/lib/guards';
 import { useWsEvent } from '@/shared/lib/ws-hooks';
-
-const { Title, Text } = Typography;
-const { TextArea } = Input;
-const { TabPane } = Tabs;
 
 type Epoch = { id: string; name: string; name_ru: string; order: number };
 type Hypothesis = { id: string; title: string; description: string; type: string; epoch: string; confidence: number; tags: string[] };
@@ -19,6 +15,8 @@ type ExplorationResult = { request: { prompt: string; epoch?: string; location?:
 type CompatibilityResult = { overall_score: number; is_compatible: boolean; risk_level: string; axis_scores: { axis: string; score: number; violations_count: number; warnings_count: number }[]; violations_count: number; warnings_count: number; recommendations: string[] };
 type Possibility = { id: string; title: string; title_ru: string; description: string; category: string; confidence: number; tags: string[] };
 type HistoryItem = { id: string; timestamp: number; prompt: string; epoch?: string; result: ExplorationResult };
+type HistoryApiItem = { id: string | number; created_at: string; prompt: string; epoch?: string; result?: ExplorationResult; duration_ms?: number; summary?: string };
+type GeneratedTextResponse = { system_instruction: string; user_prompt: string };
 
 const RISK_COLORS: Record<string, string> = { low: '#52c41a', medium: '#faad14', high: '#ff7a45', rejected: '#ff4d4f' };
 const BRANCH_TYPE_LABELS: Record<string, string> = { conservative: 'Консервативное', moderate: 'Умеренное', radical: 'Радикальное', unexpected: 'Неожиданное' };
@@ -27,32 +25,17 @@ const PROGRESS_STEPS = ['Проверка совместимости', 'Гене
 
 async function loadHistory(): Promise<HistoryItem[]> {
   try {
-    const res = await api.get<{ data: any[] }>('/book/world-explorer/history?limit=50');
-    return (res.data || []).map((item: any) => ({
-      id: String(item.id),
-      timestamp: new Date(item.created_at).getTime(),
-      prompt: item.prompt,
-      epoch: item.epoch,
-      result: item.result || { request: { prompt: item.prompt }, hypothesis: null, scenario: { branch_count: 0, best_branch_id: '', summary: '' }, ranked_branches: [], duration_ms: item.duration_ms || 0, summary: item.summary || '' },
+    const res = await api.get<{ data: HistoryApiItem[] }>('/book/world-explorer/history?limit=50');
+    return (res.data || []).map((item: HistoryApiItem) => ({
+      id: String(item.id), timestamp: new Date(item.created_at).getTime(), prompt: item.prompt, epoch: item.epoch,
+      result: item.result || { request: { prompt: item.prompt, branch_count: 0 }, hypothesis: null, scenario: { branch_count: 0, best_branch_id: '', summary: '' }, ranked_branches: [], duration_ms: item.duration_ms || 0, summary: item.summary || '' },
     }));
   } catch { return []; }
 }
 
 async function saveHistory(item: HistoryItem) {
-  try {
-    await api.post('/book/world-explorer/history', {
-      prompt: item.prompt,
-      epoch: item.epoch,
-      branch_count: item.result?.request?.branch_count || 3,
-      hypothesis_id: item.result?.hypothesis?.id || null,
-      hypothesis_title: item.result?.hypothesis?.title || null,
-      result_json: JSON.stringify(item.result),
-      summary: item.result?.summary || '',
-      overall_score: item.result?.ranked_branches?.[0]?.quality_score || 0,
-      branch_count_actual: item.result?.ranked_branches?.length || 0,
-      duration_ms: item.result?.duration_ms || 0,
-    });
-  } catch { /* silent */ }
+  try { await api.post('/book/world-explorer/history', { prompt: item.prompt, epoch: item.epoch, branch_count: item.result?.request?.branch_count || 3, hypothesis_id: item.result?.hypothesis?.id || null, hypothesis_title: item.result?.hypothesis?.title || null, result_json: JSON.stringify(item.result), summary: item.result?.summary || '', overall_score: item.result?.ranked_branches?.[0]?.quality_score || 0, branch_count_actual: item.result?.ranked_branches?.length || 0, duration_ms: item.result?.duration_ms || 0 }); }
+  catch { }
 }
 
 function WorldExplorerContent() {
@@ -71,7 +54,6 @@ function WorldExplorerContent() {
   const [generatingText, setGeneratingText] = useState(false);
   const [feedbackRating, setFeedbackRating] = useState(0);
   const [feedbackComment, setFeedbackComment] = useState('');
-  const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { data: epochsData } = useQuery({ queryKey: ['we-epochs'], queryFn: () => api.get<{ data: Epoch[] }>('/book/world-explorer/epochs') });
   const epochs = epochsData?.data || [];
@@ -90,25 +72,22 @@ function WorldExplorerContent() {
 
   useEffect(() => { const t = setTimeout(checkCompatibility, 500); return () => clearTimeout(t); }, [checkCompatibility]);
 
-  // WebSocket real-time progress
-  useWsEvent('exploration_progress' as any, (data: any) => { if (data.step !== undefined) setProgress(data.step); });
-  useWsEvent('exploration_complete' as any, () => { setProgress(-1); });
-  useWsEvent('exploration_started' as any, (data: any) => { console.log('Exploration started:', data.exploration_id); });
+  useWsEvent('exploration_progress', (data: Record<string, unknown>) => { if (typeof data.step === 'number') setProgress(data.step); });
+  useWsEvent('exploration_complete', () => setProgress(-1));
+  useWsEvent('exploration_started', () => setProgress(0));
 
   const exploreMutation = useMutation({
     mutationFn: async () => { setProgress(0); return api.post<{ data: ExplorationResult; summary: string }>('/book/world-explorer/explore', { prompt, epoch: epoch || undefined, branch_count: branchCount }); },
-    onSuccess: (res) => { setResult(res.data); setProgress(-1); const item: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), prompt, epoch, result: res.data }; setHistory(prev => [item, ...prev].slice(0, 50)); saveHistory(item); message.success('Исследование завершено'); },
-    onError: () => { setProgress(-1); message.error('Ошибка исследования'); },
+    onSuccess: (res) => { setResult(res.data); setProgress(-1); const item: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), prompt, epoch, result: res.data }; setHistory(prev => [item, ...prev].slice(0, 50)); saveHistory(item); toast.success('Исследование завершено'); },
+    onError: () => { setProgress(-1); toast.error('Ошибка исследования'); },
   });
 
   const exploreFromHypothesis = async (hyp: Hypothesis) => {
     try {
       setProgress(0);
       const res = await api.post<{ data: ExplorationResult }>(`/book/world-explorer/explore/hypothesis?hypothesis_id=${hyp.id}&epoch=${hyp.epoch || 'satya_yuga'}&branch_count=${branchCount}`, {});
-      setResult(res.data);
-      setProgress(-1);
-      setActiveTab('explore');
-    } catch { setProgress(-1); message.error('Ошибка'); }
+      setResult(res.data); setProgress(-1); setActiveTab('explore');
+    } catch { setProgress(-1); toast.error('Ошибка'); }
   };
 
   const loadFromHistory = (item: HistoryItem) => { setPrompt(item.prompt); setEpoch(item.epoch); setResult(item.result); setActiveTab('explore'); };
@@ -116,56 +95,194 @@ function WorldExplorerContent() {
   const toggleCompare = (branch: RankedBranch) => { setCompareBranches(prev => { const exists = prev.find(b => b.rank === branch.rank); if (exists) return prev.filter(b => b.rank !== branch.rank); if (prev.length >= 3) return prev; return [...prev, branch]; }); };
 
   const submitFeedback = async (branch: RankedBranch) => {
-    if (feedbackRating === 0) { message.warning('Выберите оценку'); return; }
-    try {
-      await api.post('/book/world-explorer/feedback', { branch_rank: branch.rank, branch_type: branch.branch_type, branch_title: branch.title, rating: feedbackRating, comment: feedbackComment });
-      message.success('Отзыв сохранён');
-      setFeedbackRating(0);
-      setFeedbackComment('');
-    } catch { message.error('Ошибка сохранения'); }
+    if (feedbackRating === 0) { toast.warning('Выберите оценку'); return; }
+    try { await api.post('/book/world-explorer/feedback', { branch_rank: branch.rank, branch_type: branch.branch_type, branch_title: branch.title, rating: feedbackRating, comment: feedbackComment }); toast.success('Отзыв сохранён'); setFeedbackRating(0); setFeedbackComment(''); }
+    catch { toast.error('Ошибка сохранения'); }
   };
 
   const generateTextFromBranch = async (branch: RankedBranch) => {
     setGeneratingText(true);
-    try {
-      const res = await api.post<{ data: any }>('/book/world-explorer/generate-from-branch', { exploration_prompt: prompt, branch_title: branch.title, branch_type: branch.branch_type, epoch, style: 'literary', max_length: 2000, quality_score: branch.quality_score, strengths: branch.strengths, weaknesses: branch.weaknesses });
-      setGeneratedText(res.data);
-    } catch { message.error('Ошибка генерации'); }
+    try { const res = await api.post<{ data: GeneratedTextResponse }>('/book/world-explorer/generate-from-branch', { exploration_prompt: prompt, branch_title: branch.title, branch_type: branch.branch_type, epoch, style: 'literary', max_length: 2000, quality_score: branch.quality_score, strengths: branch.strengths, weaknesses: branch.weaknesses }); setGeneratedText(res.data); }
+    catch { toast.error('Ошибка генерации'); }
     setGeneratingText(false);
   };
 
+  const epochOptions = epochs.map(e => ({ value: e.id, label: e.name_ru }));
+
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-      <div style={{ marginBottom: 24 }}><Title level={2} style={{ margin: 0 }}><BranchesOutlined style={{ marginRight: 8 }} />Исследование мира</Title><Text type='secondary'>Исследуйте альтернативные линии развития мира книги</Text></div>
-      {statsData?.data && (<div style={{ display: 'flex', gap: 16, marginBottom: 24 }}><Statistic title='Эпох' value={statsData.data.epochs_count || 0} /><Statistic title='Локаций' value={statsData.data.locations_count || 0} /><Statistic title='Паттернов' value={statsData.data.patterns_count || 0} /><Statistic title='Событий' value={statsData.data.events_count || 0} /></div>)}
-      <Tabs activeKey={activeTab} onChange={setActiveTab}>
-        <TabPane tab={<span><ExperimentOutlined /> Исследование</span>} key='explore'>
-          <Card style={{ marginBottom: 16 }}><Space direction='vertical' style={{ width: '100%' }} size='middle'><TextArea rows={3} placeholder='Опишите вашу идею...' value={prompt} onChange={(e) => setPrompt(e.target.value)} style={{ fontSize: 15 }} /><div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}><Select placeholder='Эпоха' style={{ width: 200 }} allowClear value={epoch} onChange={setEpoch} options={epochs.map(e => ({ value: e.id, label: e.name_ru }))} /><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Text>Ветвей:</Text><Slider min={2} max={8} value={branchCount} onChange={setBranchCount} style={{ width: 120 }} /><Text strong>{branchCount}</Text></div><Button type='primary' icon={<ExperimentOutlined />} loading={exploreMutation.isPending} disabled={!prompt || prompt.length < 5} onClick={() => exploreMutation.mutate()} size='large'>Исследовать</Button></div></Space></Card>
-          {progress >= 0 && (<Card style={{ marginBottom: 16 }}><Text strong>Прогресс:</Text><Progress percent={Math.round(((progress + 1) / PROGRESS_STEPS.length) * 100)} status='active' style={{ marginTop: 8 }} /><Text type='secondary' style={{ fontSize: 12 }}>{PROGRESS_STEPS[progress] || 'Завершение...'}</Text></Card>)}
-          {compatibility && (<Card title='Совместимость' style={{ marginBottom: 16 }} size='small'><div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 12 }}><Progress type='circle' percent={Math.round(compatibility.overall_score * 100)} size={60} strokeColor={RISK_COLORS[compatibility.risk_level] || '#1890ff'} /><div><Text strong>Балл: {compatibility.overall_score.toFixed(2)}</Text><br /><Tag color={RISK_COLORS[compatibility.risk_level]}>{compatibility.risk_level.toUpperCase()}</Tag>{compatibility.is_compatible && <Tag color='green'>ОК</Tag>}</div></div><div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{compatibility.axis_scores.map(ax => (<Tooltip key={ax.axis} title={`${CRITERIA_LABELS[ax.axis] || ax.axis}: ${ax.score.toFixed(2)}`}><div style={{ textAlign: 'center' }}><Progress type='circle' percent={Math.round(ax.score * 100)} size={40} strokeColor={ax.score >= 0.7 ? '#52c41a' : ax.score >= 0.4 ? '#faad14' : '#ff4d4f'} /><div style={{ fontSize: 10, marginTop: 2 }}>{CRITERIA_LABELS[ax.axis] || ax.axis}</div></div></Tooltip>))}</div>{compatibility.recommendations.length > 0 && <Alert type='info' message={compatibility.recommendations[0]} style={{ marginTop: 12 }} showIcon />}</Card>)}
-          {result && (<Card title='Результаты' style={{ marginBottom: 16 }}><Descriptions size='small' column={3}><Descriptions.Item label='Гипотеза'>{result.hypothesis?.title || '-'}</Descriptions.Item><Descriptions.Item label='Ветвей'>{result.scenario.branch_count}</Descriptions.Item><Descriptions.Item label='Время'>{result.duration_ms.toFixed(0)}ms</Descriptions.Item></Descriptions></Card>)}
-          {result && (<div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>{result.ranked_branches.map(branch => (<Badge key={branch.rank} count={'#' + branch.rank} color={branch.rank === 1 ? '#52c41a' : '#1890ff'}><Card size='small' hoverable onClick={() => setSelectedBranch(branch)} style={{ width: 260, cursor: 'pointer', border: branch.rank === 1 ? '2px solid #52c41a' : '1px solid #f0f0f0' }}><Space direction='vertical' style={{ width: '100%' }}><Tag color={branch.branch_type === 'unexpected' ? 'purple' : branch.branch_type === 'radical' ? 'orange' : branch.branch_type === 'moderate' ? 'green' : 'blue'}>{BRANCH_TYPE_LABELS[branch.branch_type] || branch.branch_type}</Tag><Text strong style={{ fontSize: 13 }}>{branch.title}</Text><Progress percent={Math.round(branch.quality_score * 100)} size='small' strokeColor={branch.quality_score >= 0.8 ? '#52c41a' : branch.quality_score >= 0.6 ? '#faad14' : '#ff4d4f'} /><div style={{ fontSize: 12, color: '#8c8c8c' }}>Влияние: {(branch.impact_score * 100).toFixed(0)}% | Противоречия: {branch.contradictions}</div><Button size='small' icon={<SwapOutlined />} onClick={(e) => { e.stopPropagation(); toggleCompare(branch); }} type={compareBranches.find(b => b.rank === branch.rank) ? 'primary' : 'default'}>Сравнить</Button></Space></Card></Badge>))}</div>)}
-          {compareBranches.length >= 2 && <Button type='primary' icon={<SwapOutlined />} onClick={() => setShowCompare(true)} style={{ marginBottom: 16 }}>Сравнить ({compareBranches.length})</Button>}
-          {!result && !exploreMutation.isPending && <Empty description='Введите идею и нажмите «Исследовать»' />}
-        </TabPane>
-        <TabPane tab={<span><BulbOutlined /> Гипотезы</span>} key='hypotheses'>
-          <Card style={{ marginBottom: 16 }}><Select placeholder='Эпоха' style={{ width: 250 }} value={epoch} onChange={setEpoch} options={epochs.map(e => ({ value: e.id, label: e.name_ru }))} /></Card>
-          {hypsLoading ? <Spin /> : hypotheses.length === 0 ? <Empty description='Нет гипотез' /> : <List dataSource={hypotheses} renderItem={(hyp: Hypothesis) => <List.Item actions={[<Button key='e' type='primary' size='small' onClick={() => exploreFromHypothesis(hyp)}>Исследовать</Button>]}><List.Item.Meta title={<><Tag>{hyp.type}</Tag> {hyp.title}</>} description={hyp.description} /></List.Item>} />}
-        </TabPane>
-        <TabPane tab={<span><ThunderboltOutlined /> Возможности</span>} key='possibilities'>
-          <Card style={{ marginBottom: 16 }}><Select placeholder='Эпоха' style={{ width: 250 }} value={epoch} onChange={setEpoch} options={epochs.map(e => ({ value: e.id, label: e.name_ru }))} /></Card>
-          {possLoading ? <Spin /> : possibilities.length === 0 ? <Empty description='Нет возможностей' /> : <List dataSource={possibilities} renderItem={(p: Possibility) => <List.Item><List.Item.Meta title={<><Tag color='blue'>{p.category}</Tag> {p.title_ru}</>} description={p.description} /></List.Item>} />}
-        </TabPane>
-        <TabPane tab={<span><HistoryOutlined /> История</span>} key='history'>
-          {history.length === 0 ? <Empty description='История пуста' /> : <List dataSource={history} renderItem={(item: HistoryItem) => <List.Item actions={[<Button key='l' size='small' onClick={() => loadFromHistory(item)}>Загрузить</Button>, <Button key='d' size='small' danger icon={<DeleteOutlined />} onClick={() => deleteFromHistory(item.id)} />]}><List.Item.Meta title={item.prompt} description={<Space><Tag>{item.epoch || 'Все эпохи'}</Tag><Tag color='blue'>{item.result?.ranked_branches?.length || 0} ветвей</Tag><Text type='secondary' style={{ fontSize: 12 }}>{new Date(item.timestamp).toLocaleString('ru-RU')}</Text></Space>} /></List.Item>} />}
-        </TabPane>
-      </Tabs>
-      <Modal title={selectedBranch?.title || 'Детали ветви'} open={!!selectedBranch} onCancel={() => { setSelectedBranch(null); setGeneratedText(null); }} footer={selectedBranch ? [<Button key='gen' type='primary' loading={generatingText} onClick={() => selectedBranch && generateTextFromBranch(selectedBranch)}>Сгенерировать текст</Button>] : []} width={700}>
-        {selectedBranch && <Space direction='vertical' style={{ width: '100%' }}><Descriptions column={2}><Descriptions.Item label='Тип'><Tag>{BRANCH_TYPE_LABELS[selectedBranch.branch_type] || selectedBranch.branch_type}</Tag></Descriptions.Item><Descriptions.Item label='Ранг'>#{selectedBranch.rank}</Descriptions.Item></Descriptions><Divider /><Title level={5}>Критерии</Title>{Object.entries(CRITERIA_LABELS).map(([key, label]) => <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}><Text style={{ width: 120, fontSize: 13 }}>{label}</Text><Progress percent={Math.round(selectedBranch.quality_score * 100)} size='small' style={{ flex: 1 }} /></div>)}<Divider /><div style={{ display: 'flex', gap: 16 }}><div style={{ flex: 1 }}><Text strong>Сильные стороны:</Text>{selectedBranch.strengths.length > 0 ? selectedBranch.strengths.map((s, i) => <div key={i}><Tag color='green'>{s}</Tag></div>) : <Text type='secondary'>Нет</Text>}</div><div style={{ flex: 1 }}><Text strong>Слабые стороны:</Text>{selectedBranch.weaknesses.length > 0 ? selectedBranch.weaknesses.map((w, i) => <div key={i}><Tag color='red'>{w}</Tag></div>) : <Text type='secondary'>Нет</Text>}</div></div><Divider /><Descriptions column={3}><Descriptions.Item label='Влияние'><Progress type='circle' percent={Math.round(selectedBranch.impact_score * 100)} size={50} /></Descriptions.Item><Descriptions.Item label='Противоречия'><Badge count={selectedBranch.contradictions} showZero color={selectedBranch.contradictions > 0 ? 'red' : 'green'}><NodeIndexOutlined style={{ fontSize: 24 }} /></Badge></Descriptions.Item><Descriptions.Item label='Изменения'><Statistic value={selectedBranch.delta_changes} /></Descriptions.Item></Descriptions>{generatedText && (<><Divider /><Title level={5}>Сгенерированный промпт</Title><Card size='small' style={{ maxHeight: 300, overflow: 'auto' }}><Text style={{ fontSize: 12, whiteSpace: 'pre-wrap' }}>{generatedText.user_prompt}</Text></Card></>)}<Divider /><Title level={5}>Обратная связь</Title><Space direction='vertical' style={{ width: '100%' }}><div><Text>Оценка:</Text> <Rate value={feedbackRating} onChange={setFeedbackRating} /></div><TextArea rows={2} placeholder='Комментарий (необязательно)' value={feedbackComment} onChange={(e) => setFeedbackComment(e.target.value)} /><Button type='primary' icon={<StarOutlined />} disabled={feedbackRating === 0} onClick={() => selectedBranch && submitFeedback(selectedBranch)}>Сохранить отзыв</Button></Space></Space>}
-      </Modal>
-      <Modal title='Сравнение ветвей' open={showCompare} onCancel={() => setShowCompare(false)} footer={null} width={900}>
-        <div style={{ display: 'flex', gap: 16 }}>{compareBranches.map(branch => <Card key={branch.rank} size='small' style={{ flex: 1 }}><Title level={5}>{branch.title}</Title><Tag color={branch.rank === 1 ? 'green' : 'blue'}>#{branch.rank}</Tag><Divider />{Object.entries(CRITERIA_LABELS).map(([key, label]) => <div key={key} style={{ marginBottom: 4 }}><Text style={{ fontSize: 12 }}>{label}</Text><Progress percent={Math.round(branch.quality_score * 100)} size='small' strokeColor={branch.quality_score >= 0.8 ? '#52c41a' : '#faad14'} /></div>)}<Divider /><Statistic title='Балл' value={branch.quality_score} precision={3} /></Card>)}</div>
-      </Modal>
+      <div style={{ marginBottom: 24 }}><h2 style={{ margin: 0 }}><BranchesOutlined style={{ marginRight: 8 }} />Исследование мира</h2><span style={{ color: '#999' }}>Исследуйте альтернативные линии развития мира книги</span></div>
+
+      {statsData?.data && (
+        <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
+          <LStatistic title="Эпох" value={statsData.data.epochs_count || 0} />
+          <LStatistic title="Локаций" value={statsData.data.locations_count || 0} />
+          <LStatistic title="Паттернов" value={statsData.data.patterns_count || 0} />
+          <LStatistic title="Событий" value={statsData.data.events_count || 0} />
+        </div>
+      )}
+
+      <LTabs items={[
+        { key: 'explore', label: <><ExperimentOutlined /> Исследование</>, children: (
+          <>
+            <LCard style={{ marginBottom: 16 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <LTextArea rows={3} placeholder="Опишите вашу идею..." value={prompt} onChange={e => setPrompt(e.target.value)} style={{ fontSize: 15 }} />
+                <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <LSelect placeholder="Эпоха" value={epoch} onChange={setEpoch} options={epochOptions} style={{ width: 200 }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span>Ветвей:</span>
+                    <LSlider min={2} max={8} value={branchCount} onChange={setBranchCount} style={{ width: 120 }} />
+                    <strong>{branchCount}</strong>
+                  </div>
+                  <LButton type="primary" icon={<ExperimentOutlined />} loading={exploreMutation.isPending} disabled={!prompt || prompt.length < 5} onClick={() => exploreMutation.mutate()}>Исследовать</LButton>
+                </div>
+              </div>
+            </LCard>
+
+            {progress >= 0 && (
+              <LCard style={{ marginBottom: 16 }}>
+                <strong>Прогресс:</strong>
+                <LProgress percent={Math.round(((progress + 1) / PROGRESS_STEPS.length) * 100)} status="active" style={{ marginTop: 8 }} />
+                <span style={{ color: '#999', fontSize: 12 }}>{PROGRESS_STEPS[progress] || 'Завершение...'}</span>
+              </LCard>
+            )}
+
+            {compatibility && (
+              <LCard title="Совместимость" style={{ marginBottom: 16 }} size="small">
+                <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 12 }}>
+                  <LProgress type="circle" percent={Math.round(compatibility.overall_score * 100)} size={60} strokeColor={RISK_COLORS[compatibility.risk_level] || '#1890ff'} />
+                  <div>
+                    <strong>Балл: {compatibility.overall_score.toFixed(2)}</strong><br />
+                    <LTag color={RISK_COLORS[compatibility.risk_level]}>{compatibility.risk_level.toUpperCase()}</LTag>
+                    {compatibility.is_compatible && <LTag color="green">ОК</LTag>}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {compatibility.axis_scores.map(ax => (
+                    <div key={ax.axis} title={`${CRITERIA_LABELS[ax.axis] || ax.axis}: ${ax.score.toFixed(2)}`} style={{ textAlign: 'center' }}>
+                      <LProgress type="circle" percent={Math.round(ax.score * 100)} size={40} strokeColor={ax.score >= 0.7 ? '#52c41a' : ax.score >= 0.4 ? '#faad14' : '#ff4d4f'} />
+                      <div style={{ fontSize: 10, marginTop: 2 }}>{CRITERIA_LABELS[ax.axis] || ax.axis}</div>
+                    </div>
+                  ))}
+                </div>
+                {compatibility.recommendations.length > 0 && <LAlert type="info" message={compatibility.recommendations[0]} style={{ marginTop: 12 }} />}
+              </LCard>
+            )}
+
+            {result && (
+              <LCard title="Результаты" style={{ marginBottom: 16 }}>
+                <div style={{ display: 'flex', gap: 24 }}>
+                  <div><strong>Гипотеза:</strong> {result.hypothesis?.title || '-'}</div>
+                  <div><strong>Ветвей:</strong> {result.scenario.branch_count}</div>
+                  <div><strong>Время:</strong> {result.duration_ms.toFixed(0)}ms</div>
+                </div>
+              </LCard>
+            )}
+
+            {result && (
+              <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+                {result.ranked_branches.map(branch => (
+                  <LBadge key={branch.rank} count={'#' + branch.rank} color={branch.rank === 1 ? '#52c41a' : '#1890ff'}>
+                    <LCard size="small" hoverable onClick={() => setSelectedBranch(branch)} style={{ width: 260, cursor: 'pointer', border: branch.rank === 1 ? '2px solid #52c41a' : '1px solid #f0f0f0' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <LTag color={branch.branch_type === 'unexpected' ? 'purple' : branch.branch_type === 'radical' ? 'orange' : branch.branch_type === 'moderate' ? 'green' : 'blue'}>{BRANCH_TYPE_LABELS[branch.branch_type] || branch.branch_type}</LTag>
+                        <strong style={{ fontSize: 13 }}>{branch.title}</strong>
+                        <LProgress percent={Math.round(branch.quality_score * 100)} size="small" strokeColor={branch.quality_score >= 0.8 ? '#52c41a' : branch.quality_score >= 0.6 ? '#faad14' : '#ff4d4f'} />
+                        <div style={{ fontSize: 12, color: '#8c8c8c' }}>Влияние: {(branch.impact_score * 100).toFixed(0)}% | Противоречия: {branch.contradictions}</div>
+                        <LButton size="small" icon={<SwapOutlined />} onClick={(e) => { e.stopPropagation(); toggleCompare(branch); }} type={compareBranches.find(b => b.rank === branch.rank) ? 'primary' : 'default'}>Сравнить</LButton>
+                      </div>
+                    </LCard>
+                  </LBadge>
+                ))}
+              </div>
+            )}
+
+            {compareBranches.length >= 2 && <LButton type="primary" icon={<SwapOutlined />} onClick={() => setShowCompare(true)} style={{ marginBottom: 16 }}>Сравнить ({compareBranches.length})</LButton>}
+            {!result && !exploreMutation.isPending && <LEmpty description="Введите идею и нажмите «Исследовать»" />}
+          </>
+        )},
+        { key: 'hypotheses', label: <><BulbOutlined /> Гипотезы</>, children: (
+          <>
+            <LCard style={{ marginBottom: 16 }}><LSelect placeholder="Эпоха" value={epoch} onChange={setEpoch} options={epochOptions} style={{ width: 250 }} /></LCard>
+            {hypsLoading ? <div style={{ textAlign: 'center', padding: 48 }}><LSpin /></div> : hypotheses.length === 0 ? <LEmpty description="Нет гипотез" /> : hypotheses.map(hyp => (
+              <div key={hyp.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 12, borderBottom: '1px solid #f0f0f0' }}>
+                <div><LTag>{hyp.type}</LTag> <strong>{hyp.title}</strong><div style={{ fontSize: 12, color: '#666' }}>{hyp.description}</div></div>
+                <LButton type="primary" size="small" onClick={() => exploreFromHypothesis(hyp)}>Исследовать</LButton>
+              </div>
+            ))}
+          </>
+        )},
+        { key: 'possibilities', label: <><ThunderboltOutlined /> Возможности</>, children: (
+          <>
+            <LCard style={{ marginBottom: 16 }}><LSelect placeholder="Эпоха" value={epoch} onChange={setEpoch} options={epochOptions} style={{ width: 250 }} /></LCard>
+            {possLoading ? <div style={{ textAlign: 'center', padding: 48 }}><LSpin /></div> : possibilities.length === 0 ? <LEmpty description="Нет возможностей" /> : possibilities.map(p => (
+              <div key={p.id} style={{ padding: 12, borderBottom: '1px solid #f0f0f0' }}>
+                <LTag color="blue">{p.category}</LTag> <strong>{p.title_ru}</strong>
+                <div style={{ fontSize: 12, color: '#666' }}>{p.description}</div>
+              </div>
+            ))}
+          </>
+        )},
+        { key: 'history', label: <><HistoryOutlined /> История</>, children: history.length === 0 ? <LEmpty description="История пуста" /> : history.map(item => (
+          <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 12, borderBottom: '1px solid #f0f0f0' }}>
+            <div><strong>{item.prompt}</strong><div style={{ display: 'flex', gap: 8, marginTop: 4 }}><LTag>{item.epoch || 'Все эпохи'}</LTag><LTag color="blue">{item.result?.ranked_branches?.length || 0} ветвей</LTag><span style={{ fontSize: 12, color: '#999' }}>{new Date(item.timestamp).toLocaleString('ru-RU')}</span></div></div>
+            <LSpace><LButton size="small" onClick={() => loadFromHistory(item)}>Загрузить</LButton><LButton size="small" danger icon={<DeleteOutlined />} onClick={() => deleteFromHistory(item.id)} /></LSpace>
+          </div>
+        ))},
+      ]} />
+
+      <LModal title={selectedBranch?.title || 'Детали ветви'} open={!!selectedBranch} onCancel={() => { setSelectedBranch(null); setGeneratedText(null); }} footer={selectedBranch ? [<LButton key="gen" type="primary" loading={generatingText} onClick={() => selectedBranch && generateTextFromBranch(selectedBranch)}>Сгенерировать текст</LButton>] : []} width={700}>
+        {selectedBranch && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 16 }}><LTag>{BRANCH_TYPE_LABELS[selectedBranch.branch_type] || selectedBranch.branch_type}</LTag><span>#{selectedBranch.rank}</span></div>
+            <LDivider />
+            <h5>Критерии</h5>
+            {Object.entries(CRITERIA_LABELS).map(([key, label]) => (
+              <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <span style={{ width: 120, fontSize: 13 }}>{label}</span>
+                <LProgress percent={Math.round(selectedBranch.quality_score * 100)} size="small" style={{ flex: 1 }} />
+              </div>
+            ))}
+            <LDivider />
+            <div style={{ display: 'flex', gap: 16 }}>
+              <div style={{ flex: 1 }}><strong>Сильные стороны:</strong>{selectedBranch.strengths.length > 0 ? selectedBranch.strengths.map((s, i) => <div key={i}><LTag color="green">{s}</LTag></div>) : <span style={{ color: '#999' }}>Нет</span>}</div>
+              <div style={{ flex: 1 }}><strong>Слабые стороны:</strong>{selectedBranch.weaknesses.length > 0 ? selectedBranch.weaknesses.map((w, i) => <div key={i}><LTag color="red">{w}</LTag></div>) : <span style={{ color: '#999' }}>Нет</span>}</div>
+            </div>
+            <LDivider />
+            <div style={{ display: 'flex', gap: 24 }}>
+              <div><LProgress type="circle" percent={Math.round(selectedBranch.impact_score * 100)} size={50} /><div style={{ fontSize: 11 }}>Влияние</div></div>
+              <div><LBadge count={selectedBranch.contradictions} showZero color={selectedBranch.contradictions > 0 ? 'red' : 'green'}><NodeIndexOutlined style={{ fontSize: 24 }} /></LBadge><div style={{ fontSize: 11 }}>Противоречия</div></div>
+              <div><LStatistic title="Изменения" value={selectedBranch.delta_changes} /></div>
+            </div>
+            {generatedText && <><LDivider /><h5>Сгенерированный промпт</h5><LCard size="small" style={{ maxHeight: 300, overflow: 'auto' }}><span style={{ fontSize: 12, whiteSpace: 'pre-wrap' }}>{generatedText.user_prompt}</span></LCard></>}
+            <LDivider />
+            <h5>Оценить ветвь</h5>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {[1, 2, 3, 4, 5].map(v => <span key={v} onClick={() => setFeedbackRating(v)} style={{ cursor: 'pointer', fontSize: 20, color: v <= feedbackRating ? '#faad14' : '#d9d9d9' }}>★</span>)}
+            </div>
+            <LTextArea rows={2} placeholder="Комментарий..." value={feedbackComment} onChange={e => setFeedbackComment(e.target.value)} />
+            <LButton size="small" onClick={() => submitFeedback(selectedBranch)}>Отправить</LButton>
+          </div>
+        )}
+      </LModal>
+
+      <LModal title="Сравнение ветвей" open={showCompare} onCancel={() => setShowCompare(false)} footer={null} width={900}>
+        <div style={{ display: 'flex', gap: 16 }}>
+          {compareBranches.map(branch => (
+            <LCard key={branch.rank} size="small" style={{ flex: 1 }}>
+              <h5>{branch.title}</h5>
+              <LTag color={branch.rank === 1 ? 'green' : 'blue'}>#{branch.rank}</LTag>
+              <LDivider />
+              {Object.entries(CRITERIA_LABELS).map(([key, label]) => (
+                <div key={key} style={{ marginBottom: 4 }}><span style={{ fontSize: 12 }}>{label}</span><LProgress percent={Math.round(branch.quality_score * 100)} size="small" strokeColor={branch.quality_score >= 0.8 ? '#52c41a' : '#faad14'} /></div>
+              ))}
+              <LDivider />
+              <LStatistic title="Балл" value={branch.quality_score} precision={3} />
+            </LCard>
+          ))}
+        </div>
+      </LModal>
     </div>
   );
 }

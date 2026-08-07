@@ -1,16 +1,14 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Card, Input, Button, Typography, Space, Tag, Spin, Empty, List, Progress, Tooltip, Row, Col } from 'antd';
-import { SendOutlined, RobotOutlined, UserOutlined, BulbOutlined, HistoryOutlined, BookOutlined, ThunderboltOutlined, DatabaseOutlined, LinkOutlined, ArrowRightOutlined } from '@ant-design/icons';
+import { LCard, LButton, LSpace, LTag, LSpin, LTextArea } from '@/shared/ui/light';
+import { SendOutlined, UserOutlined, BulbOutlined, BookOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
 import { Markdown } from '@/shared/lib/markdown';
 import { ProtectedRoute } from '@/shared/lib/guards';
+import { SourceBadge } from '@/shared/ui/SourceBadge';
 import Link from 'next/link';
-
-const { Title, Text } = Typography;
-const { TextArea } = Input;
 
 type Message = {
   role: 'user' | 'assistant';
@@ -26,13 +24,6 @@ type ReaderProfile = {
   last_topic: string;
 };
 
-const SOURCE_CONFIG: Record<string, { icon: any; color: string; label: string }> = {
-  pulse: { icon: <DatabaseOutlined />, color: '#059669', label: 'Геном' },
-  llm: { icon: <ThunderboltOutlined />, color: '#7c3aed', label: 'AI' },
-  hybrid: { icon: <LinkOutlined />, color: '#2563eb', label: 'Гибрид' },
-  mock: { icon: <BulbOutlined />, color: '#6b7280', label: 'Заглушка' },
-};
-
 const POPULAR_QUESTIONS = [
   { q: 'Кто такой Велик?', tag: 'Персонаж' },
   { q: 'Расскажи об Аркаиме', tag: 'Локация' },
@@ -44,25 +35,13 @@ const POPULAR_QUESTIONS = [
   { q: 'Где происходит действие?', tag: 'Локация' },
 ];
 
-function SourceBadge({ sourceType }: { sourceType?: string }) {
-  if (!sourceType) return null;
-  const config = SOURCE_CONFIG[sourceType] || SOURCE_CONFIG.mock;
-  return (
-    <Tooltip title={`Источник: ${config.label}`}>
-      <Tag style={{ marginTop: 4, fontSize: 10, color: config.color, borderColor: config.color }}>
-        {config.icon} {config.label}
-      </Tag>
-    </Tooltip>
-  );
-}
-
 function AskContent() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [streamingText, setStreamingText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<any>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const { data: profile } = useQuery({
     queryKey: ['reader-profile'],
@@ -88,10 +67,13 @@ function AskContent() {
     setStreamingText('');
 
     try {
-      const token = document.cookie.split('; ').find(c => c.startsWith('arkaim_session='))?.split('=')[1] || '';
+      // arkaim_session — httponly cookie, приходит автоматически (credentials: 'same-origin').
+      // Ручной Authorization-заголовок из document.cookie вернул бы ПУСТОЙ токен и
+      // перебил бы валидную cookie-сессию в auth.verify_request. Поэтому не шлём его.
       const resp = await fetch('/v1/stream', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: q }),
       });
 
@@ -132,35 +114,32 @@ function AskContent() {
 
   return (
     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
-      {/* Header */}
       {!hasHistory && (
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ fontSize: '4rem', marginBottom: 8 }}>𓃉</div>
-          <Title level={2} style={{ marginBottom: 8 }}>Задайте вопрос книге</Title>
-          <Text type="secondary" style={{ fontSize: 14 }}>
+          <h2 style={{ marginBottom: 8, fontSize: 20, fontWeight: 700 }}>Задайте вопрос книге</h2>
+          <span style={{ fontSize: 14, color: '#999' }}>
             Книга ответит на основе своего содержания, тем и знаний
-          </Text>
+          </span>
           {profile && (
             <div style={{ marginTop: 12 }}>
-              <Text type="secondary" style={{ fontSize: 12 }}>
+              <span style={{ fontSize: 12, color: '#999' }}>
                 {profile.questions_total} вопросов задано · {profile.topics?.length || 0} тем изучено
-              </Text>
+              </span>
             </div>
           )}
         </div>
       )}
 
-      {/* Messages */}
       <div style={{ flex: 1, overflow: 'auto', marginBottom: 16 }}>
         {messages.length === 0 ? (
-          /* Popular questions */
           <div>
-            <Text style={{ fontSize: 13, marginBottom: 16, display: 'block', color: '#94a3b8' }}>
+            <span style={{ fontSize: 13, marginBottom: 16, display: 'block', color: '#94a3b8' }}>
               <BulbOutlined /> Популярные вопросы:
-            </Text>
-            <Row gutter={[12, 12]}>
+            </span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
               {POPULAR_QUESTIONS.map((item, i) => (
-                <Col xs={24} sm={12} key={i}>
+                <div key={i} style={{ flex: '1 1 calc(50% - 12px)', minWidth: 250 }}>
                   <div
                     onClick={() => sendMessage(item.q)}
                     style={{
@@ -177,23 +156,21 @@ function AskContent() {
                     onMouseEnter={e => { e.currentTarget.style.borderColor = '#3b82f6'; e.currentTarget.style.background = '#253349'; }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = '#334155'; e.currentTarget.style.background = '#1e293b'; }}
                   >
-                    <Text style={{ fontSize: 14, color: '#e2e8f0' }}>{item.q}</Text>
-                    <Space size={6}>
-                      <Tag style={{ fontSize: 10, margin: 0, background: '#334155', color: '#93c5fd', borderColor: '#475569' }}>{item.tag}</Tag>
+                    <span style={{ fontSize: 14, color: '#e2e8f0' }}>{item.q}</span>
+                    <LSpace size={6}>
+                      <LTag style={{ fontSize: 10, margin: 0, background: '#334155', color: '#93c5fd', borderColor: '#475569' }}>{item.tag}</LTag>
                       <ArrowRightOutlined style={{ color: '#64748b', fontSize: 11 }} />
-                    </Space>
+                    </LSpace>
                   </div>
-                </Col>
+                </div>
               ))}
-            </Row>
+            </div>
           </div>
         ) : (
-          /* Conversation */
           <div>
             {messages.map((msg, i) => (
               <div key={i} style={{ marginBottom: 20 }}>
                 {msg.role === 'user' ? (
-                  /* Вопрос пользователя — справа */
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
                     <div style={{ maxWidth: '50%', minWidth: 150, background: '#2563eb', color: '#fff', padding: '12px 16px', borderRadius: '14px 2px 14px 14px', fontSize: 14, lineHeight: 1.6 }}>
                       {msg.content}
@@ -203,7 +180,6 @@ function AskContent() {
                     </div>
                   </div>
                 ) : (
-                  /* Ответ книги — слева */
                   <div style={{ display: 'flex', gap: 10 }}>
                     <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #0f172a, #1e293b)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16 }}>
                       <BookOutlined />
@@ -236,7 +212,6 @@ function AskContent() {
               </div>
             ))}
 
-            {/* Streaming */}
             {sending && streamingText && (
               <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
                 <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #0f172a, #1e293b)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -253,14 +228,13 @@ function AskContent() {
               </div>
             )}
 
-            {/* Typing */}
             {sending && !streamingText && (
               <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
                 <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #0f172a, #1e293b)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <BookOutlined />
                 </div>
                 <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '2px 14px 14px 14px', padding: '14px 18px', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
-                  <Space><Spin size="small" /><Text style={{ color: '#94a3b8', fontSize: 13 }}>Думаю...</Text></Space>
+                  <LSpace><LSpin size="small" /><span style={{ color: '#94a3b8', fontSize: 13 }}>Думаю...</span></LSpace>
                 </div>
               </div>
             )}
@@ -270,10 +244,9 @@ function AskContent() {
         )}
       </div>
 
-      {/* Input */}
-      <Card size="small" style={{ borderRadius: 12 }}>
+      <LCard size="small" style={{ borderRadius: 12 }}>
         <div style={{ display: 'flex', gap: 8 }}>
-          <TextArea
+          <LTextArea
             ref={inputRef}
             value={input}
             onChange={e => setInput(e.target.value)}
@@ -283,19 +256,19 @@ function AskContent() {
             disabled={sending}
             style={{ borderRadius: 8 }}
           />
-          <Button type="primary" icon={<SendOutlined />} onClick={() => sendMessage()} loading={sending}
+          <LButton type="primary" icon={<SendOutlined />} onClick={() => sendMessage()} loading={sending}
             style={{ borderRadius: 8, height: 'auto', minWidth: 80 }}>
             Отправить
-          </Button>
+          </LButton>
         </div>
         <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between' }}>
-          <Text type="secondary" style={{ fontSize: 11 }}>Enter — отправить · Shift+Enter — новая строка</Text>
-          <Space size={4}>
+          <span style={{ fontSize: 11, color: '#999' }}>Enter — отправить · Shift+Enter — новая строка</span>
+          <LSpace size={4}>
             <Link href="/book" style={{ fontSize: 11 }}>💬 Чат</Link>
             <Link href="/library" style={{ fontSize: 11 }}>📖 Библиотека</Link>
-          </Space>
+          </LSpace>
         </div>
-      </Card>
+      </LCard>
     </div>
   );
 }

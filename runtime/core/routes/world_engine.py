@@ -1,4 +1,4 @@
-﻿"""
+"""
 World Engine API — эндпоинты для работы с вычислимой моделью мира.
 
 Предоставляет:
@@ -11,13 +11,19 @@ World Engine API — эндпоинты для работы с вычислим�
 from __future__ import annotations
 
 import logging
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from pydantic import BaseModel, Field
 from typing import Optional
 
+from auth.rbac import require_role
+
 log = logging.getLogger("routes.world_engine")
 
-router = APIRouter(prefix="/world", tags=["World Engine"])
+router = APIRouter(
+    prefix="/world",
+    tags=["World Engine"],
+    dependencies=[Depends(require_role("reader"))],
+)
 
 
 # ── Модели запросов ────────────────────────────────────────────
@@ -105,7 +111,7 @@ async def get_entity_context(entity_id: str):
 @router.get("/entity/{entity_id}/visual-prompt", summary="Визуальный промпт")
 async def get_visual_prompt(
     entity_id: str,
-    style: str = Query("cinematic", regex="^(cinematic|realistic|watercolor|ethereal)$"),
+    style: str = Query("cinematic", pattern="^(cinematic|realistic|watercolor|ethereal)$"),
 ):
     """Генерировать визуальный промпт для сущности."""
     engine = _get_world_engine()
@@ -125,7 +131,7 @@ async def get_visual_prompt(
     }
 
 
-@router.post("/validate", summary="Проверка консистентности")
+@router.post("/validate", summary="Проверка консистентности", dependencies=[Depends(require_role("editor"))])
 async def validate_entity(request: ValidateRequest):
     """Проверить сущность на соответствие правилам мира."""
     engine = _get_world_engine()

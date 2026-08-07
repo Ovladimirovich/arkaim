@@ -86,5 +86,12 @@ class SharedSettings:
     SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
     EMAIL_FROM: str = os.getenv("EMAIL_FROM", "")
 
+    # ComfyUI (Colab + Cloudflare Tunnel)
+    COMFYUI_URL: str = os.getenv("COMFYUI_URL", "http://127.0.0.1:8188")
+
+    # ── Genome (данные книги) ──────────────────────────
+    GENOME_DIR: Path = Path(os.getenv("GENOME_DIR", str(BOOK_DIR / "genome")))
+    GENOME_VERSION: str = os.getenv("GENOME_VERSION", "1.0.0")
+
 
 settings = SharedSettings

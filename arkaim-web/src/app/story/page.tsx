@@ -1,15 +1,18 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import { Card, Input, Button, Typography, Space, Tag, Collapse, Spin, Empty, List, Alert, Badge } from 'antd';
 import { ThunderboltOutlined, SendOutlined, GlobalOutlined, ExperimentOutlined, CheckCircleOutlined, WarningOutlined, BookOutlined, EnvironmentOutlined, TeamOutlined, ToolOutlined, SafetyCertificateOutlined, LoadingOutlined } from '@ant-design/icons';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
 import { ProtectedRoute } from '@/shared/lib/guards';
 import { Markdown } from '@/shared/lib/markdown';
-
-const { Title, Text, Paragraph } = Typography;
-const { TextArea } = Input;
+import { LCard } from '@/shared/ui/light/LCard';
+import { LTag } from '@/shared/ui/light/LTag';
+import { LButton } from '@/shared/ui/light/LButton';
+import { LSpin } from '@/shared/ui/light/LSpin';
+import { LEmpty } from '@/shared/ui/light/LEmpty';
+import { LAlert } from '@/shared/ui/light/LAlert';
+import { LBadge } from '@/shared/ui/light/LBadge';
 
 type WorldModel = {
   epochs: Array<{ id: string; name: string; name_ru: string; description: string; order: number }>;
@@ -37,7 +40,7 @@ type StoryResult = {
   text: string;
   word_count: number;
   constraints: ConstraintModel;
-  validation: { passed: boolean; violations: any[]; warnings: string[] };
+  validation: { passed: boolean; violations: { rule: string; rule_text?: string; message: string }[]; warnings: string[] };
 };
 
 const STORY_PRESETS = [
@@ -51,86 +54,88 @@ const STORY_PRESETS = [
 
 function ConstraintDisplay({ constraints }: { constraints: ConstraintModel }) {
   const ctx = constraints.resolved_context;
-  const items = [
-    {
-      key: 'epoch',
-      label: (
-        <Space>
-          <GlobalOutlined />
-          <span>Эпоха</span>
-          {ctx.epoch && <Tag color="blue">{ctx.epoch.name_ru}</Tag>}
-        </Space>
-      ),
-      children: ctx.epoch ? (
-        <div>
-          <Paragraph>{ctx.epoch.description}</Paragraph>
-          {ctx.characters_alive.length > 0 && (
-            <div>
-              <Text strong>Персонажи в эпохе:</Text>
-              <Space wrap style={{ marginTop: 4 }}>
-                {ctx.characters_alive.map((ch, i) => (
-                  <Tag key={i} icon={<TeamOutlined />}>{ch.character_name} ({ch.status})</Tag>
-                ))}
-              </Space>
-            </div>
-          )}
-          {ctx.technologies_available.length > 0 && (
-            <div style={{ marginTop: 8 }}>
-              <Text strong>Технологии:</Text>
-              <Space wrap style={{ marginTop: 4 }}>
-                {ctx.technologies_available.map((t, i) => (
-                  <Tag key={i} icon={<ToolOutlined />}>{t.name_ru}</Tag>
-                ))}
-              </Space>
-            </div>
-          )}
-        </div>
-      ) : <Text type="secondary">Не определена</Text>,
-    },
-    {
-      key: 'location',
-      label: (
-        <Space>
-          <EnvironmentOutlined />
-          <span>Локация</span>
-          {ctx.location && <Tag color="green">{ctx.location.name_ru}</Tag>}
-        </Space>
-      ),
-      children: ctx.location ? <Paragraph>{ctx.location.description}</Paragraph> : <Text type="secondary">Не определена</Text>,
-    },
-    {
-      key: 'rules',
-      label: (
-        <Space>
-          <SafetyCertificateOutlined />
-          <span>Ограничения</span>
-          <Badge count={constraints.hard_constraints.length} style={{ backgroundColor: '#ff4d4f' }} />
-        </Space>
-      ),
-      children: (
-        <div>
-          <Text strong>Жёсткие ограничения:</Text>
-          <List
-            size="small"
-            dataSource={constraints.hard_constraints}
-            renderItem={item => <List.Item><Tag color="red">MUST</Tag> {item}</List.Item>}
-          />
-          {constraints.forbidden_elements.length > 0 && (
-            <div style={{ marginTop: 8 }}>
-              <Text strong type="danger">Запрещено:</Text>
-              <List
-                size="small"
-                dataSource={constraints.forbidden_elements}
-                renderItem={item => <List.Item><Tag color="volcano">NO</Tag> {item}</List.Item>}
-              />
-            </div>
-          )}
-        </div>
-      ),
-    },
-  ];
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({ epoch: true, rules: true });
 
-  return <Collapse items={items} defaultActiveKey={['epoch', 'rules']} />;
+  const toggle = (key: string) => setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {/* Epoch */}
+      <LCard size="small">
+        <div onClick={() => toggle('epoch')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <GlobalOutlined /> <strong>Эпоха</strong>
+          {ctx.epoch && <LTag color="blue">{ctx.epoch.name_ru}</LTag>}
+          <span style={{ marginLeft: 'auto', fontSize: 12, color: '#999' }}>{openSections.epoch ? '▲' : '▼'}</span>
+        </div>
+        {openSections.epoch && ctx.epoch && (
+          <div style={{ marginTop: 8 }}>
+            <p>{ctx.epoch.description}</p>
+            {ctx.characters_alive.length > 0 && (
+              <div style={{ marginTop: 8 }}>
+                <strong>Персонажи в эпохе:</strong>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
+                  {ctx.characters_alive.map((ch, i) => (
+                    <LTag key={i} color="blue"><TeamOutlined /> {ch.character_name} ({ch.status})</LTag>
+                  ))}
+                </div>
+              </div>
+            )}
+            {ctx.technologies_available.length > 0 && (
+              <div style={{ marginTop: 8 }}>
+                <strong>Технологии:</strong>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
+                  {ctx.technologies_available.map((t, i) => (
+                    <LTag key={i} color="green"><ToolOutlined /> {t.name_ru}</LTag>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </LCard>
+
+      {/* Location */}
+      <LCard size="small">
+        <div onClick={() => toggle('location')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <EnvironmentOutlined /> <strong>Локация</strong>
+          {ctx.location && <LTag color="green">{ctx.location.name_ru}</LTag>}
+          <span style={{ marginLeft: 'auto', fontSize: 12, color: '#999' }}>{openSections.location ? '▲' : '▼'}</span>
+        </div>
+        {openSections.location && ctx.location && (
+          <div style={{ marginTop: 8 }}><p>{ctx.location.description}</p></div>
+        )}
+      </LCard>
+
+      {/* Rules */}
+      <LCard size="small">
+        <div onClick={() => toggle('rules')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <SafetyCertificateOutlined /> <strong>Ограничения</strong>
+          <LBadge count={constraints.hard_constraints.length} color="#ff4d4f" />
+          <span style={{ marginLeft: 'auto', fontSize: 12, color: '#999' }}>{openSections.rules ? '▲' : '▼'}</span>
+        </div>
+        {openSections.rules && (
+          <div style={{ marginTop: 8 }}>
+            <strong>Жёсткие ограничения:</strong>
+            {constraints.hard_constraints.map((item, i) => (
+              <div key={i} style={{ padding: '4px 0', borderBottom: '1px solid var(--divider-color)' }}>
+                <LTag color="red">MUST</LTag> {item}
+              </div>
+            ))}
+            {constraints.forbidden_elements.length > 0 && (
+              <div style={{ marginTop: 8 }}>
+                <strong style={{ color: '#ff4d4f' }}>Запрещено:</strong>
+                {constraints.forbidden_elements.map((item, i) => (
+                  <div key={i} style={{ padding: '4px 0', borderBottom: '1px solid var(--divider-color)' }}>
+                    <LTag color="orange">NO</LTag> {item}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </LCard>
+    </div>
+  );
 }
 
 function StoryOutput({ story, streamingText, isStreaming }: {
@@ -138,73 +143,38 @@ function StoryOutput({ story, streamingText, isStreaming }: {
   streamingText: string;
   isStreaming: boolean;
 }) {
-  // Show streaming text while generating
   if (isStreaming && streamingText) {
     return (
-      <Card
-        title={
-          <Space>
-            <BookOutlined />
-            <span>Генерация...</span>
-            <LoadingOutlined />
-          </Space>
-        }
-      >
+      <LCard title={<span><BookOutlined /> Генерация... <LoadingOutlined /></span>}>
         <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>
           <Markdown content={streamingText} />
           <span style={{ animation: 'blink 1s infinite' }}>|</span>
         </div>
-      </Card>
+      </LCard>
     );
   }
 
   if (!story) return null;
 
   return (
-    <Card
-      title={
-        <Space>
-          <BookOutlined />
-          <span>Сгенерированная история</span>
-          <Tag>{story.word_count} слов</Tag>
-        </Space>
-      }
-      extra={
-        story.validation.passed ? (
-          <Tag icon={<CheckCircleOutlined />} color="success">Валидация пройдена</Tag>
-        ) : (
-          <Tag icon={<WarningOutlined />} color="error">Есть нарушения</Tag>
-        )
-      }
+    <LCard
+      title={<span><BookOutlined /> Сгенерированная история <LTag>{story.word_count} слов</LTag></span>}
+      extra={story.validation.passed ? (
+        <LTag color="green"><CheckCircleOutlined /> Валидация пройдена</LTag>
+      ) : (
+        <LTag color="red"><WarningOutlined /> Есть нарушения</LTag>
+      )}
     >
       <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>
         <Markdown content={story.text} />
       </div>
       {story.validation.warnings.length > 0 && (
-        <Alert
-          type="warning"
-          message="Предупреждения"
-          description={
-            <ul style={{ margin: 0 }}>
-              {story.validation.warnings.map((w, i) => <li key={i}>{w}</li>)}
-            </ul>
-          }
-          style={{ marginTop: 16 }}
-        />
+        <LAlert type="warning" message="Предупреждения" style={{ marginTop: 16 }} />
       )}
       {story.validation.violations.length > 0 && (
-        <Alert
-          type="error"
-          message="Нарушения ограничений"
-          description={
-            <ul style={{ margin: 0 }}>
-              {story.validation.violations.map((v, i) => <li key={i}>{v.rule_text}</li>)}
-            </ul>
-          }
-          style={{ marginTop: 8 }}
-        />
+        <LAlert type="error" message="Нарушения ограничений" style={{ marginTop: 8 }} />
       )}
-    </Card>
+    </LCard>
   );
 }
 
@@ -214,37 +184,27 @@ function WorldModelPanel() {
     queryFn: () => api.get<{ data: WorldModel }>('/book/world-engine/model'),
   });
 
-  if (isLoading) return <Spin size="small" />;
+  if (isLoading) return <LSpin size="small" />;
   const wm = data?.data;
-  if (!wm) return <Empty description="Модель мира не загружена" />;
+  if (!wm) return <LEmpty description="Модель мира не загружена" />;
 
   return (
-    <div>
-      <Space direction="vertical" style={{ width: '100%' }}>
-        <Card size="small" title="Эпохи">
-          <List
-            size="small"
-            dataSource={wm.epochs}
-            renderItem={ep => (
-              <List.Item>
-                <Text>{ep.name_ru || ep.name}</Text>
-              </List.Item>
-            )}
-          />
-        </Card>
-        <Card size="small" title="Локации">
-          <List
-            size="small"
-            dataSource={wm.locations}
-            renderItem={loc => (
-              <List.Item>
-                <Text>{loc.name_ru || loc.name}</Text>
-                <Tag>{loc.type}</Tag>
-              </List.Item>
-            )}
-          />
-        </Card>
-      </Space>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <LCard size="small" title="Эпохи">
+        {wm.epochs.map(ep => (
+          <div key={ep.id} style={{ padding: '4px 0', borderBottom: '1px solid var(--divider-color)', fontSize: 13 }}>
+            {ep.name_ru || ep.name}
+          </div>
+        ))}
+      </LCard>
+      <LCard size="small" title="Локации">
+        {wm.locations.map(loc => (
+          <div key={loc.id} style={{ padding: '4px 0', borderBottom: '1px solid var(--divider-color)', fontSize: 13, display: 'flex', justifyContent: 'space-between' }}>
+            <span>{loc.name_ru || loc.name}</span>
+            <LTag>{loc.type}</LTag>
+          </div>
+        ))}
+      </LCard>
     </div>
   );
 }
@@ -277,7 +237,6 @@ function StoryPageContent() {
     streamingTextRef.current = '';
     setStory(null);
 
-    // Abort previous request if any
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -291,9 +250,7 @@ function StoryPageContent() {
         signal: abortControllerRef.current.signal,
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const reader = response.body?.getReader();
       if (!reader) throw new Error('No reader');
@@ -312,16 +269,13 @@ function StoryPageContent() {
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             const data = line.slice(6);
-            if (data === '[DONE]') {
-              continue;
-            }
+            if (data === '[DONE]') continue;
             try {
               const parsed = JSON.parse(data);
               if (parsed.type === 'chunk') {
                 streamingTextRef.current += parsed.text;
                 setStreamingText(streamingTextRef.current);
               } else if (parsed.type === 'done') {
-                // Build final story from accumulated streaming text
                 setStory({
                   id: parsed.id,
                   text: streamingTextRef.current,
@@ -332,18 +286,15 @@ function StoryPageContent() {
                 streamingTextRef.current = '';
               } else if (parsed.type === 'constraints') {
                 setConstraints(parsed.data);
-              } else if (parsed.type === 'error') {
-                console.error('Story generation error:', parsed.message);
               }
-            } catch (e) {
-              // Ignore parse errors for partial chunks
-            }
+            } catch {}
           }
         }
       }
-    } catch (err: any) {
-      if (err.name !== 'AbortError') {
-        console.error('Streaming error:', err);
+    } catch (err: unknown) {
+      const error = err as { name?: string };
+      if (error.name !== 'AbortError') {
+        // Silent error
       }
     } finally {
       setIsStreaming(false);
@@ -358,86 +309,57 @@ function StoryPageContent() {
   return (
     <div style={{ display: 'flex', height: 'calc(100vh - 48px)' }}>
       {/* Sidebar */}
-      <div style={{
-        width: 280,
-        borderRight: '1px solid #f0f0f0',
-        padding: 16,
-        overflow: 'auto',
-        flexShrink: 0,
-      }}>
-        <Title level={5} style={{ marginBottom: 16 }}>
-          <ThunderboltOutlined /> Пресеты
-        </Title>
-        <Space direction="vertical" style={{ width: '100%' }} size={8}>
+      <div style={{ width: 280, borderRight: '1px solid #f0f0f0', padding: 16, overflow: 'auto', flexShrink: 0 }}>
+        <h5 style={{ marginBottom: 16 }}><ThunderboltOutlined /> Пресеты</h5>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {STORY_PRESETS.map((preset, i) => (
-            <Button
-              key={i}
-              block
-              onClick={() => handlePreset(preset.prompt)}
-              style={{ textAlign: 'left', height: 'auto', padding: '8px 12px' }}
-            >
+            <LButton key={i} onClick={() => handlePreset(preset.prompt)} style={{ textAlign: 'left', height: 'auto', padding: '8px 12px', width: '100%' }}>
               {preset.label}
-            </Button>
+            </LButton>
           ))}
-        </Space>
+        </div>
 
-        <Title level={5} style={{ marginTop: 24, marginBottom: 16 }}>
-          <GlobalOutlined /> Мир
-        </Title>
+        <h5 style={{ marginTop: 24, marginBottom: 16 }}><GlobalOutlined /> Мир</h5>
         <WorldModelPanel />
       </div>
 
       {/* Main */}
       <div style={{ flex: 1, padding: 24, overflow: 'auto' }}>
-        <Title level={2}>
-          <ThunderboltOutlined /> Движок Повествования
-        </Title>
-        <Paragraph type="secondary">
+        <h2><ThunderboltOutlined /> Движок Повествования</h2>
+        <p style={{ color: '#999' }}>
           Создавайте истории внутри мира книги. Сначала система строит модель ограничений, затем LLM пишет внутри них.
-        </Paragraph>
+        </p>
 
         {/* Input */}
-        <Card style={{ marginBottom: 24 }}>
-          <Space direction="vertical" style={{ width: '100%' }} size={12}>
-            <TextArea
+        <LCard style={{ marginBottom: 24 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <textarea
               value={prompt}
               onChange={e => setPrompt(e.target.value)}
               placeholder={'Опишите историю, которую хотите создать...\nНапример: «Я хочу историю о молодом гиперборейце за 30 лет до появления Велика»'}
-              autoSize={{ minRows: 3, maxRows: 6 }}
+              rows={4}
+              style={{ width: '100%', padding: 12, border: '1px solid #d9d9d9', borderRadius: 6, fontSize: 14, resize: 'vertical' }}
             />
-            <Space>
-              <Button
-                type="primary"
-                icon={<ExperimentOutlined />}
-                onClick={handleParse}
-                loading={constraintsMutation.isPending}
-              >
+            <div style={{ display: 'flex', gap: 8 }}>
+              <LButton type="primary" icon={<ExperimentOutlined />} onClick={handleParse} loading={constraintsMutation.isPending}>
                 Построить ограничения
-              </Button>
-              <Button
-                icon={isStreaming ? <LoadingOutlined /> : <SendOutlined />}
-                onClick={handleGenerate}
-                loading={false}
-                disabled={!constraints && !isStreaming}
-              >
+              </LButton>
+              <LButton icon={isStreaming ? <LoadingOutlined /> : <SendOutlined />} onClick={handleGenerate} disabled={!constraints && !isStreaming}>
                 {isStreaming ? 'Генерация...' : 'Сгенерировать историю'}
-              </Button>
+              </LButton>
               {isStreaming && (
-                <Button
-                  danger
-                  onClick={() => abortControllerRef.current?.abort()}
-                >
+                <LButton danger onClick={() => abortControllerRef.current?.abort()}>
                   Стоп
-                </Button>
+                </LButton>
               )}
-            </Space>
-          </Space>
-        </Card>
+            </div>
+          </div>
+        </LCard>
 
         {/* Constraints */}
         {constraints && (
           <div style={{ marginBottom: 24 }}>
-            <Title level={4}>Модель ограничений</Title>
+            <h4>Модель ограничений</h4>
             <ConstraintDisplay constraints={constraints} />
           </div>
         )}
@@ -448,7 +370,7 @@ function StoryPageContent() {
         {/* Loading */}
         {constraintsMutation.isPending && (
           <div style={{ textAlign: 'center', padding: 40 }}>
-            <Spin size="large" tip="Анализ мира..." />
+            <LSpin size="large" tip="Анализ мира..." />
           </div>
         )}
       </div>

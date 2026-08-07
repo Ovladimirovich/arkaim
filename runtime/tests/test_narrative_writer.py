@@ -10,6 +10,10 @@ if str(CORE_DIR) not in sys.path:
     sys.path.insert(0, str(CORE_DIR))
 
 from narrative_engine.story.writer import build_writer_brief, format_story_prompt
+from narrative_engine.story.composer import compose_prompt, format_composer_prompt
+from narrative_engine.context_assembler import FullContext
+from narrative_engine.planner import NarrativePlan
+from narrative_engine.planners.cause_effect import CauseEffectTree
 from narrative_engine.constraint_engine import (
     ConstraintModel, StoryRequest, ResolvedContext,
 )
@@ -63,3 +67,45 @@ class TestWriter:
         assert "писатель" in prompt.lower() or "Сатья Юга" in prompt
         assert "История о гиперборейце" in prompt
         assert "запрещено" in prompt.lower() or "нарушать" in prompt.lower()
+
+class TestComposer:
+    """Tests for new Composer API (replaces Writer)."""
+
+    def test_compose_prompt(self):
+        constraints = _make_constraints()
+        context = FullContext(
+            world_state=constraints.resolved_context.model_dump()
+        )
+        plan = NarrativePlan(
+            cause_effect=CauseEffectTree(root="test"),
+        )
+        composed = compose_prompt(constraints, context, plan, "literary", 1000)
+        assert "system_instruction" in composed
+        assert "user_prompt" in composed
+        assert len(composed["system_instruction"]) > 100
+
+    def test_format_composer_prompt(self):
+        constraints = _make_constraints()
+        context = FullContext()
+        plan = NarrativePlan(
+            cause_effect=CauseEffectTree(root="test"),
+        )
+        composed = compose_prompt(constraints, context, plan, "literary", 1000)
+        full = format_composer_prompt(composed)
+        assert len(full) > 500
+        assert "Наследие Аркаима" in full
+
+    def test_compose_includes_plan(self):
+        constraints = _make_constraints()
+        context = FullContext()
+        plan = NarrativePlan(
+            cause_effect=CauseEffectTree(
+                root="test",
+                matched_pattern="Путешествие героя",
+                nodes=[],
+            ),
+            story_structure=["Экспозиция", "Завязка", "Развязка"],
+        )
+        composed = compose_prompt(constraints, context, plan, "literary", 1000)
+        assert "Экспозиция" in composed["user_prompt"]
+        assert "Завязка" in composed["user_prompt"]

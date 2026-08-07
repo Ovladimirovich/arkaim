@@ -1,100 +1,9 @@
 'use client';
 
-
-// ── Streaming Search ──────────────────────────
-function StreamingSearch() {
-  const [query, setQuery] = React.useState("");
-  const [results, setResults] = React.useState([]);
-  const [loading, setLoading] = React.useState(false);
-  const search = async () => {
-    if (!query) return;
-    setLoading(true);
-    const res = await fetch('/book/world/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query, limit: 10 }) });
-    const data = await res.json();
-    setResults(data.world_model || []);
-    setLoading(false);
-  };
-  return (
-    <div>
-      <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Поиск..." style={{ width: 300, marginRight: 8 }} />
-      <button onClick={search}>Найти</button>
-      {loading && <div>Загрузка...</div>}
-      {results.map((r, i) => <div key={i} style={{ padding: 8, borderBottom: '1px solid #f0f0f0' }}>{r.name} - {r.category}</div>)}
-    </div>
-  );
-}
-
-
-
-
-// ── World Stats Charts ──────────────────────────
-
-function WorldBarChart({ data, height = 200 }: { data: { label: string; value: number }[]; height?: number }) {
-  const maxValue = Math.max(...data.map(d => d.value));
-  return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height, padding: '20px 0' }}>
-      {data.map((d, i) => (
-        <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <div style={{ fontSize: 10, marginBottom: 4 }}>{d.value}</div>
-          <div style={{
-            width: '100%',
-            height: `${(d.value / maxValue) * (height - 40)}px`,
-            background: 'linear-gradient(180deg, #722ed1 0%, #531dab 100%)',
-            borderRadius: '4px 4px 0 0',
-          }} />
-          <div style={{ fontSize: 9, marginTop: 4, textAlign: 'center' }}>{d.label}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function WorldPieChart({ data, size = 120 }: { data: { label: string; value: number; color: string }[]; size?: number }) {
-  const total = data.reduce((sum, d) => sum + d.value, 0);
-  let currentAngle = 0;
-  
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-      <div style={{ width: size, height: size, borderRadius: '50%', background: `conic-gradient(${data.map(d => {
-        const angle = (d.value / total) * 360;
-        const result = `${d.color} ${currentAngle}deg ${currentAngle + angle}deg`;
-        currentAngle += angle;
-        return result;
-      }).join(', ')})`, position: 'relative' }}>
-        <div style={{ position: 'absolute', top: '30%', left: '30%', width: '40%', height: '40%', borderRadius: '50%', background: 'white' }} />
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {data.map((d, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-            <div style={{ width: 10, height: 10, borderRadius: 2, background: d.color }} />
-            <span>{d.label}: {d.value}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ── Responsive Styles ──────────────────────────
-
-const responsiveStyles = {
-  container: { padding: '24px' },
-  header: { marginBottom: 24 },
-  statsRow: { marginBottom: 24 },
-  card: { marginBottom: 16 },
-  searchInput: { marginBottom: 16 },
-  resultItem: { padding: '12px', borderBottom: '1px solid #f0f0f0' },
-  tag: { marginRight: 8 },
-  chartContainer: { height: 200, padding: '20px 0' },
-};
-
-import { useState, useEffect } from 'react';
-import { Card, Row, Col, Input, Button, Tabs, Tag, Space, Statistic, Table, Modal, Select, message, Spin, Descriptions, List, Typography } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { api } from '@/shared/lib/api';
+import { LCard, LTag, LSpace, LStatistic, LTable, LModal, LButton, LInput, LTextArea, LTabs, toast } from '@/shared/ui/light';
 import { SearchOutlined, DatabaseOutlined, LinkOutlined, PictureOutlined, CheckCircleOutlined, SettingOutlined, GlobalOutlined, AppstoreOutlined, FileTextOutlined } from '@ant-design/icons';
-
-const { TabPane } = Tabs;
-const { Title, Text, Paragraph } = Typography;
-const { Search } = Input;
 
 const API_BASE = '/book/world';
 
@@ -110,15 +19,6 @@ interface Entity {
   category: string;
   description: string;
   properties: Record<string, any>;
-}
-
-interface Relation {
-  id: string;
-  source_id: string;
-  target_id: string;
-  relation_type: string;
-  description: string;
-  strength: number;
 }
 
 interface WorldMode {
@@ -140,13 +40,6 @@ interface WorldRule {
 export default function WorldEnginePage() {
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState<WorldStats | null>(null);
-  
-  // Chart data from stats
-  const categoryChartData = stats ? Object.entries(stats.categories || {}).map(([cat, count], i) => ({
-    label: cat,
-    value: count,
-    color: ['#1890ff', '#52c41a', '#faad14', '#ff4d4f', '#722ed1', '#13c2c2', '#eb2f96', '#2f54eb', '#faad14', '#a0d911', '#f5222d', '#722ed1', '#1890ff'][i % 13],
-  })) : [];
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Entity[]>([]);
   const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null);
@@ -160,7 +53,6 @@ export default function WorldEnginePage() {
   const [selectedRule, setSelectedRule] = useState<WorldRule | null>(null);
   const [categoryEntities, setCategoryEntities] = useState<any[]>([]);
 
-  // Load stats on mount
   useEffect(() => {
     loadStats();
     loadModes();
@@ -169,396 +61,232 @@ export default function WorldEnginePage() {
   }, []);
 
   const loadStats = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/summary`);
-      const data = await res.json();
-      setStats(data.stats.world_model);
-    } catch (error) {
-      console.error('Error loading stats:', error);
-    }
+    try { const data = await api.get<{ stats: WorldStats }>("/book/world/summary"); setStats(data.stats); }
+    catch (e) { console.error('Error loading stats:', e); }
   };
 
   const loadModes = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/modes`);
-      const data = await res.json();
-      setModes(data.modes);
-    } catch (error) {
-      console.error('Error loading modes:', error);
-    }
+    try { const data = await api.get<{ modes: WorldMode[] }>("/book/world/modes"); setModes(data.modes); }
+    catch (e) { console.error('Error loading modes:', e); }
   };
 
   const loadRules = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/rules`);
-      const data = await res.json();
-      setRules(data.rules);
-    } catch (error) {
-      console.error('Error loading rules:', error);
-    }
+    try { const data = await api.get<{ rules: WorldRule[] }>("/book/world/rules"); setRules(data.rules); }
+    catch (e) { console.error('Error loading rules:', e); }
   };
 
   const loadCategories = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/categories`);
-      const data = await res.json();
-      setCategories(data.categories);
-    } catch (error) {
-      console.error('Error loading categories:', error);
-    }
+    try { const data = await api.get<{ categories: Record<string, number> }>("/book/world/categories"); setCategories(data.categories); }
+    catch (e) { console.error('Error loading categories:', e); }
   };
 
   const loadCategoryEntities = async (category: string) => {
     setSelectedCategory(category);
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/search`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: category, limit: 50 }),
-      });
+      const res = await fetch(`${API_BASE}/search`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: category, limit: 50 }) });
       const data = await res.json();
       setCategoryEntities(data.world_model || []);
       setActiveTab('search');
-    } catch (error) {
-      message.error('Ошибка загрузки категории');
-    } finally {
-      setLoading(false);
-    }
+    } catch { toast.error('Ошибка загрузки категории'); }
+    finally { setLoading(false); }
   };
 
   const handleSearch = async (query: string) => {
     if (!query) return;
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/search`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, limit: 20 }),
-      });
+      const res = await fetch(`${API_BASE}/search`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query, limit: 20 }) });
       const data = await res.json();
       setSearchResults(data.world_model || []);
-    } catch (error) {
-      message.error('Ошибка поиска');
-    } finally {
-      setLoading(false);
-    }
+    } catch { toast.error('Ошибка поиска'); }
+    finally { setLoading(false); }
   };
 
   const loadEntityContext = async (entityId: string) => {
     try {
-      const res = await fetch(`${API_BASE}/entity/${entityId}/context`);
-      const data = await res.json();
+      const data = await api.get<{ entity: Entity; relations: { outgoing_count: number; incoming_count: number; outgoing: { relation_type: string; target_id: string }[] } }>(`/book/world/entity/${entityId}/context`);
       setEntityContext(data);
       setSelectedEntity(data.entity);
-    } catch (error) {
-      message.error('Ошибка загрузки контекста');
-    }
+    } catch { toast.error('Ошибка загрузки контекста'); }
   };
 
   const generateVisualPrompt = async (entityId: string) => {
     try {
-      const res = await fetch(`${API_BASE}/entity/${entityId}/visual-prompt?style=cinematic`);
-      const data = await res.json();
+      const data = await api.get<{ prompt: string }>(`/book/world/entity/${entityId}/visual-prompt?style=cinematic`);
       setVisualPrompt(data.prompt);
-    } catch (error) {
-      message.error('Ошибка генерации промпта');
-    }
+    } catch { toast.error('Ошибка генерации промпта'); }
   };
 
   const columns = [
     { title: 'ID', dataIndex: 'id', key: 'id', width: 150 },
     { title: 'Название', dataIndex: 'name', key: 'name' },
-    { title: 'Категория', dataIndex: 'category', key: 'category', 
-      render: (cat: string) => <Tag color="blue">{cat}</Tag> },
-    { title: 'Описание', dataIndex: 'description', key: 'description', 
-      render: (desc: string) => desc?.substring(0, 100) + '...' },
+    { title: 'Категория', dataIndex: 'category', key: 'category',
+      render: (v: unknown) => <LTag color="blue">{String(v)}</LTag> },
+    { title: 'Описание', dataIndex: 'description', key: 'description',
+      render: (v: unknown) => String(v).substring(0, 100) + '...' },
     { title: 'Действия', key: 'actions',
-      render: (_: any, record: Entity) => (
-        <Space>
-          <Button size="small" onClick={() => loadEntityContext(record.id)}>Контекст</Button>
-          <Button size="small" onClick={() => generateVisualPrompt(record.id)}>Промпт</Button>
-        </Space>
-      ),
+      render: (_: unknown, record: unknown) => {
+        const r = record as Entity;
+        return <LSpace><LButton size="small" onClick={() => loadEntityContext(r.id)}>Контекст</LButton><LButton size="small" onClick={() => generateVisualPrompt(r.id)}>Промпт</LButton></LSpace>;
+      },
     },
   ];
 
-  return (
-    <div style={responsiveStyles.container}>
-      <Title level={2}>
-        <GlobalOutlined /> World Engine
-      </Title>
-      <Paragraph>
-        Вычислимая модель мира книги «Наследие Аркаима» — 547 сущностей, 287 связей, 55 форм
-      </Paragraph>
+  const tagColors = ['#1890ff', '#52c41a', '#faad14', '#ff4d4f', '#722ed1', '#13c2c2', '#eb2f96', '#2f54eb'];
 
-      {/* Stats */}
+  return (
+    <div style={{ padding: 24 }}>
+      <h2><GlobalOutlined /> World Engine</h2>
+      <p style={{ color: '#999' }}>Вычислимая модель мира книги «Наследие Аркаима» — 547 сущностей, 287 связей, 55 форм</p>
+
       {stats && (
-        <Row gutter={16} style={{ marginBottom: 24 }}>
-          <Col span={6}>
-            <Card>
-              <Statistic title="Сущностей" value={stats.total_entities} prefix={<DatabaseOutlined />} />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card>
-              <Statistic title="Категорий" value={stats.total_categories} prefix={<AppstoreOutlined />} />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card>
-              <Statistic title="Режимов" value={modes.length} prefix={<SettingOutlined />} />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card>
-              <Statistic title="Правил" value={rules.length} prefix={<CheckCircleOutlined />} />
-            </Card>
-          </Col>
-        </Row>
+        <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
+          <div style={{ flex: 1 }}><LCard><LStatistic title="Сущностей" value={stats.total_entities} prefix={<DatabaseOutlined />} /></LCard></div>
+          <div style={{ flex: 1 }}><LCard><LStatistic title="Категорий" value={stats.total_categories} prefix={<AppstoreOutlined />} /></LCard></div>
+          <div style={{ flex: 1 }}><LCard><LStatistic title="Режимов" value={modes.length} prefix={<SettingOutlined />} /></LCard></div>
+          <div style={{ flex: 1 }}><LCard><LStatistic title="Правил" value={rules.length} prefix={<CheckCircleOutlined />} /></LCard></div>
+        </div>
       )}
 
-      <Tabs activeKey={activeTab} onChange={setActiveTab}>
-        {/* Search Tab */}
-        <TabPane tab={<span><SearchOutlined /> Поиск</span>} key="search">
-          <Card>
-            <Search
-              placeholder="Поиск по миру (например: Аркаим, Гиперборея, философия)"
-              enterButton="Найти"
-              size="large"
-              loading={loading}
-              onSearch={handleSearch}
-              style={{ marginBottom: 16 }}
-            />
-            
+      <LTabs items={[
+        { key: 'search', label: <><SearchOutlined /> Поиск</>, children: (
+          <LCard>
+            <LSpace style={{ marginBottom: 16 }}>
+              <LInput placeholder="Поиск по миру (например: Аркаим, Гиперборея, философия)" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ width: 400 }} />
+              <LButton type="primary" icon={<SearchOutlined />} loading={loading} onClick={() => handleSearch(searchQuery)}>Найти</LButton>
+            </LSpace>
             {selectedCategory && (
               <div style={{ marginBottom: 16 }}>
-                <Tag color="purple" closable onClose={() => { setSelectedCategory(null); setCategoryEntities([]); }}>
-                  Категория: {selectedCategory}
-                </Tag>
+                <LTag color="purple" style={{ cursor: 'default' }} onClick={() => { setSelectedCategory(null); setCategoryEntities([]); }}>
+                  ✕ Категория: {selectedCategory}
+                </LTag>
               </div>
             )}
-            <Table
-              columns={columns}
-              dataSource={selectedCategory ? categoryEntities : searchResults}
-              rowKey="id"
-              pagination={{ pageSize: 10 }}
-            />
-          </Card>
-        </TabPane>
-
-        {/* Categories Tab */}
-        <TabPane tab={<span><AppstoreOutlined /> Категории</span>} key="categories">
-          <Card>
-            <Row gutter={[16, 16]}>
-              {Object.entries(categories).map(([cat, count]) => (
-                <Col span={6} key={cat}>
-                  <Card 
-                    hoverable 
-                    onClick={() => loadCategoryEntities(cat)}
-                    style={{ textAlign: 'center' }}
-                  >
-                    <Statistic title={cat} value={count} />
-                  </Card>
-                </Col>
+            <LTable columns={columns} dataSource={selectedCategory ? categoryEntities : searchResults} rowKey="id" pagination={{ pageSize: 10 }} />
+          </LCard>
+        )},
+        { key: 'categories', label: <><AppstoreOutlined /> Категории</>, children: (
+          <LCard>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+              {Object.entries(categories).map(([cat, count], i) => (
+                <div key={cat} style={{ flex: '1 1 calc(25% - 16px)', minWidth: 150 }}>
+                  <LCard hoverable onClick={() => loadCategoryEntities(cat)} style={{ textAlign: 'center' }}>
+                    <LStatistic title={cat} value={count} />
+                  </LCard>
+                </div>
               ))}
-            </Row>
-          </Card>
-        </TabPane>
-
-        {/* Modes Tab */}
-        <TabPane tab={<span><SettingOutlined /> Режимы</span>} key="modes">
-          <Card title="Режимы работы World Engine">
+            </div>
+          </LCard>
+        )},
+        { key: 'modes', label: <><SettingOutlined /> Режимы</>, children: (
+          <LCard title="Режимы работы World Engine">
             <p style={{ marginBottom: 16 }}>Выберите режим для перехода к соответствующему функционалу:</p>
-            <List
-              dataSource={modes}
-              renderItem={(mode: WorldMode) => (
-                <List.Item 
-                  style={{ cursor: 'pointer', padding: '12px', marginBottom: 8, borderRadius: 8, border: '1px solid #f0f0f0' }}
-                  onClick={() => {
-                    const routes: Record<string, string> = {
-                      'dialog': '/book',
-                      'story': '/story',
-                      'movie': '/film-studio',
-                      'quest': '/world-explorer',
-                      'game': '/world-explorer',
-                      'research': '/search',
-                      'lesson': '/library',
-                      'timeline': '/map',
-                      'documentary': '/film-studio',
-                      'illustration': '/visual-view',
-                    };
-                    window.location.href = routes[mode.mode] || '/world-engine';
-                  }}
-                >
-                  <List.Item.Meta
-                    title={<span style={{ fontWeight: 'bold' }}>{mode.name}</span>}
-                    description={mode.description}
-                  />
-                  <Space>
-                    <Tag color="green">{mode.mode}</Tag>
-                    <span style={{ color: '#1890ff' }}>→</span>
-                  </Space>
-                </List.Item>
-              )}
-            />
-          </Card>
-        </TabPane>
-
-        {/* Rules Tab */}
-        <TabPane tab={<span><CheckCircleOutlined /> Правила</span>} key="rules">
-          <Card title="Правила консистентности мира">
+            {modes.map((mode) => {
+              const routes: Record<string, string> = { 'dialog': '/book', 'story': '/story', 'movie': '/film-studio', 'quest': '/world-explorer', 'game': '/world-explorer', 'research': '/search', 'lesson': '/library', 'timeline': '/map', 'documentary': '/film-studio', 'illustration': '/visual-view' };
+              return (
+                <div key={mode.mode} style={{ cursor: 'pointer', padding: 12, marginBottom: 8, borderRadius: 8, border: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                  onClick={() => { window.location.href = routes[mode.mode] || '/world-engine'; }}>
+                  <div><strong>{mode.name}</strong><div style={{ fontSize: 12, color: '#666' }}>{mode.description}</div></div>
+                  <LSpace><LTag color="green">{mode.mode}</LTag><span style={{ color: '#1890ff' }}>→</span></LSpace>
+                </div>
+              );
+            })}
+          </LCard>
+        )},
+        { key: 'rules', label: <><CheckCircleOutlined /> Правила</>, children: (
+          <LCard title="Правила консистентности мира">
             <p style={{ marginBottom: 16 }}>Правила определяют допустимость построений в мире книги:</p>
-            <List
-              dataSource={rules}
-              renderItem={(rule: WorldRule) => (
-                <List.Item 
-                  style={{ cursor: 'pointer', padding: '12px', marginBottom: 8, borderRadius: 8, border: '1px solid #f0f0f0' }}
-                  onClick={() => setSelectedRule(rule)}
-                >
-                  <List.Item.Meta
-                    title={<span style={{ fontWeight: 'bold' }}>{rule.name_ru}</span>}
-                    description={rule.description_ru?.substring(0, 100) + '...'}
-                  />
-                  <Space>
-                    <Tag color={rule.severity === 'hard' ? 'red' : 'orange'}>{rule.severity}</Tag>
-                    <Tag>{rule.rule_type}</Tag>
-                    <span style={{ color: '#1890ff' }}>Подробнее →</span>
-                  </Space>
-                </List.Item>
+            {rules.map((rule) => (
+              <div key={rule.id} style={{ cursor: 'pointer', padding: 12, marginBottom: 8, borderRadius: 8, border: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                onClick={() => setSelectedRule(rule)}>
+                <div><strong>{rule.name_ru}</strong><div style={{ fontSize: 12, color: '#666' }}>{rule.description_ru?.substring(0, 100) + '...'}</div></div>
+                <LSpace><LTag color={rule.severity === 'hard' ? 'red' : 'orange'}>{rule.severity}</LTag><LTag>{rule.rule_type}</LTag><span style={{ color: '#1890ff' }}>Подробнее →</span></LSpace>
+              </div>
+            ))}
+
+            <LModal open={!!selectedRule} title={selectedRule?.name_ru || 'Правило'} onCancel={() => setSelectedRule(null)}
+              width={600}
+              footer={<><LButton onClick={() => setSelectedRule(null)}>Закрыть</LButton><LButton type="primary" onClick={() => window.location.href = '/editor'}>Открыть редактор</LButton></>}>
+              {selectedRule && (
+                <div>
+                  <p><strong>Описание:</strong> {selectedRule.description_ru}</p>
+                  <p><strong>Тип:</strong> <LTag>{selectedRule.rule_type}</LTag></p>
+                  <p><strong>Серьёзность:</strong> <LTag color={selectedRule.severity === 'hard' ? 'red' : 'orange'}>{selectedRule.severity}</LTag></p>
+                </div>
               )}
-            />
-          </Card>
-          
-          {/* Rule Detail Modal */}
-          <Modal
-            title={selectedRule?.name_ru || 'Правило'}
-            open={!!selectedRule}
-            onCancel={() => setSelectedRule(null)}
-            footer={[
-              <Button key="close" onClick={() => setSelectedRule(null)}>Закрыть</Button>,
-              <Button key="editor" type="primary" onClick={() => window.location.href = '/editor'}>
-                Открыть редактор
-              </Button>,
-            ]}
-            width={600}
-          >
-            {selectedRule && (
-              <div>
-                <p><strong>Описание:</strong> {selectedRule.description_ru}</p>
-                <p><strong>Тип:</strong> <Tag>{selectedRule.rule_type}</Tag></p>
-                <p><strong>Серьёзность:</strong> <Tag color={selectedRule.severity === 'hard' ? 'red' : 'orange'}>{selectedRule.severity}</Tag></p>
-                <p style={{ marginTop: 16 }}>
-                  <strong>Примеры нарушений:</strong>
-                </p>
-                <ul>
-                  <li>Персонаж знает события из будущего</li>
-                  <li>Персонаж находится в двух местах одновременно</li>
-                  <li>Технология появилась до своей эпохи</li>
-                </ul>
-                <p style={{ marginTop: 16 }}>
-                  <strong>Как проверить:</strong>
-                </p>
-                <ul>
-                  <li>Используйте кнопку "Проверить" в редакторе</li>
-                  <li>Вызовите API <code>/book/world/validate</code></li>
-                </ul>
+            </LModal>
+          </LCard>
+        )},
+        { key: 'visual', label: <><PictureOutlined /> Визуал</>, children: (
+          <>
+            {stats && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginBottom: 24 }}>
+                {Object.entries(stats.categories || {}).map(([cat, count], i) => (
+                  <div key={cat} style={{ flex: '1 1 calc(25% - 16px)', minWidth: 150 }}>
+                    <LCard hoverable onClick={() => loadCategoryEntities(cat)} style={{ textAlign: 'center', cursor: 'pointer' }}>
+                      <LStatistic title={cat} value={count} />
+                      <div style={{ marginTop: 8, fontSize: 12, color: '#1890ff' }}>Нажмите для поиска →</div>
+                    </LCard>
+                  </div>
+                ))}
               </div>
             )}
-          </Modal>
-        </TabPane>
-
-        {/* Visual Prompt Tab */}
-        <TabPane tab={<span><PictureOutlined /> Визуал</span>} key="visual">
-            {/* Category Tiles - Clickable */}
-            {stats && (
-              <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-                {Object.entries(stats.categories || {}).map(([cat, count]) => (
-                  <Col span={6} key={cat}>
-                    <Card 
-                      hoverable 
-                      onClick={() => loadCategoryEntities(cat)}
-                      style={{ textAlign: 'center', cursor: 'pointer' }}
-                    >
-                      <Statistic title={cat} value={count} />
-                      <div style={{ marginTop: 8, fontSize: 12, color: '#1890ff' }}>Нажмите для поиска →</div>
-                    </Card>
-                  </Col>
-                ))}
-              </Row>
-            )}
-          <Card title="Генерация визуального промпта">
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <Input.Search
-                placeholder="ID сущности (например: region_arkaim)"
-                enterButton="Генерировать"
-                onSearch={(val) => generateVisualPrompt(val)}
-              />
-              {visualPrompt && (
-                <Card type="inner" title="Промпт">
-                  <Paragraph copyable>{visualPrompt}</Paragraph>
-                </Card>
-              )}
-            </Space>
-          </Card>
-        </TabPane>
-
-        {/* Entity Context Tab */}
-        <TabPane tab={<span><FileTextOutlined /> Контекст</span>} key="context">
-          <Card title="Контекст сущности">
+            <LCard title="Генерация визуального промпта">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <LSpace>
+                  <LInput placeholder="ID сущности (например: region_arkaim)" id="visual-entity-id" style={{ width: 400 }} />
+                  <LButton type="primary" icon={<PictureOutlined />} onClick={() => {
+                    const el = document.getElementById('visual-entity-id') as HTMLInputElement;
+                    if (el) generateVisualPrompt(el.value);
+                  }}>Генерировать</LButton>
+                </LSpace>
+                {visualPrompt && (
+                  <LCard size="small" title="Промпт" style={{ marginTop: 8 }}>
+                    <p style={{ fontSize: 13 }}>{visualPrompt}</p>
+                  </LCard>
+                )}
+              </div>
+            </LCard>
+          </>
+        )},
+        { key: 'context', label: <><FileTextOutlined /> Контекст</>, children: (
+          <LCard title="Контекст сущности">
             <p style={{ marginBottom: 16 }}>Введите ID сущности для просмотра её контекста и связей:</p>
-            <Input.Search
-              placeholder="ID сущности (например: region_arkaim)"
-              enterButton="Загрузить"
-              size="large"
-              onSearch={(val) => loadEntityContext(val)}
-              style={{ marginBottom: 16 }}
-            />
+            <LSpace style={{ marginBottom: 16 }}>
+              <LInput placeholder="ID сущности (например: region_arkaim)" id="context-entity-id" style={{ width: 400 }} />
+              <LButton type="primary" icon={<SearchOutlined />} onClick={() => {
+                const el = document.getElementById('context-entity-id') as HTMLInputElement;
+                if (el) loadEntityContext(el.value);
+              }}>Загрузить</LButton>
+            </LSpace>
 
             {selectedEntity && (
               <>
-                <Descriptions bordered column={2} style={{ marginTop: 16 }}>
-                  <Descriptions.Item label="ID">{selectedEntity.id}</Descriptions.Item>
-                  <Descriptions.Item label="Название">{selectedEntity.name}</Descriptions.Item>
-                  <Descriptions.Item label="Категория">
-                    <Tag color="blue">{selectedEntity.category}</Tag>
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Описание" span={2}>
-                    {selectedEntity.description}
-                  </Descriptions.Item>
-                </Descriptions>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16, padding: 16, border: '1px solid var(--card-border)', borderRadius: 8 }}>
+                  <div style={{ flex: '1 1 50%' }}><strong>ID:</strong> {selectedEntity.id}</div>
+                  <div style={{ flex: '1 1 50%' }}><strong>Название:</strong> {selectedEntity.name}</div>
+                  <div style={{ flex: '1 1 50%' }}><strong>Категория:</strong> <LTag color="blue">{selectedEntity.category}</LTag></div>
+                  <div style={{ flex: '1 1 100%' }}><strong>Описание:</strong> {selectedEntity.description}</div>
+                </div>
 
                 {entityContext?.relations && (
-                  <Card title="Связи" style={{ marginTop: 16 }}>
-                    <Row gutter={16}>
-                      <Col span={12}>
-                        <Statistic 
-                          title="Исходящих" 
-                          value={entityContext.relations.outgoing_count} 
-                        />
-                      </Col>
-                      <Col span={12}>
-                        <Statistic 
-                          title="Входящих" 
-                          value={entityContext.relations.incoming_count} 
-                        />
-                      </Col>
-                    </Row>
+                  <LCard title="Связи" style={{ marginTop: 16 }}>
+                    <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+                      <LStatistic title="Исходящих" value={entityContext.relations.outgoing_count} />
+                      <LStatistic title="Входящих" value={entityContext.relations.incoming_count} />
+                    </div>
                     {entityContext.relations.outgoing?.length > 0 && (
-                      <div style={{ marginTop: 16 }}>
+                      <div>
                         <p><strong>Исходящие связи:</strong></p>
-                        <List
-                          size="small"
-                          dataSource={entityContext.relations.outgoing.slice(0, 5)}
-                          renderItem={(rel: any) => (
-                            <List.Item>
-                              <Tag>{rel.relation_type}</Tag> → {rel.target_id}
-                            </List.Item>
-                          )}
-                        />
+                        {entityContext.relations.outgoing.slice(0, 5).map((rel: any, i: number) => (
+                          <div key={i} style={{ padding: '4px 0', borderBottom: '1px solid #f0f0f0' }}>
+                            <LTag>{rel.relation_type}</LTag> → {rel.target_id}
+                          </div>
+                        ))}
                       </div>
                     )}
-                  </Card>
+                  </LCard>
                 )}
               </>
             )}
@@ -570,9 +298,9 @@ export default function WorldEnginePage() {
                 <p style={{ fontSize: 12 }}>Примеры: region_arkaim, region_hyperborea</p>
               </div>
             )}
-          </Card>
-        </TabPane>
-      </Tabs>
+          </LCard>
+        )},
+      ]} />
     </div>
   );
 }

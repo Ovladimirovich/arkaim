@@ -1,5 +1,5 @@
-"""
-ComfyUI Provider — генерация изображений через ComfyUI API (POST /prompt).
+﻿"""
+ComfyUI Provider вЂ” РіРµРЅРµСЂР°С†РёСЏ РёР·РѕР±СЂР°Р¶РµРЅРёР№ С‡РµСЂРµР· ComfyUI API (POST /prompt).
 """
 import asyncio
 import json
@@ -14,17 +14,20 @@ WF_DIR = config.GENOME_DIR / "workflows"
 WF_DIR.mkdir(parents=True, exist_ok=True)
 
 DEFAULT_WF = {
-    "3": {"class_type": "KSampler", "inputs": {"seed": 42, "steps": 30, "cfg": 7.0, "sampler_name": "euler", "scheduler": "normal", "denoise": 1.0, "model": ["4", 0], "positive": ["6", 0], "negative": ["7", 0], "latent_image": ["5", 0]}},
-    "4": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": "sd_xl_base_1.0.safetensors"}},
+    "3": {"class_type": "KSampler", "inputs": {"seed": 42, "steps": 25, "cfg": 7.0, "sampler_name": "euler", "scheduler": "normal", "denoise": 1.0, "model": ["4", 0], "positive": ["6", 0], "negative": ["7", 0], "latent_image": ["5", 0]}},
+    "4": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": "cyberrealistic_v80.safetensors"}},
     "5": {"class_type": "EmptyLatentImage", "inputs": {"width": 1024, "height": 1024, "batch_size": 1}},
     "6": {"class_type": "CLIPTextEncode", "inputs": {"text": "", "clip": ["4", 1]}},
-    "7": {"class_type": "CLIPTextEncode", "inputs": {"text": "blurry, low quality", "clip": ["4", 1]}},
+    "7": {"class_type": "CLIPTextEncode", "inputs": {"text": "blurry, low quality, deformed, ugly, bad anatomy, watermark, text, signature", "clip": ["4", 1]}},
     "8": {"class_type": "VAEDecode", "inputs": {"samples": ["3", 0], "vae": ["4", 2]}},
     "9": {"class_type": "SaveImage", "inputs": {"filename_prefix": "arkaim", "images": ["8", 0]}},
 }
 
 class ComfyUIProvider(ImageProvider):
-    def __init__(self, base_url="http://127.0.0.1:8188", workflow_name="default.json"):
+    def __init__(self, base_url=None, workflow_name="default.json"):
+        if base_url is None:
+            from config import config
+            base_url = getattr(config, "COMFYUI_URL", "http://127.0.0.1:8188")
         self._base_url = base_url.rstrip("/")
         self._wf_name = workflow_name
         self._wf = self._load(workflow_name)
@@ -62,13 +65,68 @@ class ComfyUIProvider(ImageProvider):
             if isinstance(n, dict) and n.get("class_type") == "KSampler":
                 n["inputs"]["seed"] = seed
 
-    async def generate(self, prompt, size="1024x1024"):
+    QUALITY_PRESETS = {
+        "draft": {"steps": 15, "cfg": 5.0, "sampler": "euler"},
+        "standard": {"steps": 25, "cfg": 7.0, "sampler": "euler"},
+        "high": {"steps": 40, "cfg": 9.0, "sampler": "ddim"},
+        "ultra": {"steps": 60, "cfg": 11.0, "sampler": "dpmpp_2m"},
+    }
+
+    def _inject_quality(self, wf, preset="standard"):
+        params = self.QUALITY_PRESETS.get(preset, self.QUALITY_PRESETS["standard"])
+        for n in wf.values():
+            if isinstance(n, dict) and n.get("class_type") == "KSampler":
+                n["inputs"]["steps"] = params["steps"]
+                n["inputs"]["cfg"] = params["cfg"]
+                n["inputs"]["sampler_name"] = params["sampler"]
+
+    async def _resolve_ckpt(self, client):
+        """Найти доступный чекпоинт на сервере ComfyUI.
+
+        Отдаёт приоритет SDXL/реалистичным моделям, иначе — первый доступный.
+        """
+        try:
+            r = await client.get(f"{self._base_url}/object_info/CheckpointLoaderSimple")
+            r.raise_for_status()
+            info = r.json().get("CheckpointLoaderSimple", {})
+            name_meta = info.get("input", {}).get("required", {}).get("ckpt_name", [])
+            if isinstance(name_meta, list) and name_meta and isinstance(name_meta[0], list):
+                available = name_meta[0]
+            else:
+                return None
+            if not available:
+                return None
+            pref = ["sd_xl", "sdxl", "realistic", "cyberrealistic", "juggernaut", "dreamshaper", "v1-5", "sd15"]
+            for p in pref:
+                for ckpt in available:
+                    if p in ckpt.lower():
+                        return ckpt
+            return available[0]
+        except Exception:
+            return None
+
+    async def generate(self, prompt, size="1024x1024", **kwargs):
+        # Re-read URL from .env in case Colab tunnel changed
+        import os
+        new_url = os.getenv("COMFYUI_URL", "http://127.0.0.1:8188").rstrip("/")
+        if new_url != self._base_url:
+            self._base_url = new_url
         w, h = self._parse_size(size); neg = ""
         if isinstance(prompt, tuple): prompt, neg = prompt
         wf = self._inject_prompt(self._wf, prompt, neg)
         wf = self._inject_size(wf, w, h)
         self._inject_seed(wf, hash(prompt) & 0x7FFFFFFF)
-        async with httpx.AsyncClient(timeout=180) as c:
+        quality = kwargs.get("quality", "standard")
+        self._inject_quality(wf, quality)
+        # Динамически подобрать существующий чекпоинт (иначе 400 на несуществующей модели)
+        async with httpx.AsyncClient(timeout=15) as c:
+            ckpt = await self._resolve_ckpt(c)
+        if ckpt:
+            for n in wf.values():
+                if isinstance(n, dict) and n.get("class_type") == "CheckpointLoaderSimple":
+                    n["inputs"]["ckpt_name"] = ckpt
+                    break
+        async with httpx.AsyncClient(timeout=300) as c:
             r = await c.post(f"{self._base_url}/prompt", json={"prompt": wf})
             r.raise_for_status()
             pid = r.json().get("prompt_id", "")
@@ -77,16 +135,23 @@ class ComfyUIProvider(ImageProvider):
 
     async def health(self):
         try:
+            import os
+            new_url = os.getenv("COMFYUI_URL", "http://127.0.0.1:8188").rstrip("/")
+            if new_url != self._base_url:
+                self._base_url = new_url
+                log.info("comfyui_url_changed url=%s", new_url)
             async with httpx.AsyncClient(timeout=5) as c:
                 return (await c.get(f"{self._base_url}/system_stats")).status_code == 200
         except Exception: return False
 
-    async def _poll(self, c, pid, timeout=180):
+    async def _poll(self, c, pid, timeout=300):
         start = asyncio.get_event_loop().time()
+        is_remote = not self._base_url.startswith("http://127.0.0.1")
+        poll_interval = 2 if is_remote else 1
         while True:
             if asyncio.get_event_loop().time() - start > timeout:
                 raise TimeoutError(f"comfyui_timeout pid={pid}")
-            await asyncio.sleep(1)
+            await asyncio.sleep(poll_interval)
             r = await c.get(f"{self._base_url}/history/{pid}")
             if r.status_code != 200: continue
             h = r.json().get(pid, {})

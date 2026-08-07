@@ -36,6 +36,7 @@ beforeAll(() => {
 
   // scrollTo
   Element.prototype.scrollTo = vi.fn();
+  Element.prototype.scrollIntoView = vi.fn();
 });
 
 // Mock all Next.js navigation
@@ -69,6 +70,7 @@ vi.mock('@/shared/lib/api', () => ({
 // Mock WebSocket
 vi.mock('@/shared/lib/ws-hooks', () => ({
   useWsContext: vi.fn(() => ({ connected: false, lastEvent: null })),
+  useWsEvent: vi.fn(),
 }));
 
 // Mock Markdown
@@ -76,9 +78,25 @@ vi.mock('@/shared/lib/markdown', () => ({
   Markdown: ({ content }: { content: string }) => <div>{content}</div>,
 }));
 
-import { useAuth } from '@/app/providers';
+// Mock GenerationSettings
+vi.mock('@/shared/contexts/GenerationSettingsContext', () => ({
+  GenerationSettingsProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useGenerationSettings: vi.fn(() => ({
+    provider: 'auto',
+    style: 'cinematic_fantasy',
+    mood: 'neutral',
+    size: '1024x1024',
+    negativePrompt: '',
+    quality: 'standard',
+    updateSettings: vi.fn(),
+    resetSettings: vi.fn(),
+  })),
+}));
 
-function mockAuth(role: string = 'reader') {
+import { useAuth } from '@/app/providers';
+import type { UserRole } from '@/shared/types';
+
+function mockAuth(role: UserRole = 'reader') {
   vi.mocked(useAuth).mockReturnValue({
     user: { id: '1', role, provider: 'dev', is_active: true, username: 'test', display_name: 'Test User' },
     loading: false,
@@ -136,4 +154,58 @@ describe('Page renders without crashing', () => {
     render(<UploadPage />);
     expect(document.body).toBeTruthy();
   });
+
+  it('renders AdminPage', async () => {
+    mockAuth('admin');
+    const { default: AdminPage } = await import('@/app/admin/page');
+    render(<AdminPage />);
+    expect(document.body).toBeTruthy();
+  }, 15000);
+
+  it('renders BookPage', async () => {
+    mockAuth();
+    const { default: BookPage } = await import('@/app/book/page');
+    render(<BookPage />);
+    expect(document.body).toBeTruthy();
+  }, 15000);
+
+  it('renders WorldExplorerPage', async () => {
+    mockAuth();
+    const { default: WorldExplorerPage } = await import('@/app/world-explorer/page');
+    render(<WorldExplorerPage />);
+    expect(document.body).toBeTruthy();
+  }, 15000);
+
+  it('renders LoginPage', async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      user: null,
+      loading: false,
+      login: vi.fn(),
+      logout: vi.fn(),
+    });
+    const { default: LoginPage } = await import('@/app/login/page');
+    render(<LoginPage />);
+    expect(document.body).toBeTruthy();
+  });
+
+  it('renders AskPage', async () => {
+    mockAuth();
+    const { default: AskPage } = await import('@/app/ask/page');
+    render(<AskPage />);
+    expect(document.body).toBeTruthy();
+  }, 15000);
+
+  it('renders MapPage', async () => {
+    mockAuth();
+    const { default: MapPage } = await import('@/app/map/page');
+    render(<MapPage />);
+    expect(document.body).toBeTruthy();
+  }, 15000);
+
+  it('renders FilmStudioPage', async () => {
+    mockAuth();
+    const { default: FilmStudioPage } = await import('@/app/film-studio/page');
+    render(<FilmStudioPage />);
+    expect(document.body).toBeTruthy();
+  }, 15000);
 });

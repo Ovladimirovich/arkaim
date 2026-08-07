@@ -39,7 +39,8 @@ export function NotificationBell() {
   const { data, isLoading } = useQuery({
     queryKey: ['notifications'],
     queryFn: () => api.get<{ notifications: Notification[]; unread_count: number }>('/book/community/notifications?limit=20'),
-    refetchInterval: 30000, // Poll every 30s
+    refetchInterval: 300000, // Poll every 5min (was 30s — caused slowdowns)
+    staleTime: 300000, // Cache for 5min
   });
 
   const markReadMutation = useMutation({

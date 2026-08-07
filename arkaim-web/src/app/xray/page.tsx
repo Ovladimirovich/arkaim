@@ -1,12 +1,15 @@
 'use client';
 
-import { Card, Typography, Row, Col, Statistic, Table, Tag, Spin, Tabs, Select } from 'antd';
 import { BugOutlined, ReloadOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
 import { ProtectedRoute, RoleGuard } from '@/shared/lib/guards';
-
-const { Title, Text } = Typography;
+import { LCard } from '@/shared/ui/light/LCard';
+import { LSpin } from '@/shared/ui/light/LSpin';
+import { LTabs } from '@/shared/ui/light/LTabs';
+import { LTable } from '@/shared/ui/light/LTable';
+import { LStatistic } from '@/shared/ui/light/LStatistic';
+import { LTag } from '@/shared/ui/light/LTag';
 
 type Trace = {
   trace_id: string;
@@ -29,20 +32,20 @@ function StatsPanel() {
     queryFn: () => api.get<XRayStats>('/xray/stats'),
   });
 
-  if (isLoading) return <Spin />;
+  if (isLoading) return <LSpin />;
 
   return (
-    <Row gutter={[16, 16]}>
-      <Col span={8}>
-        <Card><Statistic title="Активных трейсов" value={stats?.active_traces ?? 0} prefix={<ReloadOutlined />} /></Card>
-      </Col>
-      <Col span={8}>
-        <Card><Statistic title="Завершённых" value={stats?.completed_traces ?? 0} prefix={<ClockCircleOutlined />} /></Card>
-      </Col>
-      <Col span={8}>
-        <Card><Statistic title="Сиротских спанов" value={stats?.orphan_spans ?? 0} prefix={<BugOutlined />} /></Card>
-      </Col>
-    </Row>
+    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+      <div style={{ flex: '1 1 200px' }}>
+        <LCard><LStatistic title="Активных трейсов" value={stats?.active_traces ?? 0} prefix={<ReloadOutlined />} /></LCard>
+      </div>
+      <div style={{ flex: '1 1 200px' }}>
+        <LCard><LStatistic title="Завершённых" value={stats?.completed_traces ?? 0} prefix={<ClockCircleOutlined />} /></LCard>
+      </div>
+      <div style={{ flex: '1 1 200px' }}>
+        <LCard><LStatistic title="Сиротских спанов" value={stats?.orphan_spans ?? 0} prefix={<BugOutlined />} /></LCard>
+      </div>
+    </div>
   );
 }
 
@@ -50,32 +53,34 @@ function TracesPanel() {
   const { data: traces, isLoading } = useQuery({
     queryKey: ['xray-traces'],
     queryFn: () => api.get<Trace[]>('/xray/traces?limit=50'),
+    staleTime: 10_000,
+    refetchInterval: 15_000,
   });
 
   const columns = [
     {
       title: 'ID', dataIndex: 'trace_id', key: 'id',
-      render: (v: string) => <code style={{ fontSize: 11 }}>{v.slice(0, 12)}...</code>,
+      render: (v: unknown) => <code style={{ fontSize: 11 }}>{(v as string).slice(0, 12)}...</code>,
     },
     { title: 'Имя', dataIndex: 'name', key: 'name' },
     {
       title: 'Статус', dataIndex: 'status', key: 'status',
-      render: (v: string) => (
-        <Tag color={v === 'ok' ? 'green' : v === 'error' ? 'red' : 'blue'}>{v}</Tag>
+      render: (v: unknown) => (
+        <LTag color={v === 'ok' ? 'green' : v === 'error' ? 'red' : 'blue'}>{v as string}</LTag>
       ),
     },
     {
       title: 'Длительность', dataIndex: 'duration_ms', key: 'duration',
-      render: (v: number) => v ? `${Math.round(v)}ms` : '—',
+      render: (v: unknown) => (v as number) ? `${Math.round(v as number)}ms` : '—',
     },
     {
       title: 'Начало', dataIndex: 'started_at', key: 'started',
-      render: (v: string) => v ? new Date(v).toLocaleString('ru') : '—',
+      render: (v: unknown) => (v as string) ? new Date(v as string).toLocaleString('ru') : '—',
     },
   ];
 
   return (
-    <Table
+    <LTable
       columns={columns}
       dataSource={traces || []}
       rowKey="trace_id"
@@ -89,23 +94,23 @@ function TracesPanel() {
 function DiagnosticsPanel() {
   const { data: diag, isLoading } = useQuery({
     queryKey: ['xray-diagnostics'],
-    queryFn: () => api.get<Record<string, any>>('/xray/diagnostics'),
+    queryFn: () => api.get<Record<string, unknown>>('/xray/diagnostics'),
   });
 
-  if (isLoading) return <Spin />;
+  if (isLoading) return <LSpin />;
 
   return (
-    <Card>
-      <Text strong>Диагностика системы</Text>
+    <LCard>
+      <div style={{ fontWeight: 600, fontSize: 14 }}>Диагностика системы</div>
       <div style={{ marginTop: 12 }}>
         {diag && Object.entries(diag).map(([key, value]) => (
           <div key={key} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f1f5f9' }}>
-            <Text>{key}</Text>
-            <Text type="secondary">{String(value)}</Text>
+            <span>{key}</span>
+            <span style={{ color: '#666' }}>{String(value)}</span>
           </div>
         ))}
       </div>
-    </Card>
+    </LCard>
   );
 }
 
@@ -118,8 +123,8 @@ function XRayContent() {
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-      <Title level={2}><BugOutlined /> X-Ray Observability</Title>
-      <Tabs items={items} />
+      <h2><BugOutlined /> X-Ray Observability</h2>
+      <LTabs items={items} />
     </div>
   );
 }

@@ -1,9 +1,17 @@
-﻿"""Story Engine API Routes — /book/story-engine/*."""
+"""Story Engine API Routes — /book/story-engine/*.
+
+Полный pipeline с best-effort error handling:
+  Request → CanonValidator → ContextAssembler → UnifiedPlanner → Composer → LLM → Response
+
+Каждый этап возвращает StageResult. Pipeline продолжает работу даже при ошибках.
+LLM получает всё что удалось собрать.
+"""
 
 import json
 import uuid
 import asyncio
 import logging
+import time
 from datetime import datetime, timezone
 from typing import AsyncGenerator
 
@@ -12,9 +20,16 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from narrative_engine.world_model import WorldModel
-from narrative_engine.constraint_engine import StoryRequest, build_constraints, parse_prompt
-from narrative_engine.story.writer import build_writer_brief, format_story_prompt
-from narrative_engine.story.post_validator import validate_story
+from narrative_engine.constraint_engine import StoryRequest, parse_prompt
+from narrative_engine.canon_validator import CanonValidator, CanonCheckResult
+from narrative_engine.context_assembler import ContextAssembler, FullContext
+from narrative_engine.planner import UnifiedPlanner, NarrativePlan
+from narrative_engine.story.composer import compose_prompt, format_composer_prompt
+from narrative_engine.story.post_validator import validate_story, validate_story_with_plan
+from narrative_engine.pipeline_errors import (
+    PipelineResult, StageResult, StageStatus,
+    run_stage, run_stage_with_fallback,
+)
 
 log = logging.getLogger("hermes.narrative.story_api")
 
@@ -38,22 +53,31 @@ async def parse(request: StoryRequest):
     return {"ok": True, "data": parsed.model_dump()}
 
 
-@router.post("/constraints", summary="Построение модели ограничений")
+@router.post("/constraints", summary="Построение модели ограничений (canon-aware)")
 async def get_constraints(request: StoryRequest):
     wm = WorldModel.load()
-    constraints = build_constraints(request, wm)
-    return {"ok": True, "data": constraints.model_dump()}
+    validator = CanonValidator(wm)
+    canon_result = validator.validate(request)
+    return {"ok": True, "data": canon_result.model_dump()}
 
 
-@router.post("/generate", summary="Генерация истории (SSE streaming)")
+@router.post("/generate", summary="Генерация истории (полный pipeline, SSE streaming)")
 async def generate(request: GenerateRequest):
-    """Генерация истории с SSE streaming. Возвращает:
-    - data: {"type": "constraints", "data": ...} — модель ограничений
-    - data: {"type": "chunk", "text": "..."} — кусочки текста
-    - data: {"type": "done", "id": "...", "validation": ..., "word_count": N}
-    - data: [DONE]
+    """Генерация истории с best-effort pipeline и SSE streaming.
+
+    SSE события:
+    - pipeline_status — статус каждого этапа
+    - constraints — модель ограничений
+    - canon_check — результат canon-валидации
+    - narrative_plan — план повествования
+    - chunk — кусочки текста
+    - done — финальный результат
+    - error — ошибка
     """
-    # Парсим промпт
+    pipeline_start = time.time()
+    pipeline = PipelineResult()
+
+    # ── 1. Парсинг промпта ──
     parsed = parse_prompt(request.prompt)
     if request.epoch:
         parsed.epoch = request.epoch
@@ -64,22 +88,95 @@ async def generate(request: GenerateRequest):
     parsed.max_length = request.max_length
     parsed.style = request.style
 
-    # Строим ограничения
+    # ── 2. Canon-валидация (best-effort) ──
     wm = WorldModel.load()
-    constraints = build_constraints(parsed, wm)
+    validator = CanonValidator(wm)
+    canon_stage = run_stage("canon_validator", validator.validate, parsed)
+    pipeline.add(canon_stage)
 
-    # Формируем brief
-    brief = build_writer_brief(constraints)
-    full_prompt = format_story_prompt(brief)
+    if canon_stage.ok and canon_stage.data:
+        canon_result: CanonCheckResult = canon_stage.data
+    else:
+        # Fallback: минимальный CanonCheckResult
+        from narrative_engine.constraint_engine import build_constraints
+        constraints = build_constraints(parsed, wm)
+        canon_result = CanonCheckResult(
+            valid=True,
+            constraints=constraints,
+            warnings=[f"CanonValidator failed: {canon_stage.error}"],
+        )
+
+    constraints = canon_result.constraints
+
+    # ── 3. Сборка контекста (best-effort) ──
+    assembler = ContextAssembler(wm)
+    context_stage = run_stage_with_fallback(
+        "context_assembler",
+        assembler.assemble,
+        lambda: FullContext(world_state=constraints.resolved_context.model_dump()),
+        canon_result,
+    )
+    pipeline.add(context_stage)
+
+    full_context: FullContext = context_stage.data if context_stage.ok else FullContext(
+        world_state=constraints.resolved_context.model_dump(),
+    )
+
+    # ── 4. Планирование (best-effort) ──
+    planner = UnifiedPlanner(wm)
+    plan_stage = run_stage_with_fallback(
+        "unified_planner",
+        planner.plan,
+        lambda: NarrativePlan(),
+        parsed,
+        full_context,
+    )
+    pipeline.add(plan_stage)
+
+    narrative_plan: NarrativePlan = plan_stage.data if plan_stage.ok else NarrativePlan()
+
+    # ── 5. Composer ──
+    composer_stage = run_stage(
+        "composer",
+        compose_prompt,
+        constraints, full_context, narrative_plan,
+        request.style, request.max_length,
+    )
+    pipeline.add(composer_stage)
+
+    if composer_stage.ok and composer_stage.data:
+        composed = composer_stage.data
+    else:
+        # Fallback: минимальный промпт
+        composed = {
+            "system_instruction": "Ты — писатель в мире «Наследие Аркаима».",
+            "user_prompt": request.prompt,
+        }
+
+    full_prompt = format_composer_prompt(composed)
+    brief = {
+        "system_instruction": composed["system_instruction"],
+        "world_context": composed["user_prompt"],
+    }
 
     # Story ID
     story_id = str(uuid.uuid4())[:8]
+    pipeline.total_duration_ms = (time.time() - pipeline_start) * 1000
 
     async def event_stream() -> AsyncGenerator[str, None]:
-        # 1. Отправляем ограничения
+        # 1. Отправляем статус pipeline
+        yield f"data: {json.dumps({'type': 'pipeline_status', 'data': pipeline.summary()}, default=str)}\n\n"
+
+        # 2. Отправляем ограничения
         yield f"data: {json.dumps({'type': 'constraints', 'data': constraints.model_dump()}, default=str)}\n\n"
 
-        # 2. Генерируем текст через LLM (или заглушку)
+        # 3. Отправляем canon-валидацию
+        yield f"data: {json.dumps({'type': 'canon_check', 'data': canon_result.model_dump()}, default=str)}\n\n"
+
+        # 4. Отправляем narrative_plan
+        yield f"data: {json.dumps({'type': 'narrative_plan', 'data': narrative_plan.model_dump()}, default=str)}\n\n"
+
+        # 5. Генерируем текст через LLM (или заглушку)
         full_text = []
         try:
             async for chunk in _stream_generation(full_prompt, brief):
@@ -87,13 +184,13 @@ async def generate(request: GenerateRequest):
                 yield f"data: {json.dumps({'type': 'chunk', 'text': chunk})}\n\n"
         except Exception as e:
             log.error("story_generation_error error=%s", e)
-            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+            yield f"data: {json.dumps({'type': 'error', 'stage': 'llm_generation', 'message': str(e)})}\n\n"
 
-        # 3. Собираем полный текст и валидируем
+        # 6. Собираем полный текст и валидируем (включая план)
         story_text = "".join(full_text)
-        validation = validate_story(story_text, constraints, wm)
+        validation = validate_story_with_plan(story_text, constraints, wm, narrative_plan)
 
-        # 4. Сохраняем в историю
+        # 7. Сохраняем в историю
         story_record = {
             "id": story_id,
             "text": story_text,
@@ -101,12 +198,14 @@ async def generate(request: GenerateRequest):
             "prompt": request.prompt,
             "constraints": constraints.model_dump(),
             "validation": validation.model_dump(),
+            "narrative_plan": narrative_plan.model_dump(),
+            "pipeline": pipeline.summary(),
             "generated_at": datetime.now(tz=timezone.utc).isoformat(),
         }
         store.save_story(story_record)
 
-        # 5. Отправляем финальный результат
-        yield f"data: {json.dumps({'type': 'done', 'id': story_id, 'validation': validation.model_dump(), 'word_count': story_record['word_count']}, default=str)}\n\n"
+        # 8. Отправляем финальный результат
+        yield f"data: {json.dumps({'type': 'done', 'id': story_id, 'validation': validation.model_dump(), 'word_count': story_record['word_count'], 'pipeline_ok': pipeline.final_ok}, default=str)}\n\n"
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
@@ -128,65 +227,74 @@ async def get_story(story_id: str):
 @router.post("/validate", summary="Валидация текста по ограничениям")
 async def validate_text(text: str, request: StoryRequest):
     wm = WorldModel.load()
-    constraints = build_constraints(request, wm)
-    validation = validate_story(text, constraints, wm)
+    validator = CanonValidator(wm)
+    canon_result = validator.validate(request)
+    validation = validate_story(text, canon_result.constraints, wm)
     return {"ok": True, "data": validation.model_dump()}
 
 
 async def _stream_generation(prompt: str, brief: dict) -> AsyncGenerator[str, None]:
-    """
-    Генерация текста через LLM с streaming.
-    Пытается использовать ProviderRegistry, при ошибке — заглушка.
-    """
-    try:
-        from providers.registry import ProviderRegistry
-        from providers.base import ChatMessage
+    """Генерация текста через LLM с streaming и retry."""
+    max_retries = 2
+    providers_tried = []
 
-        messages = [
-            {"role": "system", "content": brief.get("system_instruction", "")},
-            {"role": "user", "content": prompt},
-        ]
+    for attempt in range(max_retries + 1):
+        try:
+            from providers.registry import ProviderRegistry
 
-        # Пробуем gigachat -> openrouter -> huggingface
-        for provider_name in ["gigachat", "openrouter", "huggingface"]:
-            try:
-                provider = ProviderRegistry.get(provider_name)
-                if not provider:
+            messages = [
+                {"role": "system", "content": brief.get("system_instruction", "")},
+                {"role": "user", "content": prompt},
+            ]
+
+            for provider_name in ["gigachat", "openrouter", "huggingface"]:
+                if provider_name in providers_tried:
                     continue
-                async for token in provider.stream(messages):
-                    if token.startswith("data: "):
-                        try:
-                            chunk = json.loads(token[6:])
-                            delta = chunk.get("choices", [{}])[0].get("delta", {})
-                            content = delta.get("content", "")
-                            if content:
-                                yield content
-                                await asyncio.sleep(0)  # yield control
-                        except (json.JSONDecodeError, IndexError, KeyError):
-                            pass
-                    elif token.startswith("data: [DONE]"):
+                try:
+                    provider = ProviderRegistry.get(provider_name)
+                    if not provider:
                         continue
-                    elif token and not token.startswith("data:"):
-                        yield token
-                        await asyncio.sleep(0)
-                return  # Success — exit loop
-            except Exception as e:
-                log.warning("story_provider_failed provider=%s error=%s", provider_name, e)
-                continue
+                    async for token in provider.stream(messages):
+                        if token.startswith("data: "):
+                            try:
+                                chunk = json.loads(token[6:])
+                                delta = chunk.get("choices", [{}])[0].get("delta", {})
+                                content = delta.get("content", "")
+                                if content:
+                                    yield content
+                                    await asyncio.sleep(0)
+                            except (json.JSONDecodeError, IndexError, KeyError):
+                                pass
+                        elif token.startswith("data: [DONE]"):
+                            continue
+                        elif token and not token.startswith("data:"):
+                            yield token
+                            await asyncio.sleep(0)
+                    return  # Success
+                except Exception as e:
+                    providers_tried.append(provider_name)
+                    log.warning("story_provider_failed provider=%s attempt=%d error=%s",
+                               provider_name, attempt, e)
+                    continue
 
-        # All providers failed — use stub
-        async for chunk in _stream_stub(prompt, brief):
-            yield chunk
+            # All providers failed — use stub
+            log.warning("all_providers_failed_using_stub")
+            async for chunk in _stream_stub(prompt, brief):
+                yield chunk
+            return
 
-    except ImportError:
-        # ProviderRegistry not available — use stub
-        async for chunk in _stream_stub(prompt, brief):
-            yield chunk
+        except ImportError:
+            async for chunk in _stream_stub(prompt, brief):
+                yield chunk
+            return
+
+    # All retries exhausted
+    async for chunk in _stream_stub(prompt, brief):
+        yield chunk
 
 
 async def _stream_stub(prompt: str, brief: dict) -> AsyncGenerator[str, None]:
     """Заглушка для генерации — имитирует streaming текста."""
-    # Формируем stub на основе контекста из brief
     epoch_label = "Сатья Юга"
     loc_label = "Гиперборея"
     world_ctx = brief.get("world_context", "")
@@ -195,7 +303,6 @@ async def _stream_stub(prompt: str, brief: dict) -> AsyncGenerator[str, None]:
     if "ЛОКАЦИЯ:" in world_ctx:
         loc_label = world_ctx.split("ЛОКАЦИЯ:")[1].split("\n")[0].strip()
 
-    # Определяем тип персонажа из prompt
     char_label = "ученик"
     prompt_lower = prompt.lower()
     if "жрец" in prompt_lower:
@@ -222,17 +329,12 @@ async def _stream_stub(prompt: str, brief: dict) -> AsyncGenerator[str, None]:
         f"Он знал: путь познания — это не цель, а сам процесс движения."
     )
 
-    # Simulate streaming — yield by paragraph
     paragraphs = stub_text.split("\n\n")
     for para in paragraphs:
-        # Yield word by word for realistic streaming
         words = para.split()
         for i in range(0, len(words), 3):
             chunk = " ".join(words[i:i+3]) + " "
             yield chunk
-            await asyncio.sleep(0.05)  # Simulate LLM latency
+            await asyncio.sleep(0.05)
         yield "\n\n"
         await asyncio.sleep(0.1)
-
-
-

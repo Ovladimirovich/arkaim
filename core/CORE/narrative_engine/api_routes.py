@@ -1,4 +1,4 @@
-"""World Explorer API Routes — /book/world-explorer/*.
+﻿"""World Explorer API Routes — /book/world-explorer/*.
 
 Полный pipeline исследования мира:
   Request → Hypothesis → Scenario → Impact → Contradictions → Delta → Quality → Response
@@ -66,11 +66,11 @@ async def explore(request: ExplorationRequest):
         log.error("exploration_error error=%s", e)
         import asyncio
         try:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             if loop.is_running():
                 asyncio.ensure_future(exploration_notifier.notify_error(str(e)))
-        except Exception:
-            pass
+        except RuntimeError:
+            pass  # No running event loop
         raise HTTPException(500, detail=str(e))
 
 
@@ -98,26 +98,26 @@ async def explore_from_hypothesis(
     try:
         import asyncio
         try:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             if loop.is_running():
                 asyncio.ensure_future(exploration_notifier.notify_started(
                     f"hyp_{hypothesis_id}", hypothesis.title, epoch, branch_count
                 ))
-        except Exception:
-            pass
+        except RuntimeError:
+            pass  # No running event loop
 
         result = explorer.explore_from_hypothesis(hypothesis, branch_count=branch_count)
 
         try:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             if loop.is_running():
                 asyncio.ensure_future(exploration_notifier.notify_complete(
                     result.summary, len(result.ranked_branches),
                     result.ranked_branches[0].quality_report.overall_score if result.ranked_branches else 0.0,
                     result.duration_ms,
                 ))
-        except Exception:
-            pass
+        except RuntimeError:
+            pass  # No running event loop
 
         return {
             "ok": True,
@@ -128,11 +128,11 @@ async def explore_from_hypothesis(
         log.error("exploration_error error=%s", e)
         import asyncio
         try:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             if loop.is_running():
                 asyncio.ensure_future(exploration_notifier.notify_error(str(e)))
-        except Exception:
-            pass
+        except RuntimeError:
+            pass  # No running event loop
         raise HTTPException(500, detail=str(e))
 
 

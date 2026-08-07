@@ -1,6 +1,6 @@
 'use client';
 
-import { Tabs, Card, Typography } from 'antd';
+import { LTabs } from '@/shared/ui/light';
 import { UserOutlined, KeyOutlined, LinkOutlined, TeamOutlined, BarChartOutlined, SettingOutlined, DashboardOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { ProtectedRoute, RoleGuard } from '@/shared/lib/guards';
 import { UsersPanel } from '@/widgets/admin-panel/users-panel';
@@ -10,8 +10,6 @@ import { ApiKeysPanel } from '@/widgets/admin-panel/api-keys-panel';
 import { StatsPanel } from '@/widgets/admin-panel/stats-panel';
 import { DashboardPanel } from '@/widgets/admin-panel/dashboard-panel';
 import { ModerationPanel } from '@/widgets/admin-panel/moderation-panel';
-
-const { Title, Paragraph } = Typography;
 
 function AdminContent() {
   const items = [
@@ -26,9 +24,9 @@ function AdminContent() {
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-      <Title level={2}><SettingOutlined /> Админ-панель</Title>
-      <Paragraph type="secondary">Управление пользователями, системой и мониторинг</Paragraph>
-      <Tabs items={items} />
+      <h2><SettingOutlined /> Админ-панель</h2>
+      <p style={{ color: '#999' }}>Управление пользователями, системой и мониторинг</p>
+      <LTabs items={items} />
     </div>
   );
 }

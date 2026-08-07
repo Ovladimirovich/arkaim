@@ -5,11 +5,11 @@ import { api } from '@/shared/lib/api';
 
 type UseSearchPanelOptions<T> = {
   apiPath: string;
-  transform?: (data: any) => T[];
-  requestBody?: Record<string, any>;
+  transform?: (data: Record<string, unknown>) => T[];
+  requestBody?: Record<string, unknown>;
 };
 
-export function useSearchPanel<T = any>(opts: UseSearchPanelOptions<T>) {
+export function useSearchPanel<T = Record<string, unknown>>(opts: UseSearchPanelOptions<T>) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<T[]>([]);
   const [loading, setLoading] = useState(false);

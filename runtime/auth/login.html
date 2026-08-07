@@ -44,6 +44,36 @@
     <div class="footer">
       После входа вы получите доступ к дашборду и чату с книгой.
     </div>
+
+    <script>
+      // Обработка токена из URL (/login?token=...)
+      (function() {
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('token');
+        if (token) {
+          // Показываем индикатор загрузки
+          document.querySelector('.providers').innerHTML = '<p>Вход по ссылке...</p>';
+          fetch('/auth/telegram/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: token })
+          })
+          .then(r => r.json())
+          .then(data => {
+            if (data.ok) {
+              window.location.href = '/book';
+            } else {
+              document.querySelector('.providers').innerHTML =
+                '<p style="color:#ef4444">Ошибка: ' + (data.detail || 'Токен недействителен') + '</p>';
+            }
+          })
+          .catch(err => {
+            document.querySelector('.providers').innerHTML =
+              '<p style="color:#ef4444">Ошибка сети: ' + err.message + '</p>';
+          });
+        }
+      })();
+    </script>
   </div>
 </body>
 </html>

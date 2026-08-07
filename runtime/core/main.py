@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import json
 import os
 import sys
@@ -107,7 +107,8 @@ def _init_retriever():
         try:
             from intelligence.retriever import BookRetriever
             _RETRIEVER = BookRetriever()
-        except Exception:
+        except Exception as e:
+            log.warning("retriever_init_failed: %s", e)
             _RETRIEVER = None
     return _RETRIEVER
 
@@ -119,6 +120,7 @@ _suggest_task: asyncio.Task | None = None
 _email_task: asyncio.Task | None = None
 _crowdfunding_task: asyncio.Task | None = None
 _telegram_bot_task: asyncio.Task | None = None
+_knowledge_task: asyncio.Task | None = None
 
 
 # в”Ђв”Ђ Pulse reference for email digest в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
@@ -128,7 +130,7 @@ _pulse_ref = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _health_check_task, _pulse_beat_task
-    global _suggest_task, _email_task, _pulse_ref, _crowdfunding_task, _telegram_bot_task
+    global _suggest_task, _email_task, _pulse_ref, _crowdfunding_task, _telegram_bot_task, _knowledge_task
 
     # DatabaseManager вЂ” РµРґРёРЅРѕРµ СѓРїСЂР°РІР»РµРЅРёРµ СЃРѕРµРґРёРЅРµРЅРёСЏРјРё
     from core.database import get_db_manager, close_db_manager
@@ -255,6 +257,35 @@ async def lifespan(app: FastAPI):
         _telegram_bot_task = asyncio.create_task(_bot_poll_loop())
         log.info("telegram_bot_started")
 
+
+    # Knowledge Expansion Scheduler
+    async def _knowledge_enrichment_loop():
+        from knowledge_expansion.pipeline import create_default_pipeline
+        from knowledge_expansion.scheduler import KnowledgeScheduler
+        pipeline = create_default_pipeline()
+        scheduler = KnowledgeScheduler(pipeline)
+        interval = 3600  # 1 hour
+        while True:
+            try:
+                await asyncio.sleep(interval)
+                log.info("knowledge_expansion_check")
+                await scheduler.check_and_run()
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                log.error("knowledge_expansion_error error=%s", e)
+                await asyncio.sleep(300)
+
+    _knowledge_task = asyncio.create_task(_knowledge_enrichment_loop())
+    log.info("knowledge_expansion_scheduled interval=3600s")
+
+    # Visual Assets Generation Queue
+    from core.adc_deps import registry
+    gen_queue = registry.get("generation_queue")
+    await gen_queue.start_workers()
+    log.info("generation_queue_started")
+
+
     yield
 
     if _health_check_task:
@@ -269,6 +300,16 @@ async def lifespan(app: FastAPI):
         _crowdfunding_task.cancel()
     if _telegram_bot_task:
         _telegram_bot_task.cancel()
+    if _knowledge_task:
+        _knowledge_task.cancel()
+    # Stop generation queue
+    from core.adc_deps import registry
+    gen_queue = registry.get("generation_queue")
+    await gen_queue.stop_workers()
+    # Close asset store
+    asset_store = registry.get("asset_store")
+    await asset_store.close()
+    log.info("generation_queue_stopped")
     log.info("health_monitor_stopped")
     log.info("core_shutdown")
     await core.close()
@@ -535,7 +576,9 @@ async def xray_trace_detail(trace_id: str):
 
 
 @app.post("/xray/traces/{trace_id}/freeze")
-async def xray_freeze_trace(trace_id: str):
+async def xray_freeze_trace(trace_id: str, tags: dict | None = None):
+    if tags is None:
+        tags = {}
     _readonly_check()
     ok = xray_store.freeze_trace(trace_id)
     return {"ok": ok, "trace_id": trace_id, "action": "freeze"}
@@ -556,7 +599,7 @@ async def xray_terminate_trace(trace_id: str):
 
 
 @app.post("/xray/traces/{trace_id}/tag")
-async def xray_tag_trace(trace_id: str, tags: dict = {}):
+async def xray_tag_trace(trace_id: str, tags: dict | None = None):
     _readonly_check()
     ok = xray_store.tag_trace(trace_id, tags)
     return {"ok": ok, "trace_id": trace_id, "tags": tags}
@@ -823,7 +866,7 @@ async def xray_retention_trace_list(days: int = 0, frozen: bool = False):
     if days > 0:
         snaps = [s for s in snaps if s["age_days"] >= days]
     if not frozen:
-        snaps = [s for s in snaps]
+        snaps = [s for s in snaps if not s.get("frozen", False)]
     return {
         "trace_count": len(snaps),
         "traces": sorted(snaps, key=lambda s: s["mtime"], reverse=True)[:200],

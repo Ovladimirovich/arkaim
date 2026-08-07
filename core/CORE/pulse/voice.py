@@ -9,6 +9,16 @@ import logging
 from dataclasses import dataclass
 
 from pulse.pulse import BookPulse, PulseResponse
+try:
+    from core.memory.reader_profile import adapt_response, AdaptiveResponse, ReaderLevel
+except ImportError:
+    # Fallback: импорт из runtime
+    import sys
+    from pathlib import Path
+    runtime_path = str(Path(__file__).resolve().parents[3] / "runtime")
+    if runtime_path not in sys.path:
+        sys.path.insert(0, runtime_path)
+    from core.memory.reader_profile import adapt_response, AdaptiveResponse, ReaderLevel
 from pulse.reader_aware import ReaderAwarePulse
 
 log = logging.getLogger("hermes.voice")
@@ -225,18 +235,24 @@ class BookVoice:
                 context = self._pulse.build_context()
                 log.info("voice_llm_context_len=%d", len(context))
 
-                # Добавить контекст читателя, если есть
-                reader_info = ""
+                # Добавить контекст читателя, если есть (не критично)
                 if self._memory and reader_id:
-                    reader_info = await self._memory.build_reader_context(reader_id)
-                    if reader_info:
-                        context += f"\n\nКонтекст читателя:\n{reader_info}"
+                    try:
+                        reader_info = await self._memory.build_reader_context(reader_id)
+                        if reader_info:
+                            context += f"\n\nКонтекст читателя:\n{reader_info}"
+                    except Exception:
+                        pass
 
                 if is_deepen:
                     voice_prompt = (
                         f"Читатель просит углубить тему «{reader_ctx.get('deepen_topic', '')}». "
                         f"Ранее ему было сказано:\n{reader_ctx.get('last_answer', '')}\n\n"
-                        f"Ответь глубже, используя только факты из книги. 3-5 предложений."
+                        f"СТРОГИЕ ПРАВИЛА:\n"
+                        f"1. Отвечай ТОЛЬКО на основе фактов из книги.\n"
+                        f"2. Не придумывай, не дополняй, не интерпретируй.\n"
+                        f"3. Если информации мало — скажи об этом честно.\n"
+                        f"Ответь глубже, используя только факты из книги. 2-3 предложения."
                     )
                 else:
                     mood_instruction = {
@@ -248,10 +264,9 @@ class BookVoice:
                         'neutral': '',
                     }.get(mood, '')
 
-                    # Построить контекст из истории диалога
                     dialogue_context = ""
                     if messages:
-                        for m in messages[-6:]:  # последние 6 сообщений
+                        for m in messages[-6:]:
                             role = "Читатель" if m.get("role") == "user" else "Книга"
                             dialogue_context += f"{role}: {m.get('content', '')[:200]}\n"
 
@@ -259,40 +274,52 @@ class BookVoice:
                         f"Предыдущий диалог:\n{dialogue_context}\n"
                         f"Читатель спрашивает: {query}\n\n"
                         f"Я знаю из книги:\n{response.text}\n\n"
-                        f"{mood_instruction}\n"
-                        f"Ответь с учётом контекста диалога. "
-                        f"Связывай с предыдущими ответами. 2-4 предложения."
+                        f"СТРОГИЕ ПРАВИЛА:\n"
+                        f"1. Отвечай ТОЛЬКО на основе фактов из «Я знаю из книги» выше.\n"
+                        f"2. Не используй общие темы книги для описания персонажей.\n"
+                        f"3. Не придумывай, не дополняй, не интерпретируй.\n"
+                        f"4. Не спорь с читателем — если он прав, согласись.\n"
+                        f"5. «Хранитель» — это роль КНИГИ, а не персонажей.\n"
+                        f"6. Если информации мало — скажи об этом честно.\n"
+                        f"2-3 предложения."
                     )
 
-                if self._llm and hasattr(self._llm, "chat"):
-                    log.info("voice_llm_prompt_len=%d", len(voice_prompt))
-                    llm_text = await self._llm.chat([
-                        {"role": "system", "content": context},
-                        {"role": "user", "content": voice_prompt},
-                    ])
-                    log.info("voice_llm_response_len=%d", len(llm_text))
+                log.info("voice_llm_prompt_len=%d calling_chat", len(voice_prompt))
+                log.info("voice_llm_prompt_len=%d calling_chat", len(voice_prompt))
+                llm_text = await self._llm.chat([
+                    {"role": "system", "content": context},
+                    {"role": "user", "content": voice_prompt},
+                ])
+                log.info("voice_llm_response_len=%d", len(llm_text))
 
-                    # Identity check
-                    identity = self._pulse.layers.get("identity")
-                    identity_passed = True
-                    if identity and hasattr(identity, "validate_detail"):
-                        result = identity.validate_detail(llm_text)
-                        identity_passed = result["passed"]
-                        if not identity_passed:
-                            log.warning("voice_identity_blocked trigger=%s topic=%s", result.get("trigger", "?"), query[:60])
+                identity = self._pulse.layers.get("identity")
+                identity_passed = True
+                identity_type = "ok"
+                if identity and hasattr(identity, "validate_detail"):
+                    result = identity.validate_detail(llm_text)
+                    identity_passed = result["passed"]
+                    identity_type = result.get("type", "unknown")
                     if not identity_passed:
+                        log.warning("voice_identity_blocked trigger=%s type=%s topic=%s",
+                                   result.get("trigger", "?"), identity_type, query[:60])
+                if not identity_passed:
+                    if identity_type == "external_knowledge":
+                        # LLM галлюцинировал — вернуть ответ Pulse напрямую
                         llm_text = response.text
+                    else:
+                        # Нарушение идентичности — честное незнание
+                        llm_text = "Извините, я не могу ответить на этот вопрос. Могу рассказать о содержании книги."
 
-                    return Utterance(
-                        text=llm_text,
-                        source=response.source,
-                        pulse_response=response,
-                        llm_used=True,
-                        llm_model=getattr(self._llm, "model", "unknown"),
-                        reader_topic=topic,
-                        reader_depth=depth,
-                        mood=mood,
-                    )
+                return Utterance(
+                    text=llm_text,
+                    source=response.source,
+                    pulse_response=response,
+                    llm_used=True,
+                    llm_model=getattr(self._llm, "model", "unknown"),
+                    reader_topic=topic,
+                    reader_depth=depth,
+                    mood=mood,
+                )
             except Exception as e:
                 log.error("voice_llm_error %s: %s", type(e).__name__, str(e)[:200])
 
@@ -302,8 +329,8 @@ class BookVoice:
         if identity and hasattr(identity, "validate_detail"):
             result = identity.validate_detail(final_text)
             if not result["passed"]:
-                log.warning("voice_pulse_identity_violation trigger=%s", result.get("trigger", "?"))
-                final_text = "Извините, я не могу ответить на этот вопрос."
+                log.warning("voice_pulse_identity_violation trigger=%s type=%s", result.get("trigger", "?"), result.get("type", "unknown"))
+                final_text = "Извините, я не могу ответить на этот вопрос. Могу рассказать о содержании книги."
 
         # Если есть история диалога — добавить связь с предыдущим
         if messages and len(messages) > 0 and not final_text.startswith("Как мы"):

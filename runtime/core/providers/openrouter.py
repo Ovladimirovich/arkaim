@@ -12,12 +12,12 @@ _BASE_URL = "https://openrouter.ai/api/v1"
 
 
 class OpenRouterProvider(BaseProvider):
-    def __init__(self):
+    def __init__(self) -> None:
         self.base_url = _BASE_URL
         self._client = httpx.AsyncClient(timeout=60)
         self._headers = {"Authorization": f"Bearer {settings.OPENROUTER_API_KEY}", "Content-Type": "application/json"}
 
-    async def chat(self, messages, context=None, trace_id="", xray_headers=None):
+    async def chat(self, messages, context=None, trace_id="", xray_headers=None) -> str:
         req_headers = dict(self._headers)
         if xray_headers:
             req_headers.update(xray_headers)
@@ -70,5 +70,5 @@ class OpenRouterProvider(BaseProvider):
         except Exception as exc:
             return {"status": "error", "provider": "openrouter", "error": str(exc)}
 
-    async def close(self):
+    async def close(self) -> None:
         await self._client.aclose()

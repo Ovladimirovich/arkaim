@@ -1,15 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Card, Typography, Space, Tag, List, Timeline, Button, Tabs, Row, Col, Statistic, Empty, Spin } from 'antd';
 import { EnvironmentOutlined, ClockCircleOutlined, ApartmentOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
 import { ProtectedRoute } from '@/shared/lib/guards';
-
-const { Title, Text, Paragraph } = Typography;
-
-// ── Types ───────────────────────────────────────────────────
+import { LCard } from '@/shared/ui/light/LCard';
+import { LTag } from '@/shared/ui/light/LTag';
+import { LSpin } from '@/shared/ui/light/LSpin';
 
 type Region = {
   id: string;
@@ -53,8 +51,6 @@ type TimelineEvent = {
   color: string;
 };
 
-// ── Timeline Data ───────────────────────────────────────────
-
 const TIMELINE_EVENTS: TimelineEvent[] = [
   { year: '~7000 до н.э.', title: 'Гиперборея (расцвет)', description: 'Древняя северная цивилизация на Севере, источник знаний', type: 'civilization', color: '#FFD700' },
   { year: '~5000 до н.э.', title: 'Строительство городов', description: 'Создание городищ с круглой планировкой', type: 'city', color: '#8B4513' },
@@ -69,18 +65,16 @@ const TIMELINE_EVENTS: TimelineEvent[] = [
   { year: 'Настоящее', title: 'Аркаим открыт', description: 'Археологическое открытие — подтверждение древней цивилизации', type: 'event', color: '#228B22' },
 ];
 
-// ── Map Component (Leaflet) ─────────────────────────────────
-
 function MapView({ data }: { data: MapData }) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<any>(null);
+  const mapInstanceRef = useRef<unknown>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
     const initMap = async () => {
-      // Динамическая загрузка Leaflet
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if (!(window as any).L) {
         await new Promise<void>((resolve, reject) => {
           const link = document.createElement('link');
@@ -96,6 +90,7 @@ function MapView({ data }: { data: MapData }) {
         });
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const L = (window as any).L;
 
       const map = L.map(mapRef.current!, {
@@ -148,7 +143,7 @@ function MapView({ data }: { data: MapData }) {
 
     return () => {
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
+        (mapInstanceRef.current as { remove: () => void }).remove();
         mapInstanceRef.current = null;
       }
     };
@@ -156,38 +151,32 @@ function MapView({ data }: { data: MapData }) {
 
   return (
     <>
-      {loading && <div style={{ textAlign: 'center', padding: 24 }}><Spin size="small" /> Загрузка карты...</div>}
+      {loading && <div style={{ textAlign: 'center', padding: 24 }}><LSpin size="small" /> Загрузка карты...</div>}
       <div ref={mapRef} style={{ height: '500px', width: '100%', borderRadius: '8px' }} />
     </>
   );
 }
 
-// ── Timeline Component ──────────────────────────────────────
-
 function TimelineView() {
   return (
-    <Card title={<><ClockCircleOutlined /> Хронология</>}>
-      <Timeline
-        items={TIMELINE_EVENTS.map(event => ({
-          color: event.color,
-          children: (
-            <div>
-              <Text strong>{event.year}</Text>
-              <br />
-              <Text>{event.title}</Text>
-              <br />
-              <Text type="secondary" style={{ fontSize: '12px' }}>{event.description}</Text>
-            </div>
-          ),
-        }))}
-      />
-    </Card>
+    <LCard title={<span><ClockCircleOutlined /> Хронология</span>}>
+      <div style={{ position: 'relative', paddingLeft: 20 }}>
+        <div style={{ position: 'absolute', left: 6, top: 0, bottom: 0, width: 2, background: 'var(--divider-color)' }} />
+        {TIMELINE_EVENTS.map((event, i) => (
+          <div key={i} style={{ position: 'relative', marginBottom: 16, paddingLeft: 16 }}>
+            <div style={{ position: 'absolute', left: -17, top: 4, width: 10, height: 10, borderRadius: '50%', background: event.color, border: '2px solid #fff' }} />
+            <div style={{ fontWeight: 500 }}>{event.year}</div>
+            <div style={{ fontWeight: 500 }}>{event.title}</div>
+            <div style={{ fontSize: 12, color: '#999' }}>{event.description}</div>
+          </div>
+        ))}
+      </div>
+    </LCard>
   );
 }
 
-// ── Main Page ───────────────────────────────────────────────
-
 function MapContent() {
+  const [activeTab, setActiveTab] = useState('map');
   const { data, isLoading } = useQuery({
     queryKey: ['map-data'],
     queryFn: () => api.get<MapData>('/book/community/map-data'),
@@ -195,92 +184,87 @@ function MapContent() {
 
   const mapData: MapData = data || { regions: [], routes: [], energy_lines: [] };
 
-  return (
-    <>
-      <Title level={2}><EnvironmentOutlined /> Карта и Хронология мира книги</Title>
-      <Paragraph type="secondary">
-        Интерактивная карта маршрутов миграций, энергетических линий и хронология событий книги.
-      </Paragraph>
+  const tabs = [
+    { key: 'map', label: 'Карта', icon: <EnvironmentOutlined /> },
+    { key: 'timeline', label: 'Хронология', icon: <ClockCircleOutlined /> },
+    { key: 'regions', label: 'Локации', icon: <EnvironmentOutlined /> },
+    { key: 'routes', label: 'Маршруты', icon: <ApartmentOutlined /> },
+  ];
 
-      <Tabs
-        defaultActiveKey="map"
-        items={[
-          {
-            key: 'map',
-            label: <><EnvironmentOutlined /> Карта</>,
-            children: (
-              <Card>
-                {isLoading ? (
-                  <Spin size="large" style={{ display: 'block', margin: '100px auto' }} />
-                ) : (
-                  <MapView data={mapData} />
-                )}
-              </Card>
-            ),
-          },
-          {
-            key: 'timeline',
-            label: <><ClockCircleOutlined /> Хронология</>,
-            children: <TimelineView />,
-          },
-          {
-            key: 'regions',
-            label: <><EnvironmentOutlined /> Локации</>,
-            children: (
-              <Card>
-                <List
-                  dataSource={mapData.regions}
-                  renderItem={region => (
-                    <List.Item>
-                      <List.Item.Meta
-                        title={
-                          <Space>
-                            <span style={{ color: region.color }}>●</span>
-                            <Text strong>{region.name}</Text>
-                            <Tag>{region.type}</Tag>
-                          </Space>
-                        }
-                        description={
-                          <>
-                            <Text type="secondary">{region.era}</Text>
-                            <br />
-                            <Text>{region.description}</Text>
-                          </>
-                        }
-                      />
-                    </List.Item>
-                  )}
-                />
-              </Card>
-            ),
-          },
-          {
-            key: 'routes',
-            label: <><ApartmentOutlined /> Маршруты</>,
-            children: (
-              <Card>
-                <List
-                  dataSource={mapData.routes}
-                  renderItem={route => (
-                    <List.Item>
-                      <List.Item.Meta
-                        title={
-                          <Space>
-                            <span style={{ color: route.color }}>—</span>
-                            <Text strong>{route.name}</Text>
-                          </Space>
-                        }
-                        description={route.description}
-                      />
-                    </List.Item>
-                  )}
-                />
-              </Card>
-            ),
-          },
-        ]}
-      />
-    </>
+  return (
+    <div>
+      <h2 style={{ fontSize: 24, fontWeight: 600, marginBottom: 8 }}><EnvironmentOutlined /> Карта и Хронология мира книги</h2>
+      <p style={{ color: '#999', marginBottom: 16 }}>
+        Интерактивная карта маршрутов миграций, энергетических линий и хронология событий книги.
+      </p>
+
+      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--divider-color)', marginBottom: 24 }}>
+        {tabs.map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            style={{
+              padding: '12px 16px',
+              border: 'none',
+              background: 'transparent',
+              cursor: 'pointer',
+              fontSize: 14,
+              color: activeTab === tab.key ? '#1677ff' : '#666',
+              borderBottom: activeTab === tab.key ? '2px solid #1677ff' : '2px solid transparent',
+              marginBottom: -1,
+              fontWeight: activeTab === tab.key ? 500 : 400,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            {tab.icon} {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'map' && (
+        <LCard>
+          {isLoading ? (
+            <div style={{ display: 'block', margin: '100px auto', textAlign: 'center' }}><LSpin size="large" /></div>
+          ) : (
+            <MapView data={mapData} />
+          )}
+        </LCard>
+      )}
+
+      {activeTab === 'timeline' && <TimelineView />}
+
+      {activeTab === 'regions' && (
+        <LCard>
+          {mapData.regions.map(region => (
+            <div key={region.id} style={{ padding: '12px 0', borderBottom: '1px solid var(--divider-color)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ color: region.color }}>●</span>
+                <strong>{region.name}</strong>
+                <LTag>{region.type}</LTag>
+              </div>
+              <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>{region.era}</div>
+              <div style={{ marginTop: 4 }}>{region.description}</div>
+            </div>
+          ))}
+        </LCard>
+      )}
+
+      {activeTab === 'routes' && (
+        <LCard>
+          {mapData.routes.map(route => (
+            <div key={route.id} style={{ padding: '12px 0', borderBottom: '1px solid var(--divider-color)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ color: route.color }}>—</span>
+                <strong>{route.name}</strong>
+              </div>
+              <div style={{ marginTop: 4 }}>{route.description}</div>
+            </div>
+          ))}
+        </LCard>
+      )}
+    </div>
   );
 }
 

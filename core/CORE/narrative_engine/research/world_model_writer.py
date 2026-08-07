@@ -41,8 +41,28 @@ def apply_finding_to_world_model(finding: ResearchFinding,
             log.info("location_added id=%s", loc_id)
 
     elif entity_type == "character":
-        # Добавляем персонажа в characters_living, если эпоха определена
-        pass  # Requires epoch context
+        # Добавляем персонажа в characters_living
+        char_id = entity_name.lower().replace(" ", "_")
+        # Try to determine epoch from context
+        epoch = "unknown"
+        if hasattr(finding, 'context') and finding.context:
+            epoch = finding.context.get("epoch", "unknown")
+
+        if epoch not in world_model._characters_living:
+            world_model._characters_living[epoch] = []
+
+        # Check if character already exists
+        existing_chars = {c.character_name for c in world_model._characters_living[epoch]}
+        if entity_name not in existing_chars:
+            from narrative_engine.world_model import CharacterPresence
+            world_model._characters_living[epoch].append(CharacterPresence(
+                character_name=entity_name,
+                epoch=epoch,
+                status="alive",
+                notes=description[:500] if description else "",
+                source_level=finding.source_level,
+            ))
+            log.info("character_added name=%s epoch=%s", entity_name, epoch)
 
     elif entity_type == "technology":
         tech_id = entity_name.lower().replace(" ", "_")
@@ -59,8 +79,19 @@ def apply_finding_to_world_model(finding: ResearchFinding,
             log.info("technology_added id=%s", tech_id)
 
     elif entity_type == "concept":
-        # Концепции добавляются как правила или описания
-        pass
+        # Концепции добавляются как описания в causal_rules
+        concept_id = entity_name.lower().replace(" ", "_")
+        existing_rules = {r.id for r in world_model._causal_rules}
+        if concept_id not in existing_rules:
+            from narrative_engine.world_model import CausalRule
+            world_model._causal_rules.append(CausalRule(
+                id=concept_id,
+                description=f"{entity_name}: {description[:500] if description else ''}",
+                rule_type="dependency",
+                condition=f"concept_{concept_id}",
+                source_level=finding.source_level,
+            ))
+            log.info("concept_added id=%s", concept_id)
 
     return True
 

@@ -19,11 +19,11 @@ MIGRATIONS_DIR = Path(__file__).resolve().parent / "migrations"
 class FeedbackStore:
     """Хранит и извлекает обратную связь к ветвям исследований."""
 
-    def __init__(self, db_path: Optional[str] = None):
+    def __init__(self, db_path: Optional[str] = None) -> None:
         self._db_path = db_path or str(DB_PATH)
         self._conn: Optional[aiosqlite.Connection] = None
 
-    async def _ensure_db(self):
+    async def _ensure_db(self) -> None:
         if self._conn is not None:
             try:
                 await self._conn.execute("SELECT 1")
@@ -37,7 +37,7 @@ class FeedbackStore:
             migrations_dir=MIGRATIONS_DIR,
         )
 
-    async def close(self):
+    async def close(self) -> None:
         if self._conn is not None:
             await self._conn.close()
         self._conn = None

@@ -4,6 +4,20 @@ Prompt Builder — собирает полноценный SD-промпт из 
 """
 from typing import Optional
 
+# ── Русско-английский маппинг для обратной совместимости ────────
+_EMOTION_RU_TO_EN = {
+    "конфликт": "conflict",
+    "конфликт_цивилизаций": "conflict_civilizations",
+    "смена_эпох": "era_transition",
+    "дуальность_бытия": "duality_of_existence",
+    "борьба_противоположностей": "struggle_of_opposites",
+}
+
+def _normalize_emotion(emotion: str) -> str:
+    """Нормализовать эмоцию: русские ключи → английские."""
+    return _EMOTION_RU_TO_EN.get(emotion, emotion)
+
+
 # ── Маппинг абстрактных эмоций в кинематографические термины ─────
 
 EMOTION_TO_VISUAL = {
@@ -22,10 +36,15 @@ EMOTION_TO_VISUAL = {
     "bright_warm": "bright sunny day, warm cheerful atmosphere, vibrant colors",
     "calm_acceptance": "soft evening light, peaceful atmosphere, gentle warm tones",
     "duality_contrast": "split lighting, warm vs cool, dual atmosphere, conflicting elements",
-    "conflict_цивилизаций": "epic scale, clashing civilizations, contrasting color temperatures",
-    "смена_эпох": "transitional lighting, old meets new, dramatic sky transformation",
-    "дуальность_бытия": "ethereal meets earthly, translucent overlays, dual reality",
-    "борьба_противоположностей": "chaotic lighting, clashing elements, dynamic tension",
+    "conflict_civilizations": "epic scale, clashing civilizations, contrasting color temperatures",
+    "era_transition": "transitional lighting, old meets new, dramatic sky transformation",
+    "duality_of_existence": "ethereal meets earthly, translucent overlays, dual reality",
+    "struggle_of_opposites": "chaotic lighting, clashing elements, dynamic tension",
+    "progressive_light": "soft ethereal lighting, gradual illumination, emerging radiance",
+    "warm_devotion": "golden warm light, spiritual atmosphere, reverent glow",
+    "epic_reveal": "dramatic lighting, epic revelation scene, grand unveiling",
+    "harmonious_blend": "balanced lighting, harmonious colors, unified atmosphere",
+    "metamorphosis": "transformative lighting, shifting colors, dynamic atmosphere",
 }
 
 EMOTION_SUFFIX = {
@@ -166,7 +185,7 @@ class PromptBuilder:
         parts.append(f"epic fantasy scene, {title}")
 
         # 3. Эмоция → визуальное описание
-        emotion = scene.get("emotion", "")
+        emotion = _normalize_emotion(scene.get("emotion", ""))
         emotion_visual = EMOTION_TO_VISUAL.get(emotion, "")
         if not emotion_visual and emotion:
             emotion_visual = emotion.replace("_", " ")

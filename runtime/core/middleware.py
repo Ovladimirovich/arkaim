@@ -1,4 +1,4 @@
-"""Middleware — rate limiting, auth protection, analytics."""
+﻿"""Middleware — rate limiting, auth protection, analytics."""
 import time
 import logging
 

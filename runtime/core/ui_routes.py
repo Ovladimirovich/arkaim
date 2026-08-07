@@ -1,4 +1,4 @@
-"""
+﻿"""
 ui_routes — Web UI для читателей. Jinja2 + HTMX, без сборок.
 """
 import logging

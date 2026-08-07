@@ -1,30 +1,32 @@
-"""Conflict Palettes — генерация визуальных палитр из конфликтов сущностей."""
+﻿"""Conflict Palettes — генерация визуальных палитр из конфликтов сущностей."""
 from typing import Optional
+
+from .prompt_builder import _normalize_emotion
 
 CONFLICT_TEMPLATES = {
     "гиперборея_атлантида": {
         "color_a": ["#DAA520", "#8B4513", "#F5DEB3"],
         "color_b": ["#1E3A5F", "#4A6FA5", "#B0C4DE"],
         "visual_style_hint": "duality_contrast",
-        "emotion": "конфликт_цивилизаций",
+        "emotion": "conflict_civilizations",
     },
     "кали_юга_сати_юга": {
         "color_a": ["#2C3E50", "#1A1A2E", "#16213E"],
         "color_b": ["#F1C40F", "#E67E22", "#FFF3E0"],
         "visual_style_hint": "transition_between_eras",
-        "emotion": "смена_эпох",
+        "emotion": "era_transition",
     },
     "материя_дух": {
         "color_a": ["#8B4513", "#A0522D", "#D2691E"],
         "color_b": ["#E0E0FF", "#BBDEFB", "#FFFFFF"],
         "visual_style_hint": "earth_vs_ethereal",
-        "emotion": "дуальность_бытия",
+        "emotion": "duality_of_existence",
     },
     "хаос_гармония": {
         "color_a": ["#8B0000", "#FF4500", "#FF6347"],
         "color_b": ["#90EE90", "#98FB98", "#F0FFF0"],
         "visual_style_hint": "chaos_vs_order",
-        "emotion": "борьба_противоположностей",
+        "emotion": "struggle_of_opposites",
     },
 }
 
@@ -32,7 +34,7 @@ DEFAULT_CONFLICT = {
     "color_a": ["#2C3E50"],
     "color_b": ["#E74C3C"],
     "visual_style_hint": "contrast",
-    "emotion": "конфликт",
+    "emotion": "conflict",
 }
 
 

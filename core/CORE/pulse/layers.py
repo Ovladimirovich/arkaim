@@ -150,7 +150,7 @@ class KnowledgeLayer(BaseLayer):
                         by_type[t] = []
                     by_type[t].append(e["name"])
                 parts = [f"• {t}: {', '.join(names)}" for t, names in by_type.items()]
-                text = f"Мир книги:\n\n" + "\n".join(parts)
+                text = f"РњРёСЂ РєРЅРёРіРё:\n\n" + "\n".join(parts)
                 return PulseResponse(
                     text=text,
                     source="knowledge:world_summary",
@@ -246,7 +246,7 @@ class KnowledgeLayer(BaseLayer):
             sym = matched_sym
             meaning = sym.get("meaning", "")
             chapters = sym.get("chapters", [])
-            text = f"Символ: {sym['name']}"
+            text = f"РЎРёРјРІРѕР»: {sym['name']}"
             if meaning:
                 text += f"\n\n{meaning}"
             if chapters:
@@ -279,7 +279,7 @@ class KnowledgeLayer(BaseLayer):
             conf_type = conf.get("type", "")
             text = f"Конфликт: {conf['name']}"
             if conf_type:
-                text += f"\n\nТип: {conf_type}"
+                text += f"\n\nРўРёРї: {conf_type}"
 
             # Связанные темы — предвычисленные описания
             related_themes = []
@@ -438,7 +438,7 @@ class KnowledgeLayer(BaseLayer):
         return "\n".join(parts)
 
 
-# ── Visualization Layers ─────────────────────────────
+# в"Ђв"Ђ Visualization Layers в"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђ
 
 class VisualStyleLayer(BaseLayer):
     """Слой визуального стиля. Возвращает стилистический preset."""
@@ -457,7 +457,7 @@ class VisualStyleLayer(BaseLayer):
         style_keywords = {
             "акварель": "watercolor",
             "карикатура": "sketch",
-            "кино": "cinematic_fantasy",
+            "РєРёРЅРѕ": "cinematic_fantasy",
             "фэнтези": "cinematic_fantasy",
             "реализм": "cinematic_fantasy",
         }
@@ -529,7 +529,7 @@ class NarrativeArcLayer(BaseLayer):
             if eid in q or name in q:
                 return PulseResponse(
                     text=(f"Дуга конфликта: {arc.get('name', '')}\n"
-                          f"Тип: {arc.get('arc_type', '')}\n"
+                          f"РўРёРї: {arc.get('arc_type', '')}\n"
                           f"Развязка: {arc.get('resolution', 'не указана')}"),
                     source=f"narrative_arc:conflict:{eid}",
                     confidence=0.8,
@@ -702,6 +702,18 @@ class IdentityLayer(BaseLayer):
         "запишись", "регистрируйся", "подпишись",
     ]
 
+    # Паттерны внешних знаний — если ответ содержит эти конструкции, значит LLM галлюцинирует
+    EXTERNAL_KNOWLEDGE_PATTERNS = [
+        re.compile(r"DC Comics|Marvel|комикс", re.IGNORECASE),
+        re.compile(r"Мистер Лед|Антифриз|Mr\. Freeze", re.IGNORECASE),
+        re.compile(r"из (?:фильма|сериала|игры|аниме|манги)", re.IGNORECASE),
+        re.compile(r"в реальном мире|в современном мире|в нашем мире", re.IGNORECASE),
+        re.compile(r"(?:персонаж|существо|город) из .{2,20}(?: вселенной|мир)", re.IGNORECASE),
+        re.compile(r"согласно (?:википедии|энциклопедии|справочнику)", re.IGNORECASE),
+        re.compile(r"по данным (?:википедии|энциклопедии|интернета)", re.IGNORECASE),
+        re.compile(r"это (?:из|персонаж из|существо из) .{5,50}(?: вселенной|мира|франшизы)", re.IGNORECASE),
+    ]
+
     def respond_to(self, query: str) -> Optional[PulseResponse]:
         q = query.lower()
 
@@ -717,12 +729,12 @@ class IdentityLayer(BaseLayer):
 
         if any(w in q for w in ["что ты можешь", "что умеешь", "функции", "возможности"]):
             return PulseResponse(
-                text="Я могу:\n"
+                text="РЇ РјРѕРіСѓ:\n"
                      "• Отвечать на вопросы по содержанию книги\n"
                      "• Объяснять идеи, темы и символы\n"
                      "• Рассказывать о персонажах и их пути\n"
                      "• Помогать понять философию книги\n\n"
-                     "Я не могу:\n"
+                     "РЇ РЅРµ РјРѕРіСѓ:\n"
                      "• Давать ответы, выходящие за рамки книги\n"
                      "• Генерировать маркетинговые материалы\n"
                      "• Действовать без подтверждения автора",
@@ -739,6 +751,10 @@ class IdentityLayer(BaseLayer):
         for word in self.FORBIDDEN:
             if word in t:
                 return False
+        # Проверка паттернов внешних знаний
+        for pattern in self.EXTERNAL_KNOWLEDGE_PATTERNS:
+            if pattern.search(text):
+                return False
         return True
 
     def validate_detail(self, text: str) -> dict:
@@ -746,8 +762,12 @@ class IdentityLayer(BaseLayer):
         t = text.lower()
         for word in self.FORBIDDEN:
             if word in t:
-                return {"passed": False, "trigger": word}
-        return {"passed": True, "trigger": ""}
+                return {"passed": False, "trigger": word, "type": "forbidden_word"}
+        # Проверка паттернов внешних знаний
+        for pattern in self.EXTERNAL_KNOWLEDGE_PATTERNS:
+            if pattern.search(text):
+                return {"passed": False, "trigger": pattern.pattern, "type": "external_knowledge"}
+        return {"passed": True, "trigger": "", "type": "ok"}
 
     @property
     def summary(self) -> str:
@@ -799,3 +819,302 @@ class MissionLayer(BaseLayer):
             "Помогать людям понимать её смысл. "
             "Искать не клиентов, а единомышленников."
         )
+
+class ExpansionLayer(BaseLayer):
+    """
+    Слой расширенных знаний из пайплайна Knowledge Expansion.
+    Отвечает на вопросы используя THEMES_DEEP, SYMBOLS_EXPANDED, CROSS_REFERENCES и др.
+    """
+    name = "expansion"
+
+    def __init__(self, genome: dict, retriever = None):
+        super().__init__(genome)
+        self._knowledge: dict[str, dict] = {}
+        self._load_expansion()
+
+    def _load_expansion(self):
+        """Загрузить расширенные знания через expansion_loader."""
+        try:
+            from knowledge_expansion.expansion_loader import ExpansionLoader
+            loader = ExpansionLoader()
+            self._knowledge = loader.load()
+        except Exception:
+            # Fallback: загрузка напрямую
+            import json
+            from pathlib import Path
+            here = Path(__file__).resolve().parent.parent
+            knowledge_dir = here / "KNOWLEDGE"
+            if not knowledge_dir.exists():
+                knowledge_dir = Path("core/KNOWLEDGE")
+            for f in knowledge_dir.glob("*_DEEP.json"):
+                self._load_file(f)
+            for f in knowledge_dir.glob("*_EXPANDED.json"):
+                self._load_file(f)
+            # ACADEMIC_CONFIRMATIONS
+            academic_file = knowledge_dir / "ACADEMIC_CONFIRMATIONS.json"
+            if academic_file.exists():
+                self._load_academic(academic_file)
+
+    def _load_file(self, path):
+        """Загрузить один файл."""
+        import json
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(data, list):
+                for item in data:
+                    topic = item.get("topic", "").lower()
+                    if topic:
+                        self._knowledge[topic] = item
+            elif isinstance(data, dict) and "themes" in data:
+                for item in data["themes"]:
+                    topic = item.get("name", item.get("topic", "")).lower()
+                    if topic:
+                        self._knowledge[topic] = item
+        except Exception:
+            pass
+
+    def _load_academic(self, path):
+        """Загрузить академические подтверждения."""
+        import json
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            for conf in data.get("confirmations", []):
+                topic = conf.get("category", "").lower()
+                if topic:
+                    self._knowledge[topic] = conf
+        except Exception:
+            pass
+
+    def respond_to(self, query):
+        """Найти ответ в расширенных знаниях."""
+        from pulse.layers import PulseResponse
+        q = query.lower()
+
+        # Поиск по темам (точное совпадение)
+        for topic, knowledge in self._knowledge.items():
+            if topic in q:
+                layers = knowledge.get("layers", {})
+                parts = []
+                if layers.get("literal"):
+                    parts.append(layers["literal"])
+                if layers.get("metaphorical"):
+                    parts.append(layers["metaphorical"])
+                if layers.get("cosmic"):
+                    parts.append(layers["cosmic"])
+                if parts:
+                    return PulseResponse(
+                        text=" ".join(parts),
+                        source="expansion:" + topic,
+                        confidence=0.8,
+                    )
+
+        # Поиск по ключевым словам
+        best_match = None
+        best_score = 0
+        for topic, knowledge in self._knowledge.items():
+            score = self._score(query, topic.split())
+            if score > best_score and score > 0.3:
+                best_score = score
+                best_match = knowledge
+
+        if best_match:
+            layers = best_match.get("layers", {})
+            text = layers.get("literal", "") or layers.get("metaphorical", "")
+            if text:
+                return PulseResponse(
+                    text=text,
+                    source="expansion:" + best_match.get("topic", ""),
+                    confidence=0.7,
+                )
+
+        return None
+
+    def get_context(self, query):
+        """Получить контекст для LLM (расширенные знания)."""
+        q = query.lower()
+        contexts = []
+        for topic, knowledge in self._knowledge.items():
+            if any(word in q for word in topic.split()):
+                layers = knowledge.get("layers", {})
+                cross_refs = knowledge.get("cross_references", [])
+                patterns = knowledge.get("patterns", [])
+                if layers:
+                    contexts.append("[" + topic + "] " + (layers.get("literal", "") or ""))
+                if cross_refs:
+                    contexts.append("Связи: " + ", ".join(cross_refs[:3]))
+                if patterns:
+                    contexts.append("Паттерны: " + ", ".join(patterns[:2]))
+        return "\n".join(contexts[:5])
+
+    @property
+    def summary(self):
+        return "Расширенные знания из пайплайна Knowledge Expansion."
+
+class ScreenplayLayer(BaseLayer):
+    name = "screenplay"
+
+    def __init__(self, genome: dict, retriever=None):
+        super().__init__(genome, retriever)
+        self._screenplay = self._load_screenplay()
+
+    def _load_screenplay(self) -> dict:
+        import json as _json
+        from pathlib import Path as _Path
+        search_paths = [
+            _Path("core/KNOWLEDGE/screenplay_extracts.json"),
+            config.KNOWLEDGE_DIR / "screenplay_extracts.json",
+        ]
+        here = _Path(__file__).parent.parent
+        search_paths.append(here / "KNOWLEDGE" / "screenplay_extracts.json")
+        for p in search_paths:
+            if p.exists():
+                try:
+                    return _json.loads(p.read_text(encoding="utf-8"))
+                except Exception:
+                    continue
+        return {}
+
+    def respond_to(self, query: str):
+        if not self._screenplay:
+            return None
+        q = query.lower()
+        kw = ["сценарий", "диалог", "камера", "кадр", "незнакомец", "велик", "славный", "пещера", "мизансцена", "пройвикс", "лин", "офицер", "генерал", "великус", "город", "обучение", "голос", "транс", "отлёт", "прощание", "самолёт", "политик", "репрессии"]
+        if not any(x in q for x in kw):
+            return None
+        parts = []
+        for d in self._screenplay.get("key_dialogues", []):
+            pt = " ".join(d.get("participants", [])).lower()
+            if any(w in q for w in pt.split()):
+                parts.append("Диалог: " + str(d.get("participants", [])) + " — " + d.get("topic", ""))
+                parts.append("«" + d.get("excerpt", "") + "»")
+        for o in self._screenplay.get("oceania_officers", []):
+            if o.get("name", "").lower() in q:
+                parts.append(o["name"] + ": " + o.get("description", ""))
+        if "незнакомец" in q:
+            s = self._screenplay.get("the_stranger", "")
+            if s:
+                parts.append("Незнакомец: " + s)
+        if any(w in q for w in ["обучение", "комната", "транс"]):
+            room = self._screenplay.get("teaching_room", {})
+            if room:
+                parts.append("Комната: " + room.get("description", ""))
+        if any(w in q for w in ["отлёт", "прощание", "самолёт"]):
+            dep = self._screenplay.get("departure_scene", "")
+            if dep:
+                parts.append("Сцена отлёта: " + dep)
+        if not parts:
+            return None
+        return PulseResponse(
+            text="\n\n".join(parts),
+            source="screenplay",
+            confidence=0.85,
+            provenance=[{"type": "screenplay", "query": q}],
+        )
+
+    @property
+    def summary(self) -> str:
+        if not self._screenplay:
+            return "Сценарий не загружен"
+        officers = len(self._screenplay.get("oceania_officers", []))
+        dialogues = len(self._screenplay.get("key_dialogues", []))
+        return f"Сценарий: {officers} персонажей, {dialogues} диалогов"
+
+
+class WorldEngineLayer(BaseLayer):
+    """
+    Слой модели мира — отвечает на запросы об эпохах, локациях, технологиях,
+    причинах и следствиях. Питается из WORLD_MODEL.json.
+    """
+    name = "world_engine"
+
+    def __init__(self, genome: dict, retriever=None):
+        super().__init__(genome, retriever)
+        self._world_model = None
+        self._load_world_model()
+
+    def _load_world_model(self):
+        import json
+        from pathlib import Path
+        # Search in multiple locations
+        search_paths = [
+            Path("core/CORE/narrative_engine/data/WORLD_MODEL.json"),
+            Path("narrative_engine/data/WORLD_MODEL.json"),
+        ]
+        # Also try relative to this file
+        here = Path(__file__).parent.parent
+        search_paths.append(here / "narrative_engine" / "data" / "WORLD_MODEL.json")
+        for p in search_paths:
+            if p.exists():
+                try:
+                    self._world_model = json.loads(p.read_text(encoding="utf-8"))
+                    return
+                except Exception:
+                    continue
+        self._world_model = None
+
+    def respond_to(self, query: str) -> Optional[PulseResponse]:
+        if not self._world_model:
+            return None
+        q = query.lower()
+        world_keywords = [
+            "эпоха", "эры", "где происходит", "кто жил", "что существовало",
+            "какие технологии", "цивилизации", "кали юга", "сати юга",
+            "сатья юга", "трета юга", "двапара юга", "гиперборея",
+            "локации", "города", "страны", "события", "история мира",
+        ]
+        if not any(kw in q for kw in world_keywords):
+            return None
+        context = self._build_query_context(q)
+        if context:
+            return PulseResponse(
+                text=context,
+                source="world_engine",
+                confidence=0.85,
+                provenance=[{"type": "world_model", "query": q}],
+            )
+        return None
+
+    def _build_query_context(self, query: str) -> str:
+        wm = self._world_model
+        parts = []
+        for ep in wm.get("epochs", []):
+            if any(w in query for w in ep["name"].lower().split()):
+                parts.append(f"Эпоха: {ep['name']} ({ep.get('name_ru', '')}) — {ep.get('description', '')}")
+        for loc in wm.get("locations", []):
+            if any(w in query for w in loc["name"].lower().split()):
+                parts.append(f"Локация: {loc['name']} ({loc.get('name_ru', '')}) — {loc.get('description', '')}")
+        for event in wm.get("canonical_events", [])[:5]:
+            if any(w in query for w in event.get("title", "").lower().split()):
+                parts.append(f"Событие: {event.get('title_ru', '')} — {event.get('description', '')}")
+        return "\n".join(parts[:5]) if parts else ""
+
+    def get_constraints_for(self, epoch_id: str = None, location_id: str = None) -> dict:
+        if not self._world_model:
+            return {}
+        constraints = {"epochs": [], "locations": [], "events": [], "rules": []}
+        if epoch_id:
+            for ep in self._world_model.get("epochs", []):
+                if ep["id"] == epoch_id:
+                    constraints["epochs"].append(ep)
+        if location_id:
+            for loc in self._world_model.get("locations", []):
+                if loc["id"] == location_id:
+                    constraints["locations"].append(loc)
+        constraints["events"] = self._world_model.get("canonical_events", [])
+        constraints["rules"] = self._world_model.get("causal_rules", [])
+        return constraints
+
+    def reload_world_model(self):
+        self._load_world_model()
+
+    @property
+    def summary(self) -> str:
+        wm = self._world_model
+        if not wm:
+            return "Мир не загружен"
+        epochs = len(wm.get("epochs", []))
+        locations = len(wm.get("locations", []))
+        events = len(wm.get("canonical_events", []))
+        rules = len(wm.get("causal_rules", []))
+        return f"Мир: {epochs} эпох, {locations} локаций, {events} событий, {rules} правил"
+

@@ -1,26 +1,14 @@
 """FastAPI router для Knowledge Graph эндпоинтов."""
 from fastapi import APIRouter, HTTPException
 
-from book_os.entity_store import EntityStore
-from book_os.relationship_store import RelationshipStore
-from book_os.fact_store import FactStore
 from knowledge_graph.graph_engine import GraphEngine
-from knowledge_graph.populate import populate_from_genome, populate_from_book_os
 
 router = APIRouter(prefix="/graph", tags=["Knowledge Graph"])
 
-_engine: GraphEngine | None = None
-
 
 def _get_engine() -> GraphEngine:
-    global _engine
-    if _engine is None:
-        entity_store = EntityStore()
-        rel_store = RelationshipStore()
-        fact_store = FactStore()
-        _engine = GraphEngine(entity_store, rel_store, fact_store)
-        _engine.build()
-    return _engine
+    from core.adc_deps import get_graph_engine
+    return get_graph_engine()
 
 
 @router.get("/stats")
@@ -66,6 +54,12 @@ async def entity_context(entity_id: str):
 @router.post("/populate")
 async def populate():
     """Заполнить граф из генома + BOOK OS."""
+    from book_os.entity_store import EntityStore
+    from book_os.relationship_store import RelationshipStore
+    from book_os.fact_store import FactStore
+    from knowledge_graph.populate import populate_from_genome, populate_from_book_os
+    from core.services.registry import registry
+
     entity_store = EntityStore()
     rel_store = RelationshipStore()
     fact_store = FactStore()
@@ -73,9 +67,11 @@ async def populate():
     e1, r1, f1 = populate_from_genome(entity_store, rel_store, fact_store)
     e2, r2 = populate_from_book_os(entity_store, rel_store)
 
-    global _engine
-    _engine = GraphEngine(entity_store, rel_store, fact_store)
-    _engine.build()
+    engine = GraphEngine(entity_store, rel_store, fact_store)
+    engine.build()
+
+    # Replace the cached instance in registry
+    registry._instances["graph_engine"] = engine
 
     return {
         "genome_added": {"entities": e1, "relationships": r1, "facts": f1},

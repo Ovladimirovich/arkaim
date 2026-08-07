@@ -1,8 +1,5 @@
 'use client';
 
-
-// ── Simple Chart Components ──────────────────────────
-
 function BarChart({ data, height = 200 }: { data: { label: string; value: number }[]; height?: number }) {
   const maxValue = Math.max(...data.map(d => d.value));
   return (
@@ -17,16 +14,16 @@ function BarChart({ data, height = 200 }: { data: { label: string; value: number
   );
 }
 
-
-import { Card, Typography, Row, Col, Statistic, Spin, Table, Tag, Progress, Divider, Space } from 'antd';
 import { BarChartOutlined, LineChartOutlined, PieChartOutlined, RiseOutlined, DatabaseOutlined, ApiOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
 import { ProtectedRoute } from '@/shared/lib/guards';
-
-const { Title, Text, Paragraph } = Typography;
-
-// ── Types ──────────────────────────────────────────
+import { LCard } from '@/shared/ui/light/LCard';
+import { LSpin } from '@/shared/ui/light/LSpin';
+import { LStatistic } from '@/shared/ui/light/LStatistic';
+import { LTable } from '@/shared/ui/light/LTable';
+import { LProgress } from '@/shared/ui/light/LProgress';
+import { LDivider } from '@/shared/ui/light/LDivider';
 
 type AnalyticsData = {
   total_requests: number;
@@ -49,8 +46,6 @@ type AdminStats = {
   email: Record<string, unknown>;
 };
 
-// ── Request Analytics Panel ──────────────────────────
-
 function RequestAnalyticsPanel({ data }: { data: AnalyticsData }) {
   const topTypes = Object.entries(data.requests_by_type || {})
     .sort((a, b) => b[1] - a[1])
@@ -61,74 +56,81 @@ function RequestAnalyticsPanel({ data }: { data: AnalyticsData }) {
     .slice(0, 10);
 
   return (
-    <Row gutter={[16, 16]}>
-      <Col xs={24} lg={12}>
-        <Card title="Запросы по типу" size="small">
+    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+      <div style={{ flex: '1 1 400px' }}>
+        <LCard title="Запросы по типу" size="small">
           {topTypes.length > 0 ? (
-            <Table
+            <LTable
               dataSource={topTypes.map(([type, count]) => ({ type, count, percent: data.total_requests > 0 ? Math.round(count / data.total_requests * 100) : 0 }))}
               rowKey="type"
               size="small"
               pagination={false}
               columns={[
                 { title: 'Тип', dataIndex: 'type', key: 'type' },
-                { title: 'Количество', dataIndex: 'count', key: 'count', sorter: (a: any, b: any) => a.count - b.count },
-                { title: '%', dataIndex: 'percent', key: 'percent', render: (v: number) => <Progress percent={v} size="small" /> },
+                {
+                  title: 'Количество', dataIndex: 'count', key: 'count',
+                  sorter: (a: unknown, b: unknown) => (a as { count: number }).count - (b as { count: number }).count,
+                },
+                {
+                  title: '%', dataIndex: 'percent', key: 'percent',
+                  render: (v: unknown) => <LProgress percent={v as number} size="small" showInfo={false} />,
+                },
               ]}
             />
           ) : (
-            <Text type="secondary">Нет данных</Text>
+            <span style={{ color: '#999' }}>Нет данных</span>
           )}
-        </Card>
-      </Col>
-      <Col xs={24} lg={12}>
-        <Card title="Запросы по часам" size="small">
+        </LCard>
+      </div>
+      <div style={{ flex: '1 1 400px' }}>
+        <LCard title="Запросы по часам" size="small">
           {topHours.length > 0 ? (
-            <Table
+            <LTable
               dataSource={topHours.map(([hour, count]) => ({ hour: `${hour}:00`, count }))}
               rowKey="hour"
               size="small"
               pagination={false}
               columns={[
                 { title: 'Час', dataIndex: 'hour', key: 'hour' },
-                { title: 'Количество', dataIndex: 'count', key: 'count', sorter: (a: any, b: any) => a.count - b.count },
+                {
+                  title: 'Количество', dataIndex: 'count', key: 'count',
+                  sorter: (a: unknown, b: unknown) => (a as { count: number }).count - (b as { count: number }).count,
+                },
               ]}
             />
           ) : (
-            <Text type="secondary">Нет данных</Text>
+            <span style={{ color: '#999' }}>Нет данных</span>
           )}
-        </Card>
-      </Col>
-    </Row>
+        </LCard>
+      </div>
+    </div>
   );
 }
-
-// ── Knowledge Graph Panel ──────────────────────────
 
 function GraphStatsPanel({ data }: { data: GraphStats }) {
   const nodeTypes = Object.entries(data.node_types || {}).map(([type, count]) => ({ type, count }));
   const relTypes = Object.entries(data.relationship_types || {}).map(([type, count]) => ({ type, count }));
 
   return (
-    <Row gutter={[16, 16]}>
-      <Col xs={24} lg={8}>
-        <Card size="small">
-          <Statistic title="Узлов" value={data.nodes} prefix={<DatabaseOutlined />} />
-        </Card>
-      </Col>
-      <Col xs={24} lg={8}>
-        <Card size="small">
-          <Statistic title="Связей" value={data.edges} prefix={<ApiOutlined />} />
-        </Card>
-      </Col>
-      <Col xs={24} lg={8}>
-        <Card size="small">
-          <Statistic title="Типов узлов" value={Object.keys(data.node_types || {}).length} />
-        </Card>
-      </Col>
-      <Col xs={24} lg={12}>
-        <Card title="Типы узлов" size="small">
-          <Table
+    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+      <div style={{ flex: '1 1 200px' }}>
+        <LCard size="small">
+          <LStatistic title="Узлов" value={data.nodes} prefix={<DatabaseOutlined />} />
+        </LCard>
+      </div>
+      <div style={{ flex: '1 1 200px' }}>
+        <LCard size="small">
+          <LStatistic title="Связей" value={data.edges} prefix={<ApiOutlined />} />
+        </LCard>
+      </div>
+      <div style={{ flex: '1 1 200px' }}>
+        <LCard size="small">
+          <LStatistic title="Типов узлов" value={Object.keys(data.node_types || {}).length} />
+        </LCard>
+      </div>
+      <div style={{ flex: '1 1 400px' }}>
+        <LCard title="Типы узлов" size="small">
+          <LTable
             dataSource={nodeTypes}
             rowKey="type"
             size="small"
@@ -138,11 +140,11 @@ function GraphStatsPanel({ data }: { data: GraphStats }) {
               { title: 'Количество', dataIndex: 'count', key: 'count' },
             ]}
           />
-        </Card>
-      </Col>
-      <Col xs={24} lg={12}>
-        <Card title="Типы связей" size="small">
-          <Table
+        </LCard>
+      </div>
+      <div style={{ flex: '1 1 400px' }}>
+        <LCard title="Типы связей" size="small">
+          <LTable
             dataSource={relTypes}
             rowKey="type"
             size="small"
@@ -152,52 +154,48 @@ function GraphStatsPanel({ data }: { data: GraphStats }) {
               { title: 'Количество', dataIndex: 'count', key: 'count' },
             ]}
           />
-        </Card>
-      </Col>
-    </Row>
+        </LCard>
+      </div>
+    </div>
   );
 }
 
-// ── System Stats Panel ──────────────────────────
-
 function SystemStatsPanel({ analytics, adminStats }: { analytics: AnalyticsData; adminStats?: AdminStats }) {
   return (
-    <Row gutter={[16, 16]}>
-      <Col xs={12} lg={6}>
-        <Card size="small">
-          <Statistic title="Всего запросов" value={analytics.total_requests} prefix={<BarChartOutlined />} />
-        </Card>
-      </Col>
-      <Col xs={12} lg={6}>
-        <Card size="small">
-          <Statistic
+    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+      <div style={{ flex: '1 1 180px' }}>
+        <LCard size="small">
+          <LStatistic title="Всего запросов" value={analytics.total_requests} prefix={<BarChartOutlined />} />
+        </LCard>
+      </div>
+      <div style={{ flex: '1 1 180px' }}>
+        <LCard size="small">
+          <LStatistic
             title="Среднее время"
             value={Math.round(analytics.avg_response_time_ms)}
             suffix="ms"
             prefix={<LineChartOutlined />}
           />
-        </Card>
-      </Col>
-      <Col xs={12} lg={6}>
-        <Card size="small">
-          <Statistic
+        </LCard>
+      </div>
+      <div style={{ flex: '1 1 180px' }}>
+        <LCard size="small">
+          <LStatistic
             title="Ошибка"
             value={analytics.error_rate}
             suffix="%"
             valueStyle={{ color: analytics.error_rate > 5 ? '#ef4444' : '#16a34a' }}
           />
-        </Card>
-      </Col>
-      <Col xs={12} lg={6}>
-        <Card size="small">
-          <Statistic title="Пользователей" value={adminStats?.users?.total ?? 0} />
-        </Card>
-      </Col>
-    </Row>
+        </LCard>
+      </div>
+      <div style={{ flex: '1 1 180px' }}>
+        <LCard size="small">
+          <LStatistic title="Пользователей" value={adminStats?.users?.total ?? 0} />
+        </LCard>
+      </div>
+    </div>
   );
 }
-
-// ── Main Content ──────────────────────────────────
 
 function AnalyticsContent() {
   const { data: analytics, isLoading: analyticsLoading } = useQuery({
@@ -218,35 +216,32 @@ function AnalyticsContent() {
   if (analyticsLoading) {
     return (
       <div style={{ textAlign: 'center', padding: 48 }}>
-        <Spin size="large" />
-        <div style={{ marginTop: 16 }}><Text type="secondary">Загрузка аналитики...</Text></div>
+        <LSpin size="large" />
+        <div style={{ marginTop: 16, color: '#999' }}>Загрузка аналитики...</div>
       </div>
     );
   }
 
   if (!analytics) {
-    return <div style={{ textAlign: 'center', padding: 48 }}><Text type="secondary">Данные аналитики недоступны</Text></div>;
+    return <div style={{ textAlign: 'center', padding: 48, color: '#999' }}>Данные аналитики недоступны</div>;
   }
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-      <Title level={2}><RiseOutlined /> Аналитика</Title>
-      <Paragraph type="secondary">Статистика использования системы и знаний</Paragraph>
+      <h2><RiseOutlined /> Аналитика</h2>
+      <p style={{ color: '#666' }}>Статистика использования системы и знаний</p>
 
-      {/* System Stats */}
       <SystemStatsPanel analytics={analytics} adminStats={adminStats} />
 
-      <Divider />
+      <LDivider />
 
-      {/* Request Analytics */}
-      <Title level={4}>Запросы</Title>
+      <h4>Запросы</h4>
       <RequestAnalyticsPanel data={analytics} />
 
-      <Divider />
+      <LDivider />
 
-      {/* Knowledge Graph */}
-      <Title level={4}>Граф знаний</Title>
-      {graphLoading ? <Spin /> : graphStats ? <GraphStatsPanel data={graphStats} /> : <Text type="secondary">Нет данных</Text>}
+      <h4>Граф знаний</h4>
+      {graphLoading ? <LSpin /> : graphStats ? <GraphStatsPanel data={graphStats} /> : <span style={{ color: '#999' }}>Нет данных</span>}
     </div>
   );
 }

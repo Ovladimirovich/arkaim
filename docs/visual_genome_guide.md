@@ -2,7 +2,7 @@
 
 > Объединённый документ: базовые способы + автоматические + продвинутые (2026-07-10).
 
-Visual Genome — часть проекта «Наследие Аркаима». Хранится в `modules` файла `GENOME_v1.0.0.json`. Включает:
+ — часть проекта «Наследие Аркаима». Хранится в `modules` файла `GENOME_v1.0.0.json`. Включает:
 
 - `scenes` — сюжетные сцены (связь персонажей, локаций, эмоций)
 - `character_visuals` — визуальные описания персонажей (одежда, цвета, черты)
@@ -320,93 +320,5 @@ curl -X POST "http://localhost:8642/book/visualize" \
 
 ---
 
----
-
-## 9. Image Providers — генерация изображений
-
-Готовый промпт отправляется в один из ImageProvider для генерации изображения.
-
-### 9.1 ComfyUI (рекомендуется)
-
-**По умолчанию** — `ComfyUIProvider` первым в цепочке.
-
-```
-Геном → PromptBuilder → промпт → ComfyUI API (http://127.0.0.1:8188)
-         (positive, negative)       POST /prompt с JSON-воркфлоу
-                                    poll /history до готовности
-                                    download /view → bytes
-```
-
-**Воркфлоу:** дефолтный сохраняется в `GENOME/workflows/default.json`.  
-Можно экспортировать воркфлоу из ComfyUI редактора и положить туда же — имя файла = название стиля.
-
-```python
-from providers.image.comfyui import ComfyUIProvider
-provider = ComfyUIProvider("http://127.0.0.1:8188", "cinematic.json")
-provider.set_workflow("watercolor.json")  # переключить стиль
-```
-
-**Что делает `ComfyUIProvider`:**
-- Загружает JSON-воркфлоу из `GENOME/workflows/`
-- Находит `CLIPTextEncode` ноды — вставляет positive/negative промпты
-- Находит `EmptyLatentImage` — устанавливает размер
-- Находит `KSampler` — устанавливает seed (детерминированный от хэша промпта)
-- Отправляет `POST /prompt`, опрашивает `GET /history/{pid}` до готовности
-- Скачивает изображение через `GET /view`
-
-**Смена модели:** отредактировать `CheckpointLoaderSimple.ckpt_name` в воркфлоу.
-
-**Требования:** ComfyUI запущен локально (обычно порт 8188), установлены модели.
-
-### 9.2 Stable Diffusion (A1111)
-
-Резервный провайдер для Automatic1111 WebUI:
-
-```python
-from providers.image.stable_diffusion import StableDiffusionProvider
-provider = StableDiffusionProvider("http://localhost:7860")
-```
-
-API: `POST /sdapi/v1/txt2img` с `{prompt, width, height}`.
-
-### 9.3 Mock / SVG (dev-режим)
-
-Если ни один провайдер не доступен (нет GPU, нет ComfyUI) — внутри `ImageProviderChain` срабатывает `MockImageProvider`:
-
-```
-ImageProviderChain([ComfyUIProvider(), MockImageProvider()])
-  ↑ пробует ComfyUI
-  ↑ если offline → fallback на Mock (SVG-заглушка)
-```
-
-### 9.4 Цепочка провайдеров
-
-`ImageProviderChain` под капотом:
-
-```python
-async def generate(self, prompt, size):
-    for provider in self.providers:       # ComfyUI → Mock
-        if await provider.health():
-            return await provider.generate(prompt, size)
-    raise RuntimeError("All providers failed")
-```
-
-Настройка в `runtime/core/adc_deps.py:_get_image_provider()`.
-
----
-
-## 10. Полный пайплайн «сцена → изображение»
-
-```
-1. Человек/UI/CLI → запрос сцены
-2. SceneEngine.get_scene(chapter, scene_id) → scene dict
-3. SceneEngine.get_character_visual(char_id) → visual dict
-4. SceneEngine.get_location_visual(location_id) → visual dict
-5. PromptBuilder.build_full_prompt_pair(scene, chars, loc) → (positive, negative)
-6. ImageProviderChain.generate(prompt, size) → bytes (PNG/SVG)
-7. Визуализация возвращается пользователю или сохраняется в файл
-```
-
----
-
 *Создан 10.07.2026. Объединяет `visual_genome_howto.md` + `visual_genome_advanced_methods.md` + новые модули.*
+Visual Genome

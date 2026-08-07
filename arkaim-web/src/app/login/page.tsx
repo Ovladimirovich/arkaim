@@ -1,13 +1,14 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import { Card, Typography, Space, Alert, Button, Divider, Spin, Result, message } from 'antd';
 import { CodeOutlined, LoginOutlined, SendOutlined } from '@ant-design/icons';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/app/providers';
-
-const { Title, Text } = Typography;
+import { LCard } from '@/shared/ui/light/LCard';
+import { LButton } from '@/shared/ui/light/LButton';
+import { LSpin } from '@/shared/ui/light/LSpin';
+import { LDivider } from '@/shared/ui/light/LDivider';
 
 function LoginPageInner() {
   const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'ARKAIM_AI_Bot';
@@ -19,14 +20,12 @@ function LoginPageInner() {
   const [loginState, setLoginState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Если уже авторизован — редирект на /profile
   useEffect(() => {
     if (user && !token) {
       router.push('/profile');
     }
   }, [user, router, token]);
 
-  // Обработка токена из URL (?token=XXXX)
   useEffect(() => {
     if (!token) return;
 
@@ -53,29 +52,6 @@ function LoginPageInner() {
       });
   }, [token, router]);
 
-  // Обработка callback от Telegram Widget
-  useEffect(() => {
-    const handler = async (e: MessageEvent) => {
-      if (!e.data || typeof e.data !== 'string') return;
-      try {
-        const data = JSON.parse(e.data);
-        if (data.id && data.hash) {
-          const resp = await fetch('/auth/telegram/callback', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'same-origin',
-            body: JSON.stringify(data),
-          });
-          if (resp.ok) {
-            window.location.reload();
-          }
-        }
-      } catch {}
-    };
-    window.addEventListener('message', handler);
-    return () => window.removeEventListener('message', handler);
-  }, []);
-
   const [devLoading, setDevLoading] = useState(false);
 
   const handleDevLogin = async () => {
@@ -86,10 +62,10 @@ function LoginPageInner() {
       if (resp.ok && data.ok) {
         window.location.href = '/book';
       } else {
-        message.error(data.error || 'Ошибка dev-входа');
+        alert(data.error || 'Ошибка dev-входа');
       }
     } catch {
-      message.error('Не удалось подключиться к серверу');
+      alert('Не удалось подключиться к серверу');
     } finally {
       setDevLoading(false);
     }
@@ -99,14 +75,13 @@ function LoginPageInner() {
     window.open(`https://t.me/${botUsername}?start=login`, '_blank');
   };
 
-  // Состояние: обработка токена
   if (loginState === 'loading') {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
-        <Card style={{ maxWidth: 420, width: '100%', textAlign: 'center' }}>
-          <Spin size="large" />
-          <div style={{ marginTop: 16 }}><Text>Авторизация...</Text></div>
-        </Card>
+        <LCard style={{ maxWidth: 420, width: '100%', textAlign: 'center' }}>
+          <LSpin size="large" />
+          <div style={{ marginTop: 16 }}>Авторизация...</div>
+        </LCard>
       </div>
     );
   }
@@ -114,9 +89,11 @@ function LoginPageInner() {
   if (loginState === 'success') {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
-        <Card style={{ maxWidth: 420, width: '100%', textAlign: 'center' }}>
-          <Result status="success" title="Вход выполнен!" subTitle="Перенаправление..." />
-        </Card>
+        <LCard style={{ maxWidth: 420, width: '100%', textAlign: 'center' }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>✓</div>
+          <h3 style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>Вход выполнен!</h3>
+          <div style={{ color: '#999' }}>Перенаправление...</div>
+        </LCard>
       </div>
     );
   }
@@ -124,62 +101,51 @@ function LoginPageInner() {
   if (loginState === 'error') {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
-        <Card style={{ maxWidth: 420, width: '100%', textAlign: 'center' }}>
-          <Result status="error" title="Ошибка входа" subTitle={errorMsg}
-            extra={<Button type="primary" onClick={() => { setLoginState('idle'); router.push('/login'); }}>Попробовать снова</Button>}
-          />
-        </Card>
+        <LCard style={{ maxWidth: 420, width: '100%', textAlign: 'center' }}>
+          <div style={{ fontSize: 48, marginBottom: 16, color: '#ff4d4f' }}>✕</div>
+          <h3 style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>Ошибка входа</h3>
+          <div style={{ color: '#999', marginBottom: 16 }}>{errorMsg}</div>
+          <LButton type="primary" onClick={() => { setLoginState('idle'); router.push('/login'); }}>
+            Попробовать снова
+          </LButton>
+        </LCard>
       </div>
     );
   }
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
-      <Card style={{ maxWidth: 420, width: '100%', textAlign: 'center' }}>
-        <Title level={3}>Вход в систему</Title>
-        <Text type="secondary">Получите доступ к книге «Наследие Аркаима»</Text>
+      <LCard style={{ maxWidth: 420, width: '100%', textAlign: 'center' }}>
+        <h3 style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>Вход в систему</h3>
+        <div style={{ color: '#999', marginBottom: 24 }}>Получите доступ к книге «Наследие Аркаима»</div>
 
-        <Space direction="vertical" style={{ width: '100%', marginTop: 24 }} size="middle">
-          {/* Вход через Telegram бота */}
-          <Button
-            type="primary"
-            icon={<SendOutlined />}
-            block
-            size="large"
-            onClick={handleBotLogin}
-          >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <LButton type="primary" icon={<SendOutlined />} size="large" onClick={handleBotLogin} style={{ width: '100%' }}>
             Войти через Telegram бота
-          </Button>
-          <Text type="secondary" style={{ fontSize: 12 }}>
+          </LButton>
+          <div style={{ fontSize: 12, color: '#999' }}>
             Отправьте команду /login боту @{botUsername}
-          </Text>
+          </div>
 
-          <Divider plain><Text type="secondary" style={{ fontSize: 12 }}>или</Text></Divider>
+          <LDivider />
 
-          {/* Dev Login */}
-          <Button
-            icon={<CodeOutlined />}
-            block
-            size="large"
-            onClick={handleDevLogin}
-            loading={devLoading}
-          >
+          <LButton icon={<CodeOutlined />} size="large" onClick={handleDevLogin} loading={devLoading} style={{ width: '100%' }}>
             Войти как разработчик
-          </Button>
-        </Space>
-
-        <div style={{ marginTop: 24, textAlign: 'center' }}>
-          <Text type="secondary" style={{ fontSize: 12 }}>Нет аккаунта? </Text>
-          <Link href="/register" style={{ fontSize: 12 }}>Зарегистрироваться</Link>
+          </LButton>
         </div>
-      </Card>
+
+        <div style={{ marginTop: 24, textAlign: 'center', fontSize: 12 }}>
+          <span style={{ color: '#999' }}>Нет аккаунта? </span>
+          <Link href="/register">Зарегистрироваться</Link>
+        </div>
+      </LCard>
     </div>
   );
 }
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}><Spin size="large" /></div>}>
+    <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}><LSpin size="large" /></div>}>
       <LoginPageInner />
     </Suspense>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { Table, Button, Tag, Popconfirm, message } from 'antd';
+import { Table, Button, Tag, Popconfirm, message, Empty } from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
@@ -18,6 +18,7 @@ export function ApiKeysPanel() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/auth/admin/api-keys/${id}`),
     onSuccess: () => { message.success('API-ключ отозван'); queryClient.invalidateQueries({ queryKey: ['admin-api-keys'] }); },
+    onError: () => message.error('Ошибка удаления ключа'),
   });
 
   const columns = [
@@ -28,7 +29,7 @@ export function ApiKeysPanel() {
     { title: 'Статус', dataIndex: 'is_active', key: 'status', render: (v: boolean) => v ? <Tag color="green">Активен</Tag> : <Tag color="red">Отозван</Tag> },
     {
       title: '', key: 'actions',
-      render: (_: any, record: ApiKey) => record.is_active ? (
+      render: (_: unknown, record: ApiKey) => record.is_active ? (
         <Popconfirm title="Отозвать ключ?" onConfirm={() => deleteMutation.mutate(record.id)}>
           <Button size="small" danger icon={<DeleteOutlined />} />
         </Popconfirm>
@@ -37,6 +38,12 @@ export function ApiKeysPanel() {
   ];
 
   return (
-    <Table columns={columns} dataSource={keys || []} rowKey="id" loading={isLoading} size="small" />
+    <>
+      {Array.isArray(keys) && keys.length === 0 ? (
+        <Empty description="Нет API-ключей" />
+      ) : (
+        <Table columns={columns} dataSource={keys || []} rowKey="id" loading={isLoading} size="small" />
+      )}
+    </>
   );
 }

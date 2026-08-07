@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from pathlib import Path
+from functools import lru_cache
 
 import aiosqlite
 
@@ -11,14 +12,26 @@ DB_PATH = DB_DIR / "memory.db"
 _RECENT_LIMIT = 20
 
 
+@lru_cache(maxsize=1)
+def get_memory_store() -> "MemoryStore":
+    """Кэшированный экземпляр MemoryStore — один на всё приложение."""
+    return MemoryStore()
+
+
 class MemoryStore:
     def __init__(self, db_path: str | None = None):
         self._db_path = db_path or str(DB_PATH)
         self._conn: aiosqlite.Connection | None = None
 
     async def _ensure_db(self):
+        # Проверяем что соединение активно
         if self._conn is not None:
-            return
+            try:
+                await self._conn.execute("SELECT 1")
+                return
+            except Exception:
+                self._conn = None
+
         db_manager = get_db_manager()
         self._conn = await db_manager.get_connection(db_path=self._db_path)
         await self._conn.executescript("""
@@ -97,8 +110,7 @@ class MemoryStore:
         return {"archived": len(rows)}
 
     async def close(self):
-        if self._conn is not None:
-            await self._conn.close()
+        """Сбросить ссылку на соединение (не закрывать — DatabaseManager управляет жизненным циклом)."""
         self._conn = None
 
     # ── User history ──────────────────────────────────
@@ -144,7 +156,7 @@ class MemoryStore:
         if not user_id:
             return []
         cursor = await self._conn.execute(
-            "SELECT DISTINCT session_id FROM conversations WHERE user_id = ? ORDER BY MAX(created_at) DESC",
+            "SELECT session_id FROM conversations WHERE user_id = ? GROUP BY session_id ORDER BY MAX(created_at) DESC",
             (user_id,),
         )
         return [r["session_id"] for r in await cursor.fetchall()]

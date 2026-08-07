@@ -20,11 +20,11 @@ log = logging.getLogger("hermes.websocket")
 class ConnectionManager:
     """Управляет WebSocket-соединениями с поддержкой user_id."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._connections: Set[WebSocket] = set()
         self._user_connections: dict[str, Set[WebSocket]] = {}  # user_id -> connections
 
-    async def connect(self, ws: WebSocket, user_id: str = ""):
+    async def connect(self, ws: WebSocket, user_id: str = "") -> None:
         await ws.accept()
         self._connections.add(ws)
         if user_id:
@@ -34,7 +34,7 @@ class ConnectionManager:
         ws.state.user_id = user_id
         log.info("ws_connected user_id=%s total=%d", user_id or "anon", len(self._connections))
 
-    def disconnect(self, ws: WebSocket):
+    def disconnect(self, ws: WebSocket) -> None:
         user_id = getattr(ws.state, "user_id", "")
         self._connections.discard(ws)
         if user_id and user_id in self._user_connections:
@@ -43,7 +43,7 @@ class ConnectionManager:
                 del self._user_connections[user_id]
         log.info("ws_disconnected user_id=%s total=%d", user_id or "anon", len(self._connections))
 
-    async def broadcast(self, event: str, data: dict):
+    async def broadcast(self, event: str, data: dict) -> None:
         """Разослать событие всем подключённым клиентам."""
         message = json.dumps({"event": event, "data": data}, ensure_ascii=False)
         dead = set()
@@ -55,7 +55,7 @@ class ConnectionManager:
         for ws in dead:
             self.disconnect(ws)
 
-    async def send_to_user(self, user_id: str, event: str, data: dict):
+    async def send_to_user(self, user_id: str, event: str, data: dict) -> None:
         """Отправить событие конкретному пользователю."""
         if user_id not in self._user_connections:
             return
@@ -77,7 +77,7 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-async def ws_endpoint(ws: WebSocket):
+async def ws_endpoint(ws: WebSocket) -> None:
     """WebSocket эндпоинт для дашборда. Аутентификация через query param token."""
     # Попытка аутентификации из query params
     user_id = ""
@@ -88,8 +88,8 @@ async def ws_endpoint(ws: WebSocket):
             payload = decode_access_token(token)
             if payload:
                 user_id = payload.sub
-        except Exception:
-            pass
+        except Exception as e:
+            log.warning("caught_exception: %s", e)
 
     await manager.connect(ws, user_id)
     try:
@@ -103,22 +103,22 @@ async def ws_endpoint(ws: WebSocket):
 
 # ── Фоновые уведомления ──────────────────────────
 
-async def notify_pulse_beat(pulse_state: dict):
+async def notify_pulse_beat(pulse_state: dict) -> None:
     """Разослать информацию о Pulse-бите."""
     await manager.broadcast("pulse_beat", pulse_state)
 
 
-async def notify_new_suggestion(suggestion: dict):
+async def notify_new_suggestion(suggestion: dict) -> None:
     """Уведомить о новом предложении Presence."""
     await manager.broadcast("new_suggestion", suggestion)
 
 
-async def notify_service_status(statuses: dict):
+async def notify_service_status(statuses: dict) -> None:
     """Уведомить об изменении статуса сервисов."""
     await manager.broadcast("service_status", statuses)
 
 
-async def notify_new_question(question: str, topic: str, user_id: str = ""):
+async def notify_new_question(question: str, topic: str, user_id: str = "") -> None:
     """Уведомить о новом вопросе читателя."""
     await manager.broadcast("new_question", {
         "question": question[:100],
@@ -133,12 +133,12 @@ async def notify_new_question(question: str, topic: str, user_id: str = ""):
         })
 
 
-async def notify_crowdfunding_milestone(alert: dict):
+async def notify_crowdfunding_milestone(alert: dict) -> None:
     """Уведомить о достижении майлстоуна краудфандинга."""
     await manager.broadcast("crowdfunding_milestone", alert)
 
 
-async def notify_chat_response(user_id: str, question: str, answer: str):
+async def notify_chat_response(user_id: str, question: str, answer: str) -> None:
     """Уведомить пользователя о ответе на его вопрос."""
     await manager.send_to_user(user_id, "chat_response", {
         "question": question[:100],

@@ -47,8 +47,14 @@ def send_telegram_alert(text: str):
 
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Reindex enriched_chunks")
+    parser.add_argument("--mode", default="hybrid", choices=["paragraph", "chapter", "hybrid", "dense"],
+                        help="Chunking mode. 'dense' produces 2000+ chunks.")
+    args = parser.parse_args()
+
     start = time.time()
-    log.info("reindex_started")
+    log.info("reindex_started mode=%s", args.mode)
     try:
         # Добавляем возможные пути для импорта intelligence.kernel
         alt_paths = [
@@ -81,8 +87,8 @@ def main():
         except Exception:
             log.warning("clear_collection_failed continuing")
 
-        log.info("indexing_hybrid_mode")
-        result = kernel.index_book(mode="hybrid")
+        log.info("indexing_mode mode=%s", args.mode)
+        result = kernel.index_book(mode=args.mode)
         elapsed = time.time() - start
         summary = {
             "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),

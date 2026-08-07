@@ -1,5 +1,6 @@
 import uuid
 import time
+import json
 import logging
 
 from core.provider_registry import ProviderRegistry
@@ -24,7 +25,7 @@ log = logging.getLogger("hermes.core")
 
 
 class Orchestrator:
-    def __init__(self, business_pack: str | None = None):
+    def __init__(self, business_pack: str | None = None) -> None:
         self.memory = MemoryStore()
         self.leads = LeadStore()
         self.tools = ToolExecutor()
@@ -46,7 +47,19 @@ class Orchestrator:
         model = req.get("model", provider_name)
         from core.providers.ab_testing import ab_selector
         t0 = time.time()
-        intent = "chat"  # TODO: LLM-based intent classifier (see audit report)
+
+        # Lightweight intent classifier based on keywords
+        user_text = req["messages"][-1]["content"].lower() if req.get("messages") else ""
+        intent = "chat"  # default
+        if any(w in user_text for w in ["расскажи", "опиши", "объясни", "что такое", "кто такой", "как работает"]):
+            intent = "factual"
+        elif any(w in user_text for w in ["напиши", "сгенерируй", "создай", "придумай", "сочини"]):
+            intent = "creative"
+        elif any(w in user_text for w in ["проанализируй", "сравни", "оцени", "анализ", "статистика"]):
+            intent = "analysis"
+        elif "?" in user_text:
+            intent = "question"
+
         session_id = req.get("metadata", {}).get("session_id", "default")
 
         ctx = SkillContext(
@@ -89,6 +102,11 @@ class Orchestrator:
             log_event(log, "skill_direct", trace_id=trace_id, latency_ms=(time.time() - t0) * 1000)
             return {"id": trace_id, "object": "chat.completion", "model": model, "intent": intent,
                     "choices": [{"message": {"role": "assistant", "content": final_response}}]}
+
+        # Safety: если skill вернул system_prompt/context без response — НЕ передавать LLM
+        # LLM будет галлюцинировать без фактической базы
+        if system_prompts or contexts:
+            log.warning("skill_provided_context_no_response skills=%s — falling through to LLM", [s.name for s in self.skills])
 
         identity_prompt = IdentityPolicy.system_prompt()
         all_prompts = [identity_prompt] + system_prompts
@@ -149,7 +167,7 @@ class Orchestrator:
                            f"fallback {chain[0]} -> {name}", {"from": chain[0], "to": name}))
                 log_event(log, "provider_fallback_success", from_provider=chain[0], to_provider=name, trace_id=trace_id)
 
-            (time.time() - provider_t0) * 1000
+            provider_latency = (time.time() - provider_t0) * 1000
             content = (
                 response["choices"][0]["message"]["content"]
                 if isinstance(response, dict) and "choices" in response
@@ -189,7 +207,7 @@ class Orchestrator:
         if not ProviderRegistry.is_registered(provider_name):
             metrics.increment("chat_failed")
             log_event(log, "provider_not_found", provider=provider_name, trace_id=trace_id)
-            yield f"data: {{{{error: 'Provider {provider_name} not found'}}}}\n\n"
+            yield f"data: {{\"error\": \"Provider {provider_name} not found\"}}\n\n"
             yield "data: [DONE]\n\n"
             return
 
@@ -205,15 +223,30 @@ class Orchestrator:
 
         system_prompts = []
         contexts = []
+        direct_skill_response = None
         for skill in self.skills:
             try:
                 result = await skill.execute(ctx)
             except Exception:
                 continue
-            if result.system_prompt:
-                system_prompts.append(result.system_prompt)
-            if result.context:
-                contexts.append(result.context)
+            if result.handled:
+                if result.system_prompt:
+                    # Скилл хочет LLM-помощь с контекстом — добавляем промпт, но сохраняем прямой ответ как fallback
+                    system_prompts.append(result.system_prompt)
+                    direct_skill_response = result.response
+                elif result.response:
+                    # Скилл нашёл ответ — возвращаем напрямую, без LLM
+                    metrics.increment("skill_direct_stream")
+                    log.info("stream_skill_handled skill=%s", skill.name)
+                    await self.memory.store(req["messages"], result.response, session_id=session_id, user_id=user.get("sub", ""))
+                    yield f"data: {json.dumps({'text': result.response})}\n\n"
+                    yield "data: [DONE]\n\n"
+                    return
+            else:
+                if result.system_prompt:
+                    system_prompts.append(result.system_prompt)
+                if result.context:
+                    contexts.append(result.context)
 
         identity_prompt = IdentityPolicy.system_prompt()
         all_prompts = [identity_prompt] + system_prompts
@@ -231,8 +264,24 @@ class Orchestrator:
         try:
             async for token in provider.stream(messages, trace_id=trace_id):
                 token_count += 1
-                full_response.append(token)
-                yield f"data: {token}\n\n"
+                # Провайдер отдаёт строки вида: data: {"choices":[{"delta":{"content":"..."}}]}
+                # или просто текст. Нужно извлечь content и отправить как {text: "..."}
+                content = ""
+                if token.startswith("data: "):
+                    try:
+                        chunk = json.loads(token[6:])
+                        delta = chunk.get("choices", [{}])[0].get("delta", {})
+                        content = delta.get("content", "")
+                    except Exception as e:
+                        log.warning("caught_exception: %s", e)
+                elif token.startswith("data: [DONE]"):
+                    continue
+                else:
+                    content = token
+
+                if content:
+                    full_response.append(content)
+                    yield f"data: {json.dumps({'text': content})}\n\n"
         except Exception as exc:
             metrics.increment("chat_failed")
             log.error("stream_failed provider=%s tokens=%d trace_id=%s error=%s", provider_name, token_count, trace_id, exc)
@@ -242,8 +291,8 @@ class Orchestrator:
             for skill in self.skills:
                 try:
                     safe_text = await skill.post_process(safe_text, ctx)
-                except Exception:
-                    pass
+                except Exception as e:
+                    log.warning("caught_exception: %s", e)
             await self.memory.store(req["messages"], safe_text, session_id=session_id, user_id=user.get("sub", ""))
             metrics.increment("memory_store")
             metrics.increment("chat_ok")

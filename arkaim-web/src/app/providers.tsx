@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, createContext, useContext, useCallback } from 'react';
-import { ConfigProvider, App } from 'antd';
+import { ConfigProvider, App, theme } from 'antd';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { getTheme } from '@/shared/lib/theme';
 import { WsProvider } from '@/shared/lib/ws-hooks';
+import { GenerationSettingsProvider } from '@/shared/contexts/GenerationSettingsContext';
 
 // ── Theme Context ──────────────────────────────────
 
@@ -23,7 +24,9 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const saved = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setIsDark(saved === 'dark' || (!saved && prefersDark));
+    const dark = saved === 'dark' || (!saved && prefersDark);
+    setIsDark(dark);
+    document.body.classList.toggle('dark', dark);
   }, []);
 
   const toggle = useCallback(() => {
@@ -37,7 +40,21 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeContext.Provider value={{ isDark, toggle }}>
-      <ConfigProvider theme={getTheme(isDark)}>
+      <ConfigProvider
+        theme={{
+          algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
+          token: {
+            colorPrimary: '#1677ff',
+            colorBgContainer: isDark ? '#1e293b' : '#ffffff',
+            colorBgElevated: isDark ? '#1e293b' : '#ffffff',
+            colorBgLayout: isDark ? '#0f172a' : '#ffffff',
+            colorText: isDark ? '#e2e8f0' : '#1e293b',
+            colorBorder: isDark ? '#475569' : '#d9d9d9',
+            colorBorderSecondary: isDark ? '#475569' : '#f0f0f0',
+            borderRadius: 8,
+          },
+        }}
+      >
         <App>{children}</App>
       </ConfigProvider>
     </ThemeContext.Provider>
@@ -102,7 +119,6 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     if (hasCookie) {
       initWithCookie();
     } else {
-      // Dev mode: автоматически получаем JWT-cookie через dev-login
       fetch('/api/auth/dev-login', { method: 'POST' })
         .then(resp => resp.ok ? resp.json() : null)
         .then(data => {
@@ -136,8 +152,8 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 300_000, // 5 минут — статические данные (геном, главы) не перезапрашивать
-      gcTime: 600_000,    // 10 минут — держать в памяти дольше
+      staleTime: 300_000,
+      gcTime: 600_000,
       retry: 1,
       refetchOnWindowFocus: false,
     },
@@ -152,7 +168,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <AuthProvider>
         <ThemeProvider>
           <WsProvider>
-            {children}
+            <GenerationSettingsProvider>
+              {children}
+            </GenerationSettingsProvider>
           </WsProvider>
         </ThemeProvider>
       </AuthProvider>

@@ -29,6 +29,7 @@ class WorldEngine:
         self._consistency_engine = None
         self._experience_engine = None
         self._initialized = False
+        self._entity_index: dict[str, dict] = {}
     
     def initialize(self):
         """Инициализировать движок (загрузить данные)."""
@@ -48,6 +49,13 @@ class WorldEngine:
         self._form_engine = FormEngine(self)
         self._consistency_engine = ConsistencyEngine(self)
         self._experience_engine = ExperienceEngine(self)
+        
+        # Build entity index for O(1) lookups
+        for category in self._world_model.get_categories():
+            for item in self._world_model.get_category(category):
+                entity_id = item.get("id")
+                if entity_id:
+                    self._entity_index[entity_id] = {"category": category, **item}
         
         self._initialized = True
         log.info("world_engine_initialized %s", self.summary())
@@ -102,17 +110,8 @@ class WorldEngine:
         }
     
     def get_entity(self, entity_id: str) -> Optional[dict]:
-        """Получить сущность по ID."""
-        # Ищем в WorldModel
-        for category in self._world_model.get_categories():
-            items = self._world_model.get_category(category)
-            for item in items:
-                if item.get("id") == entity_id:
-                    return {
-                        "category": category,
-                        **item,
-                    }
-        return None
+        """Получить сущность по ID (O(1) через индекс)."""
+        return self._entity_index.get(entity_id)
     
     def get_entity_context(self, entity_id: str) -> dict:
         """Получить контекст сущности — все её связи."""

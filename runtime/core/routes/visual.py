@@ -1,9 +1,9 @@
-"""Visual Genome — эндпоинты визуализации (/book/visual-*)."""
+﻿"""Visual Genome — эндпоинты визуализации (/book/visual-*)."""
 import hashlib
 import base64
 import logging
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 
 from auth.rbac import require_role
 from core.dto.requests import (
@@ -171,3 +171,188 @@ async def visual_from_speech(req: VisualFromSpeechRequest, config=Depends(get_co
 async def visual_from_image():
     """VLM pipeline — будет подключён в следующем обновлении."""
     return SuccessResponse(data={"message": "VLM-пайплайн будет подключён позже"})
+
+
+
+
+@router.post("/visual-genome/auto-generate", response_model=SuccessResponse)
+async def auto_generate_scenes(config=Depends(get_config), force: bool = Query(False)):
+    """Auto-generate scenes from book meaning + conflict palettes.
+    
+    If force=true, removes old auto-generated scenes first.
+    """
+    from visualization.meaning_to_visual import generate_visuals_from_meaning
+    from visualization.conflict_palettes import generate_all_conflict_scenes
+
+    genome = _load_genome_full(config)
+    modules = genome.setdefault("modules", {})
+
+    # If force, remove old auto-generated scenes
+    if force:
+        scenes = modules.get("scenes", [])
+        modules["scenes"] = [s for s in scenes if not s.get("scene_id", "").startswith("meaning_auto_")]
+
+    # 1. Generate from meaning
+    meaning_scenes, style_presets = generate_visuals_from_meaning(genome)
+
+    # 2. Generate from conflicts
+    conflict_scenes = generate_all_conflict_scenes(genome)
+
+    all_scenes = meaning_scenes + conflict_scenes
+
+    # Add to genome (skip existing)
+    existing_ids = {s.get("scene_id") for s in modules.get("scenes", [])}
+    new_scenes = [s for s in all_scenes if s.get("scene_id") not in existing_ids]
+    modules.setdefault("scenes", []).extend(new_scenes)
+
+    # Add style presets
+    for sp in style_presets:
+        modules.setdefault("style_presets", {})[sp["preset_id"]] = sp
+
+    _save_genome(genome, config)
+
+    return SuccessResponse(data={
+        "created": len(new_scenes),
+        "skipped": len(all_scenes) - len(new_scenes),
+        "total": len(modules.get("scenes", [])),
+        "scenes": new_scenes,
+    })
+
+@router.get("/comfyui/status", summary="ComfyUI connection status")
+async def comfyui_status():
+    """Check if ComfyUI is accessible."""
+    from core.adc_deps import registry
+    try:
+        provider_chain = registry.get("image_provider")
+        comfyui_provider = provider_chain.providers[0]
+        healthy = await comfyui_provider.health()
+        return {
+            "status": "connected" if healthy else "disconnected",
+            "url": comfyui_provider._base_url,
+            "provider": "comfyui"
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e), "provider": "comfyui"}
+
+
+
+@router.get("/comfyui/config", summary="Get ComfyUI configuration")
+async def comfyui_config():
+    """Return current ComfyUI URL and provider info."""
+    import os
+    url = os.getenv("COMFYUI_URL", "http://127.0.0.1:8188")
+    return {
+        "url": url,
+        "is_local": "127.0.0.1" in url or "localhost" in url,
+    }
+
+
+@router.post("/comfyui/config", summary="Update ComfyUI URL")
+async def comfyui_config_update(body: dict):
+    """Set a new ComfyUI URL at runtime (no restart needed) and persist to runtime/.env."""
+    import os
+    from pathlib import Path
+
+    new_url = body.get("url", "").strip()
+    if not new_url:
+        from fastapi import HTTPException
+        raise HTTPException(400, "URL is required")
+
+    # Apply to current process immediately
+    os.environ["COMFYUI_URL"] = new_url
+
+    # Persist to runtime/.env so it survives a backend restart
+    try:
+        env_path = Path(os.getcwd()) / ".env"
+        if not env_path.exists():
+            env_path = Path(__file__).resolve().parents[1] / ".env"  # runtime/.env
+        lines = []
+        if env_path.exists():
+            lines = env_path.read_text("utf-8").splitlines()
+        key = "COMFYUI_URL"
+        found = False
+        for i, ln in enumerate(lines):
+            if ln.strip().startswith(key + "="):
+                lines[i] = f"{key}={new_url}"
+                found = True
+                break
+        if not found:
+            lines.append(f"{key}={new_url}")
+        env_path.write_text("\n".join(lines) + "\n", "utf-8")
+        log.info("comfyui_url_persisted url=%s", new_url)
+    except Exception as e:
+        log.warning("comfyui_url_persist_failed: %s", e)
+
+    return {"ok": True, "url": new_url}
+
+
+@router.get("/providers/list", summary="List available image providers")
+async def list_providers():
+    """Get list of available image providers with their names and kinds."""
+    from core.adc_deps import registry
+    
+    try:
+        provider_chain = registry.get("image_provider")
+        providers_info = []
+        
+        for provider in provider_chain.providers:
+            provider_name = provider_chain._provider_name(provider)
+            provider_kind = provider_chain._provider_kind(provider)
+            
+            # Try to get additional info from provider if available
+            info = {
+                "name": provider_name,
+                "kind": provider_kind,
+            }
+            
+            # Add URL for ComfyUI if available
+            if hasattr(provider, "_base_url"):
+                info["url"] = provider._base_url
+            
+            providers_info.append(info)
+        
+        return {"providers": providers_info}
+    except Exception as e:
+        log.error("list_providers_error: %s", e)
+        raise HTTPException(500, f"Ошибка получения списка провайдеров: {e}")
+
+
+@router.get("/providers/status", summary="Get status of all image providers")
+async def providers_status():
+    """Get health status of all available image providers."""
+    from core.adc_deps import registry
+    
+    try:
+        provider_chain = registry.get("image_provider")
+        providers_status = []
+        
+        for provider in provider_chain.providers:
+            provider_name = provider_chain._provider_name(provider)
+            provider_kind = provider_chain._provider_kind(provider)
+            
+            try:
+                is_healthy = await provider.health()
+                status = "healthy" if is_healthy else "unhealthy"
+                error = None
+            except Exception as e:
+                status = "error"
+                error = str(e)
+            
+            status_info = {
+                "name": provider_name,
+                "kind": provider_kind,
+                "status": status,
+            }
+            
+            if error:
+                status_info["error"] = error
+            
+            if hasattr(provider, "_base_url"):
+                status_info["url"] = provider._base_url
+            
+            providers_status.append(status_info)
+        
+        return {"providers": providers_status}
+    except Exception as e:
+        log.error("providers_status_error: %s", e)
+        raise HTTPException(500, f"Ошибка получения статуса провайдеров: {e}")

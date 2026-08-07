@@ -1,4 +1,4 @@
-"""Исходящие DTO — единый формат ответов API."""
+﻿"""РСЃС…РѕРґСЏС‰РёРµ DTO вЂ” РµРґРёРЅС‹Р№ С„РѕСЂРјР°С‚ РѕС‚РІРµС‚РѕРІ API."""
 from __future__ import annotations
 
 from typing import Any
@@ -6,11 +6,11 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 
-# ── Базовые ───────────────────────────────────────────
+# в”Ђв”Ђ Р‘Р°Р·РѕРІС‹Рµ в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
 class ErrorDetail(BaseModel):
-    code: str = Field(..., description="Машин-readable код ошибки")
-    message: str = Field(..., description="Человеко-понятное сообщение")
+    code: str = Field(..., description="РњР°С€РёРЅ-readable РєРѕРґ РѕС€РёР±РєРё")
+    message: str = Field(..., description="Р§РµР»РѕРІРµРєРѕ-РїРѕРЅСЏС‚РЅРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ")
     details: dict[str, Any] | None = None
 
 
@@ -33,7 +33,7 @@ class PaginatedResponse(BaseModel):
     per_page: int = 20
 
 
-# ── Auth ──────────────────────────────────────────────
+# в”Ђв”Ђ Auth в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
 class UserResponse(BaseModel):
     id: str
@@ -65,7 +65,7 @@ class ApiKeyListItem(BaseModel):
     created_at: str = ""
 
 
-# ── Book Intelligence ─────────────────────────────────
+# в”Ђв”Ђ Book Intelligence в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
 class BookAskResponse(BaseModel):
     answer: str
@@ -79,6 +79,7 @@ class BookGenomeResponse(BaseModel):
     values: list[dict] = []
     world_entities: list[dict] = []
     author_intent: dict = {}
+    modules: dict = {}
 
 
 class BookLayersResponse(BaseModel):
@@ -86,9 +87,10 @@ class BookLayersResponse(BaseModel):
     meaning_layer: str = ""
     identity_layer: str = ""
     mission_layer: str = ""
+    world_engine_layer: str = ""
 
 
-# ── Reader ────────────────────────────────────────────
+# в”Ђв”Ђ Reader в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
 class ReaderTopicItem(BaseModel):
     name: str
@@ -115,7 +117,32 @@ class ReaderStatsResponse(BaseModel):
     total_questions: int = 0
 
 
-# ── Visual Genome ─────────────────────────────────────
+# в”Ђв”Ђ Reading Progress в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+
+class ReadingProgressItem(BaseModel):
+    chapter_id: str
+    chapter_index: int
+    first_read_at: str = ""
+    last_read_at: str = ""
+    read_seconds: int = 0
+    completed: bool = False
+    scroll_percent: float = 0.0
+
+
+class ReadingPositionResponse(BaseModel):
+    chapter_id: str = ""
+    chapter_index: int = 0
+    scroll_percent: float = 0.0
+    last_read_at: str = ""
+
+
+class ReadingStatsResponse(BaseModel):
+    chapters_started: int = 0
+    chapters_completed: int = 0
+    total_seconds: int = 0
+
+
+# в”Ђв”Ђ Visual Genome в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
 class VisualizeResponse(BaseModel):
     prompt: str
@@ -123,7 +150,7 @@ class VisualizeResponse(BaseModel):
     content_type: str = "image/svg+xml"
 
 
-# ── Health ────────────────────────────────────────────
+# в”Ђв”Ђ Health в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
 class HealthResponse(BaseModel):
     status: str = "ok"
@@ -133,3 +160,4 @@ class HealthResponse(BaseModel):
 class ProviderHealthResponse(BaseModel):
     status: str = "ok"
     providers: dict[str, bool] = {}
+

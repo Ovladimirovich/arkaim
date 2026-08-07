@@ -1,13 +1,24 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Typography, Progress, Row, Col, Tag, Statistic, Spin, Empty, Button, Space, Divider, Timeline, Tabs, Table, Modal, Form, Input, InputNumber, message } from 'antd';
 import { HeartOutlined, ClockCircleOutlined, UserOutlined, TrophyOutlined, LinkOutlined, ReloadOutlined, HistoryOutlined, SettingOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
 import { ProtectedRoute, RoleGuard } from '@/shared/lib/guards';
-
-const { Title, Text, Paragraph } = Typography;
+import { LCard } from '@/shared/ui/light/LCard';
+import { LProgress } from '@/shared/ui/light/LProgress';
+import { LTag } from '@/shared/ui/light/LTag';
+import { LStatistic } from '@/shared/ui/light/LStatistic';
+import { LSpin } from '@/shared/ui/light/LSpin';
+import { LEmpty } from '@/shared/ui/light/LEmpty';
+import { LButton } from '@/shared/ui/light/LButton';
+import { LSpace } from '@/shared/ui/light/LSpace';
+import { LDivider } from '@/shared/ui/light/LDivider';
+import { LTabs } from '@/shared/ui/light/LTabs';
+import { LTable } from '@/shared/ui/light/LTable';
+import { LModal } from '@/shared/ui/light/LModal';
+import { LForm } from '@/shared/ui/light/LForm';
+import { LInput } from '@/shared/ui/light/LInput';
 
 type Milestone = {
   id: string;
@@ -38,8 +49,6 @@ type CampaignHistory = {
   total: number;
 };
 
-// ── Hero Section ──────────────────────────────────
-
 function HeroSection() {
   const { data } = useQuery({
     queryKey: ['crowdfunding'],
@@ -54,33 +63,44 @@ function HeroSection() {
   return (
     <div style={{
       background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
-      borderRadius: 16,
-      padding: '3rem 2rem',
-      color: '#fff',
-      marginBottom: 32,
-      textAlign: 'center',
+      borderRadius: 16, padding: '3rem 2rem', color: '#fff',
+      marginBottom: 32, textAlign: 'center',
     }}>
       <div style={{ fontSize: 64, marginBottom: 16 }}>𓃉</div>
-      <Title level={1} style={{ color: '#fff', marginBottom: 8 }}>
-        Поддержите «Наследие Аркаима»
-      </Title>
-      <Paragraph style={{ color: '#94a3b8', fontSize: 16, maxWidth: 600, margin: '0 auto 24px' }}>
+      <h1 style={{ color: '#fff', margin: '0 0 8px' }}>Поддержите «Наследие Аркаима»</h1>
+      <p style={{ color: '#94a3b8', fontSize: 16, maxWidth: 600, margin: '0 auto 24px' }}>
         Помогите выпустить книгу и создать цифровое сознание, которое будет жить вечно.
-      </Paragraph>
-      <Row gutter={[32, 16]} justify="center">
-        <Col><Statistic title="Цель" value={totalTarget.toLocaleString('ru')} suffix="₽" valueStyle={{ color: '#fff' }} /></Col>
-        <Col><Statistic title="Собрано" value={totalRaised.toLocaleString('ru')} suffix="₽" valueStyle={{ color: '#3b82f6' }} /></Col>
-        <Col><Statistic title="Бэкеров" value={totalBackers} valueStyle={{ color: '#fff' }} /></Col>
-      </Row>
+      </p>
+      <div style={{ display: 'flex', gap: 32, justifyContent: 'center', flexWrap: 'wrap' }}>
+        <LStatistic title="Цель" value={totalTarget.toLocaleString('ru')} suffix="₽" valueStyle={{ color: '#fff' }} />
+        <LStatistic title="Собрано" value={totalRaised.toLocaleString('ru')} suffix="₽" valueStyle={{ color: '#3b82f6' }} />
+        <LStatistic title="Бэкеров" value={totalBackers} valueStyle={{ color: '#fff' }} />
+      </div>
     </div>
   );
 }
 
-// ── Campaign Card ──────────────────────────────────
+function MilestoneTimeline({ milestones }: { milestones: Milestone[] }) {
+  return (
+    <div style={{ padding: '4px 0' }}>
+      {milestones.map((m) => (
+        <div key={m.id} style={{ display: 'flex', gap: 12, padding: '6px 0', position: 'relative' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 12 }}>
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: m.reached ? '#52c41a' : '#d9d9d9', flexShrink: 0 }} />
+            <div style={{ width: 1, flex: 1, background: '#e8e8e8', minHeight: 16 }} />
+          </div>
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ textDecoration: m.reached ? 'line-through' : undefined, fontSize: 13 }}>{m.title}</span>
+            <LTag color={m.reached ? 'green' : 'default'}>{m.reached ? 'Достигнут' : `${m.target_amount.toLocaleString('ru')} ₽`}</LTag>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function CampaignCard({ campaign, onHistory }: { campaign: Campaign; onHistory: (id: string) => void }) {
-  const percent = campaign.target_amount > 0
-    ? Math.round((campaign.current_amount / campaign.target_amount) * 100) : 0;
+  const percent = campaign.target_amount > 0 ? Math.round((campaign.current_amount / campaign.target_amount) * 100) : 0;
   const isUrgent = campaign.days_left <= 7 && campaign.days_left > 0;
   const isFinished = campaign.days_left <= 0;
   const isComplete = percent >= 100;
@@ -88,42 +108,48 @@ function CampaignCard({ campaign, onHistory }: { campaign: Campaign; onHistory: 
   const totalMilestones = campaign.milestones?.length || 0;
 
   return (
-    <Card hoverable style={{ height: '100%' }}
-      title={<Space><span>{campaign.title}</span><Tag color={campaign.platform === 'planeta' ? 'blue' : 'green'}>{campaign.platform}</Tag>{isUrgent && <Tag color="red">Осталось {campaign.days_left} дн.</Tag>}{isFinished && <Tag>Завершена</Tag>}</Space>}
-      extra={campaign.url ? <a href={campaign.url} target="_blank" rel="noopener noreferrer"><LinkOutlined /> Открыть</a> : null}
-      actions={[
-        <a key="history" onClick={() => onHistory(campaign.id)}><HistoryOutlined /> История</a>,
-        campaign.url && !isFinished ? <a key="support" href={campaign.url} target="_blank" rel="noopener noreferrer"><HeartOutlined /> Поддержать</a> : null,
-      ].filter(Boolean)}
-    >
-      <Progress percent={percent} status={isComplete ? 'success' : isFinished ? 'exception' : 'active'} strokeColor={isComplete ? '#52c41a' : '#1890ff'} />
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-        <Text type="secondary" style={{ fontSize: 12 }}>{campaign.current_amount.toLocaleString('ru')} ₽</Text>
-        <Text type="secondary" style={{ fontSize: 12 }}>{campaign.target_amount.toLocaleString('ru')} ₽ ({percent}%)</Text>
+    <div style={{ border: '1px solid var(--card-border)', borderRadius: 8, padding: 16, height: '100%', background: 'var(--card-bg)', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <LSpace>
+          <strong>{campaign.title}</strong>
+          <LTag color={campaign.platform === 'planeta' ? 'blue' : 'green'}>{campaign.platform}</LTag>
+          {isUrgent && <LTag color="red">Осталось {campaign.days_left} дн.</LTag>}
+          {isFinished && <LTag>Завершена</LTag>}
+        </LSpace>
+        {campaign.url && <a href={campaign.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13 }}><LinkOutlined /> Открыть</a>}
       </div>
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        <Col span={8}><Statistic title="Собрано" value={campaign.current_amount} suffix="₽" valueStyle={{ fontSize: 16 }} /></Col>
-        <Col span={8}><Statistic title="Бэкеров" value={campaign.backers_count} prefix={<UserOutlined />} valueStyle={{ fontSize: 16 }} /></Col>
-        <Col span={8}><Statistic title="Осталось" value={campaign.days_left} suffix="дн." prefix={<ClockCircleOutlined />} valueStyle={{ fontSize: 16, color: isUrgent ? '#ef4444' : undefined }} /></Col>
-      </Row>
+
+      <LProgress percent={percent} status={isComplete ? 'success' : isFinished ? 'exception' : 'active'} strokeColor={isComplete ? '#52c41a' : '#1890ff'} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+        <span style={{ fontSize: 12, color: '#999' }}>{campaign.current_amount.toLocaleString('ru')} ₽</span>
+        <span style={{ fontSize: 12, color: '#999' }}>{campaign.target_amount.toLocaleString('ru')} ₽ ({percent}%)</span>
+      </div>
+
+      <div style={{ display: 'flex', gap: 16, marginTop: 16 }}>
+        <LStatistic title="Собрано" value={campaign.current_amount} suffix="₽" valueStyle={{ fontSize: 16 }} />
+        <LStatistic title="Бэкеров" value={campaign.backers_count} prefix={<UserOutlined />} valueStyle={{ fontSize: 16 }} />
+        <LStatistic title="Осталось" value={campaign.days_left} suffix="дн." prefix={<ClockCircleOutlined />} valueStyle={{ fontSize: 16, color: isUrgent ? '#ef4444' : undefined }} />
+      </div>
+
       {totalMilestones > 0 && (
         <>
-          <Divider style={{ margin: '12px 0' }} />
-          <Space><TrophyOutlined /><Text strong>Майлстоуны</Text><Tag>{reachedMilestones}/{totalMilestones}</Tag></Space>
-          <Timeline style={{ marginTop: 8 }} items={campaign.milestones.map(m => ({
-            color: m.reached ? 'green' : 'gray',
-            children: <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={{ textDecoration: m.reached ? 'line-through' : undefined }}>{m.title}</Text>
-              <Tag color={m.reached ? 'green' : 'default'}>{m.reached ? 'Достигнут' : `${m.target_amount.toLocaleString('ru')} ₽`}</Tag>
-            </div>,
-          }))} />
+          <LDivider style={{ margin: '12px 0' }} />
+          <LSpace><TrophyOutlined /><strong>Майлстоуны</strong><LTag>{reachedMilestones}/{totalMilestones}</LTag></LSpace>
+          <MilestoneTimeline milestones={campaign.milestones} />
         </>
       )}
-    </Card>
+
+      <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+        <LButton size="small" icon={<HistoryOutlined />} onClick={() => onHistory(campaign.id)}>История</LButton>
+        {campaign.url && !isFinished && (
+          <a href={campaign.url} target="_blank" rel="noopener noreferrer">
+            <LButton size="small" icon={<HeartOutlined />}>Поддержать</LButton>
+          </a>
+        )}
+      </div>
+    </div>
   );
 }
-
-// ── Campaign History Modal ──────────────────────────
 
 function CampaignHistoryModal({ campaignId, open, onClose }: { campaignId: string; open: boolean; onClose: () => void }) {
   const { data: history, isLoading } = useQuery({
@@ -133,80 +159,90 @@ function CampaignHistoryModal({ campaignId, open, onClose }: { campaignId: strin
   });
 
   const columns = [
-    { title: 'Дата', dataIndex: 'checked_at', key: 'date', render: (v: string) => new Date(v).toLocaleString('ru') },
-    { title: 'Собрано', dataIndex: 'current_amount', key: 'amount', render: (v: number) => `${v.toLocaleString('ru')} ₽` },
-    { title: 'Бэкеров', dataIndex: 'backers_count', key: 'backers' },
+    { title: 'Дата', dataIndex: 'checked_at', key: 'date', render: (v: unknown) => new Date(v as string).toLocaleString('ru') },
+    { title: 'Собрано', dataIndex: 'current_amount', key: 'amount', render: (v: unknown) => `${(v as number).toLocaleString('ru')} ₽` },
+    { title: 'Бэкеров', dataIndex: 'backers_count', key: 'backers', render: (v: unknown) => String(v ?? '—') },
   ];
 
   return (
-    <Modal title="История кампании" open={open} onCancel={onClose} footer={null} width={600}>
-      {isLoading ? <Spin /> : (
-        <Table columns={columns} dataSource={history?.snapshots || []} rowKey="checked_at" size="small" pagination={{ pageSize: 10 }} />
+    <LModal title="История кампании" open={open} onCancel={onClose} footer={null} width={600}>
+      {isLoading ? <LSpin /> : (
+        <LTable columns={columns} dataSource={history?.snapshots || []} rowKey="checked_at" size="small" pagination={{ pageSize: 10 }} />
       )}
-    </Modal>
+    </LModal>
   );
 }
-
-// ── Admin Config Panel ──────────────────────────────
 
 function CrowdfundingAdminPanel() {
   const queryClient = useQueryClient();
   const [configModalOpen, setConfigModalOpen] = useState(false);
-  const [form] = Form.useForm();
+  const [formEnabled, setFormEnabled] = useState(true);
+  const [formInterval, setFormInterval] = useState(3600);
+  const [msg, setMsg] = useState<string | null>(null);
 
   const { data: config } = useQuery({
     queryKey: ['crowdfunding-config'],
-    queryFn: () => api.get<{ enabled: boolean; check_interval: number; campaigns: any[] }>('/book/crowdfunding/config'),
+    queryFn: () => api.get<{ enabled: boolean; check_interval: number; campaigns: { id: string; name: string; status: string; amount: number; goal: number }[] }>('/book/crowdfunding/config'),
   });
 
   const checkNowMutation = useMutation({
     mutationFn: () => api.post('/book/crowdfunding/check-now'),
-    onSuccess: () => {
-      message.success('Проверка запущена');
-      queryClient.invalidateQueries({ queryKey: ['crowdfunding'] });
-    },
+    onSuccess: () => { setMsg('Проверка запущена'); queryClient.invalidateQueries({ queryKey: ['crowdfunding'] }); },
   });
 
   const updateConfigMutation = useMutation({
-    mutationFn: (values: any) => api.post('/book/crowdfunding/config', values),
-    onSuccess: () => {
-      message.success('Конфигурация обновлена');
-      queryClient.invalidateQueries({ queryKey: ['crowdfunding-config'] });
-      setConfigModalOpen(false);
-    },
+    mutationFn: (values: { enabled?: boolean; check_interval?: number }) => api.post('/book/crowdfunding/config', values),
+    onSuccess: () => { setMsg('Конфигурация обновлена'); queryClient.invalidateQueries({ queryKey: ['crowdfunding-config'] }); setConfigModalOpen(false); },
   });
 
-  return (
-    <Card title="Управление" style={{ marginBottom: 24 }}>
-      <Space>
-        <Button icon={<ReloadOutlined />} onClick={() => checkNowMutation.mutate()} loading={checkNowMutation.isPending}>
-          Проверить сейчас
-        </Button>
-        <Button icon={<SettingOutlined />} onClick={() => { form.setFieldsValue(config || {}); setConfigModalOpen(true); }}>
-          Настройки
-        </Button>
-      </Space>
+  const handleSaveConfig = () => {
+    updateConfigMutation.mutate({ enabled: formEnabled, check_interval: formInterval });
+  };
 
-      <Modal title="Настройки краудфандинга" open={configModalOpen} onCancel={() => setConfigModalOpen(false)}
-        onOk={() => form.validateFields().then(v => updateConfigMutation.mutate(v))} confirmLoading={updateConfigMutation.isPending}>
-        <Form form={form} layout="vertical">
-          <Form.Item name="enabled" label="Включено" valuePropName="checked">
-            <input type="checkbox" />
-          </Form.Item>
-          <Form.Item name="check_interval" label="Интервал проверки (сек)">
-            <InputNumber min={60} max={86400} style={{ width: '100%' }} />
-          </Form.Item>
-        </Form>
-      </Modal>
-    </Card>
+  const showConfig = () => {
+    setFormEnabled(config?.enabled ?? true);
+    setFormInterval(config?.check_interval ?? 3600);
+    setConfigModalOpen(true);
+  };
+
+  return (
+    <LCard title="Управление" style={{ marginBottom: 24 }}>
+      <LSpace>
+        <LButton icon={<ReloadOutlined />} onClick={() => checkNowMutation.mutate()} loading={checkNowMutation.isPending}>
+          Проверить сейчас
+        </LButton>
+        <LButton icon={<SettingOutlined />} onClick={showConfig}>
+          Настройки
+        </LButton>
+      </LSpace>
+
+      {msg && <div style={{ marginTop: 8, padding: '6px 12px', background: '#f0fdf4', borderRadius: 6, fontSize: 13 }}>{msg}</div>}
+
+      <LModal title="Настройки краудфандинга" open={configModalOpen} onCancel={() => setConfigModalOpen(false)}
+        footer={
+          <LSpace>
+            <LButton onClick={() => setConfigModalOpen(false)}>Отмена</LButton>
+            <LButton type="primary" onClick={handleSaveConfig} loading={updateConfigMutation.isPending}>Сохранить</LButton>
+          </LSpace>
+        }
+      >
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 500, marginBottom: 4 }}>
+            <input type="checkbox" checked={formEnabled} onChange={e => setFormEnabled(e.target.checked)} />
+            Включено
+          </label>
+        </div>
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 4 }}>Интервал проверки (сек)</label>
+          <input type="number" min={60} max={86400} value={formInterval} onChange={e => setFormInterval(Number(e.target.value))} style={{ width: '100%', padding: '4px 8px', border: '1px solid #d9d9d9', borderRadius: 6, fontSize: 13 }} />
+        </div>
+      </LModal>
+    </LCard>
   );
 }
 
-// ── Main Content ──────────────────────────────────
-
 function CrowdfundingContent() {
   const [historyCampaignId, setHistoryCampaignId] = useState<string | null>(null);
-  const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
     queryKey: ['crowdfunding'],
@@ -225,25 +261,29 @@ function CrowdfundingContent() {
       children: (
         <>
           <HeroSection />
-          <Card style={{ marginBottom: 24 }}>
-            <Row gutter={[24, 16]} justify="center">
-              <Col span={6}><Statistic title="Кампаний" value={campaigns.length} /></Col>
-              <Col span={6}><Statistic title="Всего собрано" value={totalRaised.toLocaleString('ru')} suffix="₽" /></Col>
-              <Col span={6}><Statistic title="Общая цель" value={totalTarget.toLocaleString('ru')} suffix="₽" /></Col>
-              <Col span={6}><Statistic title="Всего бэкеров" value={totalBackers} prefix={<UserOutlined />} /></Col>
-            </Row>
-          </Card>
+          <LCard style={{ marginBottom: 24 }}>
+            <div style={{ display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <LStatistic title="Кампаний" value={campaigns.length} />
+              <LStatistic title="Всего собрано" value={totalRaised.toLocaleString('ru')} suffix="₽" />
+              <LStatistic title="Общая цель" value={totalTarget.toLocaleString('ru')} suffix="₽" />
+              <LStatistic title="Всего бэкеров" value={totalBackers} prefix={<UserOutlined />} />
+            </div>
+          </LCard>
           {isLoading ? (
-            <div style={{ textAlign: 'center', padding: 48 }}><Spin size="large" /></div>
+            <div style={{ textAlign: 'center', padding: 48 }}><LSpin size="large" /></div>
           ) : campaigns.length === 0 ? (
-            <Empty description="Нет активных кампаний" style={{ padding: 48 }} />
+            <LEmpty description="Нет активных кампаний" style={{ padding: 48 }} />
           ) : (
-            <Row gutter={[16, 16]}>
-              {campaigns.map(c => <Col xs={24} lg={12} key={c.id}><CampaignCard campaign={c} onHistory={setHistoryCampaignId} /></Col>)}
-            </Row>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              {campaigns.map(c => (
+                <div key={c.id} style={{ flex: '1 1 45%', minWidth: 350 }}>
+                  <CampaignCard campaign={c} onHistory={setHistoryCampaignId} />
+                </div>
+              ))}
+            </div>
           )}
-          <div style={{ textAlign: 'center', padding: '24px 0', color: '#94a3b8' }}>
-            <Text type="secondary">Каждый рубль помогает создать цифровое сознание книги</Text>
+          <div style={{ textAlign: 'center', padding: '24px 0', color: '#94a3b8', fontSize: 13 }}>
+            Каждый рубль помогает создать цифровое сознание книги
           </div>
         </>
       ),
@@ -257,7 +297,7 @@ function CrowdfundingContent() {
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-      <Tabs items={items} />
+      <LTabs items={items} />
       <CampaignHistoryModal campaignId={historyCampaignId || ''} open={!!historyCampaignId} onClose={() => setHistoryCampaignId(null)} />
     </div>
   );

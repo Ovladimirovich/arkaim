@@ -1,16 +1,15 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Card, Input, Button, Typography, Space, Tag, Spin, Empty, Popconfirm, Progress, Tooltip, Drawer } from 'antd';
-import { SendOutlined, RobotOutlined, UserOutlined, HistoryOutlined, BulbOutlined, ClearOutlined, BookOutlined, ThunderboltOutlined, DatabaseOutlined, LinkOutlined, MenuOutlined, PlusOutlined } from '@ant-design/icons';
+import { LCard, LButton, LSpace, LTag, LSpin, LProgress, LDrawer, LTextArea, LModal } from '@/shared/ui/light';
+import { SendOutlined, UserOutlined, HistoryOutlined, BulbOutlined, ClearOutlined, BookOutlined, MenuOutlined, PlusOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
 import { Markdown } from '@/shared/lib/markdown';
 import { ProtectedRoute } from '@/shared/lib/guards';
+import { useIsMobile } from '@/shared/lib/hooks';
+import { SourceBadge } from '@/shared/ui/SourceBadge';
 import Link from 'next/link';
-
-const { Title, Text } = Typography;
-const { TextArea } = Input;
 
 type Message = {
   role: 'user' | 'assistant';
@@ -32,13 +31,6 @@ const EXAMPLE_QUESTIONS = [
   'Какова миссия книги?',
 ];
 
-const SOURCE_CONFIG: Record<string, { icon: any; color: string; label: string }> = {
-  pulse: { icon: <DatabaseOutlined />, color: '#059669', label: 'Геном' },
-  llm: { icon: <ThunderboltOutlined />, color: '#7c3aed', label: 'AI' },
-  hybrid: { icon: <LinkOutlined />, color: '#2563eb', label: 'Гибрид' },
-  mock: { icon: <BulbOutlined />, color: '#6b7280', label: 'Заглушка' },
-};
-
 const SESSION_KEY = 'arkaim_chat_session';
 
 function loadSession(): Message[] {
@@ -51,38 +43,15 @@ function saveSession(messages: Message[]) {
   try { localStorage.setItem(SESSION_KEY, JSON.stringify(messages.slice(-50))); } catch {}
 }
 
-function SourceBadge({ sourceType }: { sourceType?: string }) {
-  if (!sourceType) return null;
-  const config = SOURCE_CONFIG[sourceType] || SOURCE_CONFIG.mock;
-  return (
-    <Tooltip title={`Источник: ${config.label}`}>
-      <Tag style={{ marginTop: 4, fontSize: 10, color: config.color, borderColor: config.color }}>
-        {config.icon} {config.label}
-      </Tag>
-    </Tooltip>
-  );
-}
-
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const mql = window.matchMedia('(max-width: 768px)');
-    setIsMobile(mql.matches);
-    const h = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mql.addEventListener('change', h);
-    return () => mql.removeEventListener('change', h);
-  }, []);
-  return isMobile;
-}
-
 function ChatContent() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [streamingText, setStreamingText] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<any>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const isMobile = useIsMobile();
 
   const { data: genome } = useQuery({
@@ -137,17 +106,19 @@ function ChatContent() {
     setSending(true);
     setStreamingText('');
 
-    // Подготовить историю диалога (последние 6 сообщений)
     const dialogueHistory = messages.slice(-6).map(m => ({
       role: m.role,
       content: m.content,
     }));
 
     try {
-      const token = document.cookie.split('; ').find(c => c.startsWith('arkaim_session='))?.split('=')[1] || '';
+      // arkaim_session — httponly cookie, приходит автоматически (credentials: 'same-origin').
+      // Ручной Authorization-заголовок из document.cookie вернул бы ПУСТОЙ токен и
+      // перебил бы валидную cookie-сессию в auth.verify_request. Поэтому не шлём его.
       const resp = await fetch('/v1/stream', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: q, messages: dialogueHistory }),
       });
 
@@ -188,7 +159,7 @@ function ChatContent() {
     }
   }, [input, sending, messages]);
 
-  const newSession = () => { setMessages([]); setInput(''); localStorage.removeItem(SESSION_KEY); };
+  const newSession = () => { setMessages([]); setInput(''); localStorage.removeItem(SESSION_KEY); setConfirmOpen(false); };
 
   const selectTopic = (topicName: string) => {
     setMessages([]);
@@ -197,124 +168,121 @@ function ChatContent() {
     setTimeout(() => sendMessage(`Расскажи о теме «${topicName}»`), 100);
   };
 
-  // Sidebar content
   const sidebarContent = (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <Card size="small" style={{ background: 'linear-gradient(135deg, #1e293b, #334155)', color: '#fff', border: 'none' }}>
+      <LCard size="small" style={{ background: 'var(--card-bg)', color: 'var(--foreground)', border: '1px solid var(--card-border)' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '2.5rem', marginBottom: 4 }}>𓃉</div>
-          <Text strong style={{ color: '#fff', fontSize: 14 }}>Наследие Аркаима</Text>
-          <div style={{ color: '#94a3b8', fontSize: 12, marginTop: 4 }}>Цифровое сознание книги</div>
+          <span style={{ fontWeight: 600, color: 'var(--foreground)', fontSize: 14 }}>Наследие Аркаима</span>
+          <div style={{ color: 'var(--foreground)', opacity: 0.65, fontSize: 12, marginTop: 4 }}>Цифровое сознание книги</div>
           {profile?.last_topic && (
             <div style={{ marginTop: 8 }}>
-              <Tag style={{ fontSize: 10, background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none' }}>
+              <LTag style={{ fontSize: 10, background: 'var(--card-border)', color: 'var(--foreground)', border: '1px solid var(--card-border)' }}>
                 Последняя тема: {profile.last_topic}
-              </Tag>
+              </LTag>
             </div>
           )}
         </div>
-      </Card>
+      </LCard>
 
-      <Card size="small" title="Навигация">
-        <Space direction="vertical" size={4} style={{ width: '100%' }}>
-          <Link href="/library" style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}><BookOutlined /> Библиотека</Link>
-          <Link href="/search" style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}><BulbOutlined /> Поиск</Link>
-          <Link href="/reading" style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}><BookOutlined /> Чтение</Link>
-        </Space>
-      </Card>
+      <LCard size="small" title="Навигация">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <Link href="/library" style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, color: 'var(--foreground)' }}><BookOutlined /> Библиотека</Link>
+          <Link href="/search" style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, color: 'var(--foreground)' }}><BulbOutlined /> Поиск</Link>
+          <Link href="/reading" style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, color: 'var(--foreground)' }}><BookOutlined /> Чтение</Link>
+        </div>
+      </LCard>
 
-      <Card size="small" title={<><BookOutlined /> Темы</>}>
+      <LCard size="small" title={<><BookOutlined /> Темы</>}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {genome?.themes?.slice(0, 12).map((t, i) => (
-            <Tooltip key={i} title={t.description}>
-              <Tag
-                onClick={() => selectTopic(t.name)}
-                style={{ marginBottom: 0, cursor: 'pointer', fontSize: 11, background: '#334155', color: '#e2e8f0', borderColor: '#475569' }}
-              >{t.name}</Tag>
-            </Tooltip>
+            <LTag
+              key={i}
+              title={t.description}
+              onClick={() => selectTopic(t.name)}
+              style={{ marginBottom: 0, cursor: 'pointer', fontSize: 11, background: 'var(--card-border)', color: 'var(--foreground)', borderColor: 'var(--card-border)' }}
+            >{t.name}</LTag>
           ))}
         </div>
-      </Card>
+      </LCard>
 
       {profile?.topics && profile.topics.length > 0 && (
-        <Card size="small" title="Мои темы">
+        <LCard size="small" title="Мои темы">
           {profile.topics.slice(0, 5).map((t, i) => (
             <div key={i} style={{ marginBottom: 6, cursor: 'pointer', padding: '4px 0', borderRadius: 4, transition: 'background 0.2s' }}
               onClick={() => selectTopic(t.name)}
-              onMouseEnter={e => (e.currentTarget.style.background = '#334155')}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--card-border)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 2 }}>
-                <span style={{ color: '#e2e8f0' }}>{t.name}</span><Text style={{ color: '#94a3b8', fontSize: 11 }}>{Math.round(t.depth * 100)}%</Text>
+                <span style={{ color: 'var(--foreground)' }}>{t.name}</span><span style={{ color: 'var(--foreground)', opacity: 0.65, fontSize: 11 }}>{Math.round(t.depth * 100)}%</span>
               </div>
-              <Progress percent={Math.round(t.depth * 100)} size="small" showInfo={false}
-                strokeColor={t.depth > 0.7 ? '#52c41a' : t.depth > 0.4 ? '#3b82f6' : '#475569'} />
+              <LProgress percent={Math.round(t.depth * 100)} size="small" showInfo={false}
+                strokeColor={t.depth > 0.7 ? '#52c41a' : t.depth > 0.4 ? '#3b82f6' : 'var(--foreground)'} />
             </div>
           ))}
-        </Card>
+        </LCard>
       )}
 
-      <Card size="small">
-        <Space direction="vertical" size={2} style={{ width: '100%' }}>
+      <LCard size="small">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-            <Text type="secondary">Вопросов</Text><Text>{profile?.questions_total ?? 0}</Text>
+            <span style={{ color: 'var(--foreground)', opacity: 0.65 }}>Вопросов</span><span style={{ color: 'var(--foreground)' }}>{profile?.questions_total ?? 0}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-            <Text type="secondary">Диалогов</Text><Text>{profile?.conversation_count ?? 0}</Text>
+            <span style={{ color: 'var(--foreground)', opacity: 0.65 }}>Диалогов</span><span style={{ color: 'var(--foreground)' }}>{profile?.conversation_count ?? 0}</span>
           </div>
-        </Space>
-      </Card>
+        </div>
+      </LCard>
     </div>
   );
 
   return (
     <div style={{ display: 'flex', gap: '1rem', height: 'calc(100vh - 100px)' }}>
-      {/* Sidebar: desktop */}
       {!isMobile && <div style={{ width: 260, flexShrink: 0, overflow: 'auto' }}>{sidebarContent}</div>}
 
-      {/* Sidebar: mobile drawer */}
-      <Drawer title="Навигация" placement="left" onClose={() => setSidebarOpen(false)} open={sidebarOpen} width={280}>
+      <LDrawer title="Навигация" placement="left" onClose={() => setSidebarOpen(false)} open={sidebarOpen} width={280}>
         {sidebarContent}
-      </Drawer>
+      </LDrawer>
 
-      {/* Chat area */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <Space>
-            {isMobile && <Button type="text" icon={<MenuOutlined />} onClick={() => setSidebarOpen(true)} />}
+          <LSpace>
+            {isMobile && <LButton type="text" icon={<MenuOutlined />} onClick={() => setSidebarOpen(true)} />}
             <div>
-              <Title level={4} style={{ margin: 0 }}>Чат с книгой</Title>
-              <Text type="secondary" style={{ fontSize: 12 }}>Задайте вопрос книге «Наследие Аркаима»</Text>
+              <h4 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--foreground)' }}>Чат с книгой</h4>
+              <span style={{ fontSize: 12, color: 'var(--foreground)', opacity: 0.65 }}>Задайте вопрос книге «Наследие Аркаима»</span>
             </div>
-          </Space>
+          </LSpace>
           {messages.length > 0 && (
-            <Space>
-              <Button icon={<PlusOutlined />} size="small" onClick={newSession}>Новая сессия</Button>
-              <Popconfirm title="Очистить историю?" onConfirm={newSession} okText="Да" cancelText="Нет">
-                <Button icon={<ClearOutlined />} size="small">Очистить</Button>
-              </Popconfirm>
-            </Space>
+            <LSpace>
+              <LButton icon={<PlusOutlined />} size="small" onClick={newSession}>Новая сессия</LButton>
+              <LButton icon={<ClearOutlined />} size="small" onClick={() => setConfirmOpen(true)}>Очистить</LButton>
+            </LSpace>
           )}
         </div>
 
-        {/* Messages */}
-        <div style={{ flex: 1, overflow: 'auto', background: '#0f172a', borderRadius: 10, padding: 16, border: '1px solid #1e293b' }}>
+        <LModal open={confirmOpen} title="Очистить историю?" onCancel={() => setConfirmOpen(false)}
+          footer={<><LButton onClick={() => setConfirmOpen(false)}>Нет</LButton><LButton type="primary" danger onClick={newSession}>Да, очистить</LButton></>}>
+          <span>Вы уверены, что хотите очистить всю историю чата?</span>
+        </LModal>
+
+        <div style={{ flex: 1, overflow: 'auto', background: 'var(--surface-bg)', borderRadius: 10, padding: 16, border: '1px solid var(--card-border)' }}>
           {messages.length === 0 && (
             <div style={{ padding: '2rem 0', textAlign: 'center' }}>
               <div style={{ fontSize: '3rem', marginBottom: 16 }}>𓃉</div>
-              <Title level={4} style={{ marginBottom: 8 }}>Задайте вопрос книге</Title>
-              <Text style={{ display: 'block', marginBottom: 24, maxWidth: 400, margin: '0 auto 24px', color: '#94a3b8', fontSize: 14 }}>
+              <h4 style={{ marginBottom: 8, fontSize: 16, fontWeight: 700, color: 'var(--foreground)' }}>Задайте вопрос книге</h4>
+              <span style={{ display: 'block', marginBottom: 24, maxWidth: 400, margin: '0 auto 24px', color: 'var(--foreground)', opacity: 0.65, fontSize: 14 }}>
                 Книга ответит на основе своего содержания, тем и знаний
-              </Text>
+              </span>
               {recentQuestions.length > 0 && (
                 <div style={{ marginBottom: 16, maxWidth: 500, margin: '0 auto 16px' }}>
-                  <Text style={{ fontSize: 12, color: '#94a3b8' }}><HistoryOutlined /> Недавние вопросы:</Text>
+                  <span style={{ fontSize: 12, color: 'var(--foreground)', opacity: 0.65 }}><HistoryOutlined /> Недавние вопросы:</span>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
                     {recentQuestions.map((item, i) => (
                       <div key={i} onClick={() => sendMessage(item.content)}
-                        style={{ padding: '10px 14px', background: '#1e293b', border: '1px solid #334155', borderRadius: 8, cursor: 'pointer', fontSize: 13, textAlign: 'left', color: '#e2e8f0', transition: 'border-color 0.2s' }}
+                        style={{ padding: '10px 14px', background: 'var(--card-border)', border: '1px solid var(--card-border)', borderRadius: 8, cursor: 'pointer', fontSize: 13, textAlign: 'left', color: 'var(--foreground)', transition: 'border-color 0.2s' }}
                         onMouseEnter={e => (e.currentTarget.style.borderColor = '#3b82f6')}
-                        onMouseLeave={e => (e.currentTarget.style.borderColor = '#334155')}>
+                        onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--card-border)')}>
                         {item.content}
                       </div>
                     ))}
@@ -322,13 +290,13 @@ function ChatContent() {
                 </div>
               )}
               <div style={{ maxWidth: 500, margin: '0 auto' }}>
-                <Text style={{ fontSize: 12, color: '#94a3b8' }}><BulbOutlined /> Попробуйте спросить:</Text>
+                <span style={{ fontSize: 12, color: 'var(--foreground)', opacity: 0.65 }}><BulbOutlined /> Попробуйте спросить:</span>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
                   {EXAMPLE_QUESTIONS.map((q, i) => (
                     <div key={i} onClick={() => sendMessage(q)}
-                      style={{ padding: '10px 14px', background: '#1e293b', border: '1px solid #334155', borderRadius: 8, cursor: 'pointer', fontSize: 13, textAlign: 'left', color: '#e2e8f0', transition: 'border-color 0.2s' }}
+                      style={{ padding: '10px 14px', background: 'var(--card-border)', border: '1px solid var(--card-border)', borderRadius: 8, cursor: 'pointer', fontSize: 13, textAlign: 'left', color: 'var(--foreground)', transition: 'border-color 0.2s' }}
                       onMouseEnter={e => (e.currentTarget.style.borderColor = '#3b82f6')}
-                      onMouseLeave={e => (e.currentTarget.style.borderColor = '#334155')}>
+                      onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--card-border)')}>
                       {q}
                     </div>
                   ))}
@@ -341,10 +309,10 @@ function ChatContent() {
             <div key={i} style={{ marginBottom: 16 }}>
               {msg.role === 'user' ? (
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                  <div style={{ maxWidth: '50%', minWidth: 120, background: '#2563eb', color: '#fff', padding: '10px 14px', borderRadius: '14px 2px 14px 14px', fontSize: 14, lineHeight: 1.6 }}>
+                  <div style={{ maxWidth: '50%', minWidth: 120, background: '#1677ff', color: '#fff', padding: '10px 14px', borderRadius: '14px 2px 14px 14px', fontSize: 14, lineHeight: 1.6 }}>
                     {msg.content}
                   </div>
-                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#dbeafe', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--card-border)', color: '#1677ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <UserOutlined />
                   </div>
                 </div>
@@ -353,12 +321,12 @@ function ChatContent() {
                   <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #0f172a, #1e293b)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <BookOutlined />
                   </div>
-                  <div style={{ flex: 1, background: '#1e293b', border: '1px solid #334155', borderRadius: '2px 14px 14px 14px', padding: '12px 16px', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
-                    <div style={{ color: '#e2e8f0', fontSize: 14, lineHeight: 1.7 }}>
+                  <div style={{ flex: 1, background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '2px 14px 14px 14px', padding: '12px 16px', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+                    <div style={{ color: 'var(--foreground)', fontSize: 14, lineHeight: 1.7 }}>
                       <Markdown content={msg.content} />
                     </div>
                     <SourceBadge sourceType={msg.sourceType} />
-                    {msg.time && <div style={{ fontSize: 11, color: '#64748b', marginTop: 3, paddingLeft: 4 }}>{msg.time}</div>}
+                    {msg.time && <div style={{ fontSize: 11, color: 'var(--foreground)', opacity: 0.65, marginTop: 3, paddingLeft: 4 }}>{msg.time}</div>}
                   </div>
                 </div>
               )}
@@ -370,10 +338,10 @@ function ChatContent() {
               <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #0f172a, #1e293b)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <BookOutlined />
               </div>
-              <div style={{ flex: 1, background: '#1e293b', border: '1px solid #334155', borderRadius: '2px 14px 14px 14px', padding: '12px 16px', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
-                <div style={{ color: '#e2e8f0', fontSize: 14, lineHeight: 1.7 }}>
+              <div style={{ flex: 1, background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '2px 14px 14px 14px', padding: '12px 16px', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+                <div style={{ color: 'var(--foreground)', fontSize: 14, lineHeight: 1.7 }}>
                   <Markdown content={streamingText} />
-                  <span style={{ color: '#3b82f6' }}>▌</span>
+                  <span style={{ color: '#1677ff' }}>▌</span>
                 </div>
               </div>
             </div>
@@ -384,8 +352,8 @@ function ChatContent() {
               <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #0f172a, #1e293b)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <BookOutlined />
               </div>
-              <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '2px 14px 14px 14px', padding: '12px 16px', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
-                <Space><Spin size="small" /><Text style={{ color: '#94a3b8', fontSize: 13 }}>Думаю...</Text></Space>
+              <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '2px 14px 14px 14px', padding: '12px 16px', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+                <LSpace><LSpin size="small" /><span style={{ color: 'var(--foreground)', opacity: 0.65, fontSize: 13 }}>Думаю...</span></LSpace>
               </div>
             </div>
           )}
@@ -393,14 +361,13 @@ function ChatContent() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input */}
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-          <TextArea ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
+          <LTextArea ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
             onPressEnter={e => { if (!e.shiftKey) { e.preventDefault(); sendMessage(); } }}
             placeholder={messages.length === 0 ? 'Ваш вопрос книге...' : 'Задайте ещё вопрос...'}
             autoSize={{ minRows: 1, maxRows: 4 }} disabled={sending} style={{ borderRadius: 8 }} />
-          <Button type="primary" icon={<SendOutlined />} onClick={() => sendMessage()} loading={sending}
-            style={{ borderRadius: 8, height: 'auto' }}>Отправить</Button>
+          <LButton type="primary" icon={<SendOutlined />} onClick={() => sendMessage()} loading={sending}
+            style={{ borderRadius: 8, height: 'auto' }}>Отправить</LButton>
         </div>
       </div>
     </div>

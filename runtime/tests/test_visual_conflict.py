@@ -39,7 +39,7 @@ class TestGenerateConflictScene:
         b = {"name": "Атлантида", "type": "civilization"}
         scene = generate_conflict_scene(a, b, chapter=3)
         assert scene["chapter"] == 3
-        assert scene["emotion"] == "конфликт_цивилизаций"
+        assert scene["emotion"] == "conflict_civilizations"
         assert scene["visual_style_hint"] == "duality_contrast"
         assert len(scene["palette_a"]) == 3
         assert len(scene["palette_b"]) == 3
@@ -74,7 +74,7 @@ class TestGenerateConflictScene:
         a = {"name": "Хаос"}
         b = {"name": "Гармония"}
         scene = generate_conflict_scene(a, b)
-        assert scene["emotion"] == "борьба_противоположностей"
+        assert scene["emotion"] == "struggle_of_opposites"
         assert "#8B0000" in scene["palette_a"]
         assert "#90EE90" in scene["palette_b"]
 
@@ -89,7 +89,7 @@ class TestGenerateAllConflictScenes:
         }
         scenes = generate_all_conflict_scenes(genome)
         assert len(scenes) == 1
-        assert scenes[0]["emotion"] == "конфликт_цивилизаций"
+        assert scenes[0]["emotion"] == "conflict_civilizations"
 
     def test_no_duplicates(self):
         genome = {
@@ -123,7 +123,7 @@ class TestGenerateAllConflictScenes:
         }
         scenes = generate_all_conflict_scenes(genome)
         assert len(scenes) == 1
-        assert scenes[0]["emotion"] != "конфликт_цивилизаций"  # fallback
+        assert scenes[0]["emotion"] != "conflict_civilizations"  # fallback
 
     def test_all_templates_accessible(self):
         for key in CONFLICT_TEMPLATES:

@@ -1,17 +1,12 @@
 'use client';
 
-import { Card, Row, Col, Statistic, Typography, List, Tag, Space, Progress, Spin, Button } from 'antd';
-import { UserOutlined, KeyOutlined, TeamOutlined, LinkOutlined, ReloadOutlined, HeartOutlined } from '@ant-design/icons';
+import { Card, Row, Col, Statistic, Typography, List, Tag, Space, Spin, Button, Alert } from 'antd';
+import { UserOutlined, KeyOutlined, TeamOutlined, LinkOutlined, HeartOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
+import type { Session, ApiKey, Invite, AdminStats, Suggestion } from '@/shared/types';
 
 const { Title, Text } = Typography;
-
-type AdminStats = {
-  users: { total: number; by_role: Record<string, number> };
-  presence: { trending_topics: number; pending_suggestions: number };
-  email: Record<string, unknown>;
-};
 
 type AnalyticsData = {
   total_requests: number;
@@ -19,47 +14,46 @@ type AnalyticsData = {
   error_rate: number;
 };
 
-type Suggestion = {
-  id: string;
-  topic: string;
-  reason?: string;
-  status: string;
-};
-
 export function DashboardPanel() {
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
     queryKey: ['admin-stats'],
     queryFn: () => api.get<AdminStats>('/auth/admin/stats'),
   });
 
-  const { data: analytics } = useQuery({
+  const { data: analytics, isLoading: analyticsLoading } = useQuery({
     queryKey: ['analytics'],
     queryFn: () => api.get<AnalyticsData>('/analytics'),
   });
 
-  const { data: sessions } = useQuery({
+  const { data: sessions, isLoading: sessionsLoading } = useQuery({
     queryKey: ['admin-sessions'],
-    queryFn: () => api.get<any[]>('/auth/admin/sessions'),
+    queryFn: () => api.get<Session[]>('/auth/admin/sessions'),
   });
 
-  const { data: apiKeys } = useQuery({
+  const { data: apiKeys, isLoading: apiKeysLoading } = useQuery({
     queryKey: ['admin-api-keys'],
-    queryFn: () => api.get<any[]>('/auth/admin/api-keys'),
+    queryFn: () => api.get<ApiKey[]>('/auth/admin/api-keys'),
   });
 
-  const { data: invites } = useQuery({
+  const { data: invites, isLoading: invitesLoading } = useQuery({
     queryKey: ['admin-invites'],
-    queryFn: () => api.get<any[]>('/auth/admin/invites'),
+    queryFn: () => api.get<Invite[]>('/auth/admin/invites'),
   });
 
-  const { data: suggestions } = useQuery({
+  const { data: suggestions, isLoading: suggestionsLoading } = useQuery({
     queryKey: ['suggestions'],
     queryFn: () => api.get<{ suggestions: Suggestion[] }>('/book/presence/suggestions'),
   });
 
-  if (statsLoading) return <Spin size="large" />;
+  if (statsLoading || analyticsLoading || sessionsLoading || apiKeysLoading || invitesLoading || suggestionsLoading) {
+    return <div style={{ textAlign: 'center', padding: 40 }}><Spin size="large" /></div>;
+  }
 
-  const activeInvites = (invites ?? []).filter((i: any) => i.is_active && i.use_count < i.max_uses).length || 0;
+  if (statsError) {
+    return <Alert type="error" message="Ошибка загрузки данных" />;
+  }
+
+  const activeInvites = (invites ?? []).filter((i) => i.is_active && i.use_count < i.max_uses).length || 0;
   const pendingSuggestions = suggestions?.suggestions?.filter((s: Suggestion) => s.status === 'pending').length || 0;
 
   return (
@@ -78,7 +72,7 @@ export function DashboardPanel() {
         </Col>
         <Col xs={12} sm={6}>
           <Card size="small">
-            <Statistic title="API-ключей" value={(apiKeys ?? []).filter((k: any) => k.is_active).length} prefix={<KeyOutlined />} />
+            <Statistic title="API-ключей" value={(apiKeys ?? []).filter((k) => k.is_active).length} prefix={<KeyOutlined />} />
           </Card>
         </Col>
         <Col xs={12} sm={6}>
@@ -132,7 +126,7 @@ export function DashboardPanel() {
               <List
                 size="small"
                 dataSource={invites.slice(0, 5)}
-                renderItem={(item: any) => (
+                renderItem={(item) => (
                   <List.Item>
                     <Space>
                       <Tag color={item.is_active ? 'green' : 'default'}>{item.role}</Tag>

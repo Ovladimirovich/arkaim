@@ -12,6 +12,9 @@ import { ChatScreen } from '../screens/chat/ChatScreen';
 import { ProfileScreen } from '../screens/profile/ProfileScreen';
 import { HistoryScreen } from '../screens/history/HistoryScreen';
 import { AdminScreen } from '../screens/admin/AdminScreen';
+import { ReadingScreen } from '../screens/reading/ReadingScreen';
+import { SearchScreen } from '../screens/search/SearchScreen';
+import { NotificationsScreen } from '../screens/notifications/NotificationsScreen';
 import { AuthProvider, useAuth } from '../shared/lib/auth';
 import { colors } from '../shared/theme';
 
@@ -27,6 +30,9 @@ function MainTabs() {
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap = 'chatbubble';
           if (route.name === 'Chat') iconName = focused ? 'chatbubble' : 'chatbubble-outline';
+          else if (route.name === 'Reading') iconName = focused ? 'book' : 'book-outline';
+          else if (route.name === 'Search') iconName = focused ? 'search' : 'search-outline';
+          else if (route.name === 'Notifications') iconName = focused ? 'notifications' : 'notifications-outline';
           else if (route.name === 'Profile') iconName = focused ? 'person' : 'person-outline';
           else if (route.name === 'History') iconName = focused ? 'time' : 'time-outline';
           else if (route.name === 'Admin') iconName = focused ? 'settings' : 'settings-outline';
@@ -39,6 +45,9 @@ function MainTabs() {
       })}
     >
       <Tab.Screen name="Chat" component={ChatScreen} options={{ title: 'Чат с книгой' }} />
+      <Tab.Screen name="Reading" component={ReadingScreen} options={{ title: 'Чтение' }} />
+      <Tab.Screen name="Search" component={SearchScreen} options={{ title: 'Поиск' }} />
+      <Tab.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Уведомления' }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Профиль' }} />
       <Tab.Screen name="History" component={HistoryScreen} options={{ title: 'История' }} />
       {user?.role === 'admin' && (

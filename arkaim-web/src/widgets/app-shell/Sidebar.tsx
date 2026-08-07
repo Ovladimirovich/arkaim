@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { Layout, Menu } from 'antd';
 import {
@@ -84,7 +84,7 @@ export function Sidebar({ collapsed, onCollapse, selectedKey }: SidebarProps) {
     .map(group => ({
       ...group,
       items: group.items.filter(item =>
-        !(item as any).roles || (item as any).roles.includes(user?.role || '')
+        !(item as { roles?: string[] }).roles || (item as { roles?: string[] }).roles?.includes(user?.role || '')
       ),
     }))
     .filter(group => group.items.length > 0);
@@ -109,9 +109,9 @@ export function Sidebar({ collapsed, onCollapse, selectedKey }: SidebarProps) {
         top: 0,
         bottom: 0,
         zIndex: 100,
-        display: 'flex',
-        flexDirection: 'column',
+        overflow: 'hidden',
       }}
+      styles={{ body: { display: 'flex', flexDirection: 'column', overflow: 'hidden' } }}
       trigger={null}
     >
       {/* Logo */}

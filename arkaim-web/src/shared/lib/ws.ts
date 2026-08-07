@@ -7,19 +7,20 @@ const WS_BASE = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8642';
 
 type WsEvent = 'pulse_beat' | 'new_suggestion' | 'service_status' |
   'new_question' | 'your_question_answered' | 'chat_response' |
-  'crowdfunding_milestone' | '_connected' | '_disconnected';
+  'crowdfunding_milestone' | '_connected' | '_disconnected' |
+  'exploration_started' | 'exploration_progress' | 'exploration_complete';
 
 type WsMessage = { event: WsEvent; data: Record<string, unknown> };
 type WsHandler = (data: Record<string, unknown>) => void;
 
 class WsClient {
   private ws: WebSocket | null = null;
-  private handlers: Map<WsEvent, Set<WsHandler>> = new Map();
+  private handlers: Map<WsEvent | string, Set<WsHandler>> = new Map();
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private token: string | null = null;
   private connected = false;
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 3;
+  private maxReconnectAttempts = 10;
 
   connect(token?: string) {
     if (typeof window === 'undefined') return;
@@ -62,13 +63,18 @@ class WsClient {
     this.reconnectAttempts = 0;
   }
 
-  on(event: WsEvent, handler: WsHandler) {
+  reconnect() {
+    this.disconnect();
+    this.connect(this.token || undefined);
+  }
+
+  on(event: WsEvent | string, handler: WsHandler) {
     if (!this.handlers.has(event)) this.handlers.set(event, new Set());
     this.handlers.get(event)!.add(handler);
     return () => this.handlers.get(event)?.delete(handler);
   }
 
-  private emit(event: WsEvent, data: Record<string, unknown>) {
+  private emit(event: WsEvent | string, data: Record<string, unknown>) {
     this.handlers.get(event)?.forEach(h => h(data));
   }
 
@@ -76,7 +82,11 @@ class WsClient {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) return;
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     this.reconnectAttempts++;
-    this.reconnectTimer = setTimeout(() => this.connect(), 5000);
+    // Exponential backoff with jitter: 1s, 2s, 4s, 8s, 16s, 32s, 60s max
+    const baseDelay = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 60000);
+    const jitter = Math.random() * 1000;
+    const delay = baseDelay + jitter;
+    this.reconnectTimer = setTimeout(() => this.connect(), delay);
   }
 
   private getTokenFromCookie(): string | null {

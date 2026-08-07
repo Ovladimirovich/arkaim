@@ -1,22 +1,25 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Typography, Input, Tabs, Table, Tag, Space, Empty, Spin, List, Button, Row, Col, Badge } from 'antd';
 import { SearchOutlined, DatabaseOutlined, BookOutlined, FileTextOutlined, TeamOutlined, BulbOutlined, GlobalOutlined, CommentOutlined, LikeOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
 import { ProtectedRoute } from '@/shared/lib/guards';
-
-const { Title, Text, Paragraph } = Typography;
-const { Search } = Input;
-
-// ── Types ──────────────────────────────────────────
+import { LCard } from '@/shared/ui/light/LCard';
+import { LTabs } from '@/shared/ui/light/LTabs';
+import { LTable } from '@/shared/ui/light/LTable';
+import { LTag } from '@/shared/ui/light/LTag';
+import { LSpace } from '@/shared/ui/light/LSpace';
+import { LEmpty } from '@/shared/ui/light/LEmpty';
+import { LSpin } from '@/shared/ui/light/LSpin';
+import { LInput } from '@/shared/ui/light/LInput';
+import { LButton } from '@/shared/ui/light/LButton';
 
 type SearchResult = {
   id: string;
   text: string;
   score: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 };
 
 type FactResult = {
@@ -54,7 +57,26 @@ type Artifact = {
   created_at: string;
 };
 
-// ── Global Search Panel ──────────────────────────
+function SearchBar({ value, onChange, onSearch, placeholder, loading }: {
+  value: string; onChange: (v: string) => void; onSearch: () => void;
+  placeholder: string; loading?: boolean;
+}) {
+  return (
+    <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+      <div style={{ flex: 1 }}>
+        <LInput
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          onPressEnter={onSearch}
+          prefix={<SearchOutlined />}
+          size="large"
+        />
+      </div>
+      <LButton onClick={onSearch} loading={loading}><SearchOutlined /> Найти</LButton>
+    </div>
+  );
+}
 
 function GlobalSearchPanel() {
   const [query, setQuery] = useState('');
@@ -78,132 +100,85 @@ function GlobalSearchPanel() {
   const artifacts = communityData?.artifacts || [];
   const totalResults = knowledgeResults.length + interpretations.length + artifacts.length;
 
-  const handleSearch = (value: string) => {
-    if (value.trim().length >= 2) {
-      setSearchQuery(value.trim());
-    }
+  const handleSearch = () => {
+    if (query.trim().length >= 2) setSearchQuery(query.trim());
   };
 
   return (
     <div>
-      <Search
-        placeholder="Поиск по всему — знания, факты, интерпретации, артефакты..."
-        enterButton={<><SearchOutlined /> Найти</>}
-        size="large"
-        loading={isLoading}
-        value={query}
-        onChange={e => setQuery(e.target.value)}
-        onSearch={handleSearch}
-        style={{ marginBottom: 16 }}
-      />
+      <SearchBar value={query} onChange={setQuery} onSearch={handleSearch} placeholder="Поиск по всему — знания, факты, интерпретации, артефакты..." loading={isLoading} />
 
       {searchQuery && !isLoading && (
-        <Tag color="blue" style={{ marginBottom: 16 }}>Найдено: {totalResults} результатов</Tag>
+        <LTag color="blue" style={{ marginBottom: 16 }}>Найдено: {totalResults} результатов</LTag>
       )}
 
       {isLoading ? (
-        <div style={{ textAlign: 'center', padding: 48 }}><Spin /></div>
+        <div style={{ textAlign: 'center', padding: 48 }}><LSpin /></div>
       ) : totalResults > 0 ? (
-        <Row gutter={[16, 16]}>
-          {/* Knowledge */}
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
           {knowledgeResults.length > 0 && (
-            <Col xs={24} lg={12}>
-              <Card title={<><BookOutlined /> Знания ({knowledgeResults.length})</>} size="small">
-                <List
-                  size="small"
-                  dataSource={knowledgeResults}
-                  renderItem={(item: SearchResult) => (
-                    <List.Item>
-                      <List.Item.Meta
-                        title={
-                          <Space>
-                            <Tag color={item.score > 0.7 ? 'green' : item.score > 0.4 ? 'blue' : 'default'}>
-                              {(item.score * 100).toFixed(0)}%
-                            </Tag>
-                            <Text ellipsis style={{ maxWidth: 300 }}>{item.text.substring(0, 80)}...</Text>
-                          </Space>
-                        }
-                        description={<Text type="secondary" style={{ fontSize: 11 }}>{item.metadata?.doc_id || ''}</Text>}
-                      />
-                    </List.Item>
-                  )}
-                />
-              </Card>
-            </Col>
+            <div style={{ flex: '1 1 400px' }}>
+              <LCard title={<><BookOutlined /> Знания ({knowledgeResults.length})</>} size="small">
+                {knowledgeResults.map((item: SearchResult) => (
+                  <div key={item.id} style={{ padding: '8px 0', borderBottom: '1px solid #f5f5f5' }}>
+                    <LSpace size={8}>
+                      <LTag color={item.score > 0.7 ? 'green' : item.score > 0.4 ? 'blue' : 'default'}>
+                        {(item.score * 100).toFixed(0)}%
+                      </LTag>
+                      <span style={{ fontSize: 13, maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {item.text.substring(0, 80)}...
+                      </span>
+                    </LSpace>
+                    <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{String(item.metadata?.doc_id || '')}</div>
+                  </div>
+                ))}
+              </LCard>
+            </div>
           )}
 
-          {/* Interpretations */}
           {interpretations.length > 0 && (
-            <Col xs={24} lg={12}>
-              <Card title={<><BulbOutlined /> Интерпретации ({interpretations.length})</>} size="small">
-                <List
-                  size="small"
-                  dataSource={interpretations}
-                  renderItem={(item: Interpretation) => (
-                    <List.Item>
-                      <List.Item.Meta
-                        title={
-                          <Space>
-                            <Text strong>{item.reader_name}</Text>
-                            <LikeOutlined /> {item.likes}
-                          </Space>
-                        }
-                        description={
-                          <div>
-                            <Text ellipsis style={{ fontSize: 12 }}>{item.text.substring(0, 100)}...</Text>
-                            <br />
-                            <Space wrap style={{ marginTop: 4 }}>
-                              {item.themes.slice(0, 3).map((t, i) => <Tag key={i} style={{ fontSize: 10 }}>{t}</Tag>)}
-                            </Space>
-                          </div>
-                        }
-                      />
-                    </List.Item>
-                  )}
-                />
-              </Card>
-            </Col>
+            <div style={{ flex: '1 1 400px' }}>
+              <LCard title={<><BulbOutlined /> Интерпретации ({interpretations.length})</>} size="small">
+                {interpretations.map((item: Interpretation) => (
+                  <div key={item.id} style={{ padding: '8px 0', borderBottom: '1px solid #f5f5f5' }}>
+                    <LSpace size={8}>
+                      <span style={{ fontWeight: 600, fontSize: 13 }}>{item.reader_name}</span>
+                      <LikeOutlined style={{ fontSize: 12 }} /> <span style={{ fontSize: 12 }}>{item.likes}</span>
+                    </LSpace>
+                    <div style={{ fontSize: 12, color: '#555', marginTop: 2 }}>{item.text.substring(0, 100)}...</div>
+                    <LSpace wrap size={4} style={{ marginTop: 4 }}>
+                      {item.themes.slice(0, 3).map((t, i) => <LTag key={i} style={{ fontSize: 10 }}>{t}</LTag>)}
+                    </LSpace>
+                  </div>
+                ))}
+              </LCard>
+            </div>
           )}
 
-          {/* Artifacts */}
           {artifacts.length > 0 && (
-            <Col xs={24} lg={12}>
-              <Card title={<><DatabaseOutlined /> Артефакты ({artifacts.length})</>} size="small">
-                <List
-                  size="small"
-                  dataSource={artifacts}
-                  renderItem={(item: Artifact) => (
-                    <List.Item>
-                      <List.Item.Meta
-                        title={
-                          <Space>
-                            <Tag color={item.category === 'archaeology' ? 'brown' : 'blue'}>{item.category}</Tag>
-                            <Text strong>{item.title}</Text>
-                            <LikeOutlined /> {item.likes}
-                          </Space>
-                        }
-                        description={
-                          <div>
-                            <Text ellipsis style={{ fontSize: 12 }}>{item.description.substring(0, 100)}...</Text>
-                            {item.location && <Text type="secondary" style={{ fontSize: 11 }}> · {item.location}</Text>}
-                          </div>
-                        }
-                      />
-                    </List.Item>
-                  )}
-                />
-              </Card>
-            </Col>
+            <div style={{ flex: '1 1 400px' }}>
+              <LCard title={<><DatabaseOutlined /> Артефакты ({artifacts.length})</>} size="small">
+                {artifacts.map((item: Artifact) => (
+                  <div key={item.id} style={{ padding: '8px 0', borderBottom: '1px solid #f5f5f5' }}>
+                    <LSpace size={8}>
+                      <LTag color={item.category === 'archaeology' ? 'brown' : 'blue'}>{item.category}</LTag>
+                      <span style={{ fontWeight: 600, fontSize: 13 }}>{item.title}</span>
+                      <LikeOutlined style={{ fontSize: 12 }} /> <span style={{ fontSize: 12 }}>{item.likes}</span>
+                    </LSpace>
+                    <div style={{ fontSize: 12, color: '#555', marginTop: 2 }}>{item.description.substring(0, 100)}...</div>
+                    {item.location && <span style={{ fontSize: 11, color: '#999' }}> · {item.location}</span>}
+                  </div>
+                ))}
+              </LCard>
+            </div>
           )}
-        </Row>
+        </div>
       ) : searchQuery ? (
-        <Empty description="Ничего не найдено" />
+        <LEmpty description="Ничего не найдено" />
       ) : null}
     </div>
   );
 }
-
-// ── Knowledge Search Panel ──────────────────────────
 
 function KnowledgeSearchPanel() {
   const [query, setQuery] = useState('');
@@ -216,10 +191,7 @@ function KnowledgeSearchPanel() {
     setLoading(true);
     setSearched(true);
     try {
-      const data = await api.post<{ results: SearchResult[] }>('/book/os/search', {
-        query: query.trim(),
-        n_results: 20,
-      });
+      const data = await api.post<{ results: SearchResult[] }>('/book/os/search', { query: query.trim(), n_results: 20 });
       setResults(data.results || []);
     } catch {
       setResults([]);
@@ -229,48 +201,45 @@ function KnowledgeSearchPanel() {
   };
 
   const columns = [
-    { title: 'Релевантность', dataIndex: 'score', key: 'score', width: 100, render: (v: number) => (
-      <Tag color={v > 0.7 ? 'green' : v > 0.4 ? 'blue' : 'default'}>{(v * 100).toFixed(0)}%</Tag>
-    )},
-    { title: 'Текст', dataIndex: 'text', key: 'text', render: (v: string) => (
-      <Text style={{ fontSize: 13 }}>{v.length > 200 ? v.slice(0, 200) + '...' : v}</Text>
-    )},
-    { title: 'Документ', key: 'doc', render: (_: any, r: SearchResult) => (
-      <Tag>{r.metadata?.doc_id || '—'}</Tag>
-    )},
+    {
+      title: 'Релевантность', dataIndex: 'score', key: 'score', width: 100,
+      render: (v: unknown) => {
+      const score = v as number;
+      return (
+        <LTag color={score > 0.7 ? 'green' : score > 0.4 ? 'blue' : 'default'}>{((v as number) * 100).toFixed(0)}%</LTag>
+      );
+    },
+    },
+    {
+      title: 'Текст', dataIndex: 'text', key: 'text',
+      render: (v: unknown) => <span style={{ fontSize: 13 }}>{(v as string).length > 200 ? (v as string).slice(0, 200) + '...' : v as string}</span>,
+    },
+    {
+      title: 'Документ', key: 'doc',
+      render: (_: unknown, r: unknown) => <LTag>{String((r as SearchResult).metadata?.doc_id || '—')}</LTag>,
+    },
   ];
 
   return (
     <div>
-      <Search
-        placeholder="Поиск по базе знаний книги..."
-        enterButton="Найти"
-        size="large"
-        loading={loading}
-        value={query}
-        onChange={e => setQuery(e.target.value)}
-        onSearch={handleSearch}
-        style={{ marginBottom: 16 }}
-      />
+      <SearchBar value={query} onChange={setQuery} onSearch={handleSearch} placeholder="Поиск по базе знаний книги..." loading={loading} />
 
       {searched && (
-        <Space style={{ marginBottom: 16 }}>
-          <Tag>Найдено: {results.length} результатов</Tag>
-        </Space>
+        <LSpace style={{ marginBottom: 16 }}>
+          <LTag>Найдено: {results.length} результатов</LTag>
+        </LSpace>
       )}
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 48 }}><Spin /></div>
+        <div style={{ textAlign: 'center', padding: 48 }}><LSpin /></div>
       ) : results.length > 0 ? (
-        <Table columns={columns} dataSource={results} rowKey="id" size="small" pagination={{ pageSize: 10 }} />
+        <LTable columns={columns} dataSource={results} rowKey="id" size="small" pagination={{ pageSize: 10 }} />
       ) : searched ? (
-        <Empty description="Ничего не найдено" />
+        <LEmpty description="Ничего не найдено" />
       ) : null}
     </div>
   );
 }
-
-// ── Community Search Panel ──────────────────────────
 
 function CommunitySearchPanel() {
   const [query, setQuery] = useState('');
@@ -285,88 +254,73 @@ function CommunitySearchPanel() {
   const interpretations = data?.interpretations || [];
   const artifacts = data?.artifacts || [];
 
-  const handleSearch = (value: string) => {
-    if (value.trim().length >= 2) {
-      setSearchQuery(value.trim());
-    }
+  const handleSearch = () => {
+    if (query.trim().length >= 2) setSearchQuery(query.trim());
   };
 
   return (
     <div>
-      <Search
-        placeholder="Поиск по интерпретациям и артефактам сообщества..."
-        enterButton="Найти"
-        size="large"
-        loading={isLoading}
-        value={query}
-        onChange={e => setQuery(e.target.value)}
-        onSearch={handleSearch}
-        style={{ marginBottom: 16 }}
-      />
+      <SearchBar value={query} onChange={setQuery} onSearch={handleSearch} placeholder="Поиск по интерпретациям и артефактам сообщества..." loading={isLoading} />
 
       {isLoading ? (
-        <div style={{ textAlign: 'center', padding: 48 }}><Spin /></div>
+        <div style={{ textAlign: 'center', padding: 48 }}><LSpin /></div>
       ) : (interpretations.length + artifacts.length) > 0 ? (
-        <Tabs
+        <LTabs
           items={[
             {
               key: 'interpretations',
               label: <><BulbOutlined /> Интерпретации ({interpretations.length})</>,
               children: (
-                <List
-                  dataSource={interpretations}
-                  renderItem={(item: Interpretation) => (
-                    <Card size="small" style={{ marginBottom: 8 }}>
-                      <Space direction="vertical" size={2} style={{ width: '100%' }}>
-                        <Space>
-                          <Text strong>{item.reader_name}</Text>
-                          <LikeOutlined /> {item.likes}
-                        </Space>
-                        <Text>{item.text}</Text>
-                        <Space wrap>
-                          {item.themes.map((t, i) => <Tag key={i}>{t}</Tag>)}
-                          {item.characters.map((c, i) => <Tag key={i} color="blue">{c}</Tag>)}
-                        </Space>
-                      </Space>
-                    </Card>
-                  )}
-                />
+                <div>
+                  {interpretations.map((item: Interpretation) => (
+                    <LCard key={item.id} size="small" style={{ marginBottom: 8 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
+                        <LSpace size={8}>
+                          <span style={{ fontWeight: 600, fontSize: 13 }}>{item.reader_name}</span>
+                          <LikeOutlined style={{ fontSize: 12 }} /> <span style={{ fontSize: 12 }}>{item.likes}</span>
+                        </LSpace>
+                        <span>{item.text}</span>
+                        <LSpace wrap size={4}>
+                          {item.themes.map((t, i) => <LTag key={i}>{t}</LTag>)}
+                          {item.characters.map((c, i) => <LTag key={i} color="blue">{c}</LTag>)}
+                        </LSpace>
+                      </div>
+                    </LCard>
+                  ))}
+                </div>
               ),
             },
             {
               key: 'artifacts',
               label: <><DatabaseOutlined /> Артефакты ({artifacts.length})</>,
               children: (
-                <List
-                  dataSource={artifacts}
-                  renderItem={(item: Artifact) => (
-                    <Card size="small" style={{ marginBottom: 8 }} title={item.title}>
-                      <Space direction="vertical" size={2} style={{ width: '100%' }}>
-                        <Space>
-                          <Tag color={item.category === 'archaeology' ? 'brown' : 'blue'}>{item.category}</Tag>
-                          <Text type="secondary">{item.location}</Text>
-                          <LikeOutlined /> {item.likes}
-                        </Space>
-                        <Text>{item.description}</Text>
-                        <Space wrap>
-                          {item.related_themes.map((t, i) => <Tag key={i}>{t}</Tag>)}
-                        </Space>
-                      </Space>
-                    </Card>
-                  )}
-                />
+                <div>
+                  {artifacts.map((item: Artifact) => (
+                    <LCard key={item.id} size="small" style={{ marginBottom: 8 }} title={item.title}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
+                        <LSpace size={8}>
+                          <LTag color={item.category === 'archaeology' ? 'brown' : 'blue'}>{item.category}</LTag>
+                          <span style={{ color: '#999', fontSize: 13 }}>{item.location}</span>
+                          <LikeOutlined style={{ fontSize: 12 }} /> <span style={{ fontSize: 12 }}>{item.likes}</span>
+                        </LSpace>
+                        <span>{item.description}</span>
+                        <LSpace wrap size={4}>
+                          {item.related_themes.map((t, i) => <LTag key={i}>{t}</LTag>)}
+                        </LSpace>
+                      </div>
+                    </LCard>
+                  ))}
+                </div>
               ),
             },
           ]}
         />
       ) : searchQuery ? (
-        <Empty description="Ничего не найдено" />
+        <LEmpty description="Ничего не найдено" />
       ) : null}
     </div>
   );
 }
-
-// ── Facts Search Panel ──────────────────────────────
 
 function FactsSearchPanel() {
   const [query, setQuery] = useState('');
@@ -389,44 +343,36 @@ function FactsSearchPanel() {
   };
 
   const columns = [
-    { title: 'Утверждение', dataIndex: 'statement', key: 'statement', render: (v: string) => <Text>{v}</Text> },
-    { title: 'Сущность', dataIndex: 'entity_id', key: 'entity', render: (v: string) => <Tag>{v}</Tag> },
-    { title: 'Уверенность', dataIndex: 'confidence', key: 'confidence', render: (v: number) => (
-      <Tag color={v > 0.7 ? 'green' : v > 0.4 ? 'blue' : 'default'}>{(v * 100).toFixed(0)}%</Tag>
-    )},
+    { title: 'Утверждение', dataIndex: 'statement', key: 'statement', render: (v: unknown) => <span>{v as string}</span> },
+    { title: 'Сущность', dataIndex: 'entity_id', key: 'entity', render: (v: unknown) => <LTag>{v as string}</LTag> },
+    {
+      title: 'Уверенность', dataIndex: 'confidence', key: 'confidence',
+      render: (v: unknown) => (
+        <LTag color={(v as number) > 0.7 ? 'green' : (v as number) > 0.4 ? 'blue' : 'default'}>{((v as number) * 100).toFixed(0)}%</LTag>
+      ),
+    },
   ];
 
   return (
     <div>
-      <Search
-        placeholder="Поиск по фактам книги..."
-        enterButton="Найти"
-        size="large"
-        loading={loading}
-        value={query}
-        onChange={e => setQuery(e.target.value)}
-        onSearch={handleSearch}
-        style={{ marginBottom: 16 }}
-      />
+      <SearchBar value={query} onChange={setQuery} onSearch={handleSearch} placeholder="Поиск по фактам книги..." loading={loading} />
 
       {searched && (
-        <Space style={{ marginBottom: 16 }}>
-          <Tag>Найдено: {results.length} фактов</Tag>
-        </Space>
+        <LSpace style={{ marginBottom: 16 }}>
+          <LTag>Найдено: {results.length} фактов</LTag>
+        </LSpace>
       )}
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 48 }}><Spin /></div>
+        <div style={{ textAlign: 'center', padding: 48 }}><LSpin /></div>
       ) : results.length > 0 ? (
-        <Table columns={columns} dataSource={results} rowKey="id" size="small" pagination={{ pageSize: 10 }} />
+        <LTable columns={columns} dataSource={results} rowKey="id" size="small" pagination={{ pageSize: 10 }} />
       ) : searched ? (
-        <Empty description="Фактов не найдено" />
+        <LEmpty description="Фактов не найдено" />
       ) : null}
     </div>
   );
 }
-
-// ── Entities Search Panel ──────────────────────────
 
 function EntitiesSearchPanel() {
   const [query, setQuery] = useState('');
@@ -449,46 +395,35 @@ function EntitiesSearchPanel() {
   };
 
   const columns = [
-    { title: 'Название', dataIndex: 'name', key: 'name', render: (v: string) => <Text strong>{v}</Text> },
-    { title: 'Тип', dataIndex: 'type', key: 'type', render: (v: string) => v ? <Tag>{v}</Tag> : '—' },
-    { title: 'Разрешено', dataIndex: 'resolved', key: 'resolved', render: (v: string) => v || '—' },
+    { title: 'Название', dataIndex: 'name', key: 'name', render: (v: unknown) => <strong>{v as string}</strong> },
+    { title: 'Тип', dataIndex: 'type', key: 'type', render: (v: unknown) => v ? <LTag>{v as string}</LTag> : '—' },
+    { title: 'Разрешено', dataIndex: 'resolved', key: 'resolved', render: (v: unknown) => (v as string) || '—' },
   ];
 
   return (
     <div>
-      <Search
-        placeholder="Поиск по сущностям (персонажи, локации, события)..."
-        enterButton="Найти"
-        size="large"
-        loading={loading}
-        value={query}
-        onChange={e => setQuery(e.target.value)}
-        onSearch={handleSearch}
-        style={{ marginBottom: 16 }}
-      />
+      <SearchBar value={query} onChange={setQuery} onSearch={handleSearch} placeholder="Поиск по сущностям (персонажи, локации, события)..." loading={loading} />
 
       {searched && (
-        <Space style={{ marginBottom: 16 }}>
-          <Tag>Найдено: {results.length} сущностей</Tag>
-        </Space>
+        <LSpace style={{ marginBottom: 16 }}>
+          <LTag>Найдено: {results.length} сущностей</LTag>
+        </LSpace>
       )}
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 48 }}><Spin /></div>
+        <div style={{ textAlign: 'center', padding: 48 }}><LSpin /></div>
       ) : results.length > 0 ? (
-        <Table columns={columns} dataSource={results} rowKey="name" size="small" pagination={{ pageSize: 10 }} />
+        <LTable columns={columns} dataSource={results} rowKey="name" size="small" pagination={{ pageSize: 10 }} />
       ) : searched ? (
-        <Empty description="Сущностей не найдено" />
+        <LEmpty description="Сущностей не найдено" />
       ) : null}
     </div>
   );
 }
 
-// ── Graph Search Panel ──────────────────────────────
-
 function GraphSearchPanel() {
   const [entityId, setEntityId] = useState('');
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
@@ -497,7 +432,7 @@ function GraphSearchPanel() {
     setLoading(true);
     setSearched(true);
     try {
-      const data = await api.get<{ neighbors: any[] }>(`/book/graph/entity/${encodeURIComponent(entityId.trim())}/neighbors?depth=2`);
+      const data = await api.get<{ neighbors: { id: string; name: string; type: string; relationship: string }[] }>(`/book/graph/entity/${encodeURIComponent(entityId.trim())}/neighbors?depth=2`);
       setResults(data.neighbors || []);
     } catch {
       setResults([]);
@@ -507,43 +442,32 @@ function GraphSearchPanel() {
   };
 
   const columns = [
-    { title: 'ID', dataIndex: 'id', key: 'id', render: (v: string) => <Tag>{v}</Tag> },
-    { title: 'Название', dataIndex: 'name', key: 'name', render: (v: string) => <Text strong>{v}</Text> },
-    { title: 'Тип', dataIndex: 'type', key: 'type', render: (v: string) => v ? <Tag>{v}</Tag> : '—' },
-    { title: 'Связь', dataIndex: 'relationship', key: 'rel', render: (v: string) => v || '—' },
+    { title: 'ID', dataIndex: 'id', key: 'id', render: (v: unknown) => <LTag>{v as string}</LTag> },
+    { title: 'Название', dataIndex: 'name', key: 'name', render: (v: unknown) => <strong>{v as string}</strong> },
+    { title: 'Тип', dataIndex: 'type', key: 'type', render: (v: unknown) => v ? <LTag>{v as string}</LTag> : '—' },
+    { title: 'Связь', dataIndex: 'relationship', key: 'rel', render: (v: unknown) => (v as string) || '—' },
   ];
 
   return (
     <div>
-      <Search
-        placeholder="Введите ID сущности для поиска связей..."
-        enterButton="Найти"
-        size="large"
-        loading={loading}
-        value={entityId}
-        onChange={e => setEntityId(e.target.value)}
-        onSearch={handleSearch}
-        style={{ marginBottom: 16 }}
-      />
+      <SearchBar value={entityId} onChange={setEntityId} onSearch={handleSearch} placeholder="Введите ID сущности для поиска связей..." loading={loading} />
 
       {searched && (
-        <Space style={{ marginBottom: 16 }}>
-          <Tag>Найдено: {results.length} связей</Tag>
-        </Space>
+        <LSpace style={{ marginBottom: 16 }}>
+          <LTag>Найдено: {results.length} связей</LTag>
+        </LSpace>
       )}
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 48 }}><Spin /></div>
+        <div style={{ textAlign: 'center', padding: 48 }}><LSpin /></div>
       ) : results.length > 0 ? (
-        <Table columns={columns} dataSource={results} rowKey="id" size="small" pagination={{ pageSize: 10 }} />
+        <LTable columns={columns} dataSource={results} rowKey="id" size="small" pagination={{ pageSize: 10 }} />
       ) : searched ? (
-        <Empty description="Связей не найдено" />
+        <LEmpty description="Связей не найдено" />
       ) : null}
     </div>
   );
 }
-
-// ── Main Page ──────────────────────────────────
 
 function SearchContent() {
   const items = [
@@ -557,11 +481,11 @@ function SearchContent() {
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-      <Title level={2}><SearchOutlined /> Поиск</Title>
-      <Paragraph type="secondary">
-        Ищите информацию в базе знаний книги «Наследие Аркаима» — знания, факты, сущности, связи, интерпретации и артефакты сообщества.
-      </Paragraph>
-      <Tabs items={items} defaultActiveKey="global" />
+      <h2><SearchOutlined /> Поиск</h2>
+      <p style={{ color: '#666' }}>
+        Ищите информацию в базе знаний книги — знания, факты, сущности, связи, интерпретации и артефакты сообщества.
+      </p>
+      <LTabs items={items} defaultActiveKey="global" />
     </div>
   );
 }

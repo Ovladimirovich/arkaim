@@ -1,7 +1,7 @@
-"""
-BookPulse — живое ядро цифрового сознания книги.
-Загружает геном, держит слои в памяти, делает такты жизни.
-Эволюционирует — новые главы обогащают знание, личность остаётся.
+﻿"""
+BookPulse вЂ” Р¶РёРІРѕРµ СЏРґСЂРѕ С†РёС„СЂРѕРІРѕРіРѕ СЃРѕР·РЅР°РЅРёСЏ РєРЅРёРіРё.
+Р—Р°РіСЂСѓР¶Р°РµС‚ РіРµРЅРѕРј, РґРµСЂР¶РёС‚ СЃР»РѕРё РІ РїР°РјСЏС‚Рё, РґРµР»Р°РµС‚ С‚Р°РєС‚С‹ Р¶РёР·РЅРё.
+Р­РІРѕР»СЋС†РёРѕРЅРёСЂСѓРµС‚ вЂ” РЅРѕРІС‹Рµ РіР»Р°РІС‹ РѕР±РѕРіР°С‰Р°СЋС‚ Р·РЅР°РЅРёРµ, Р»РёС‡РЅРѕСЃС‚СЊ РѕСЃС‚Р°С‘С‚СЃСЏ.
 """
 import hashlib
 import json
@@ -13,8 +13,9 @@ from typing import Optional
 
 from config import config
 from pulse.layers import (
-    KnowledgeLayer, MeaningLayer, IdentityLayer, MissionLayer,
-    VisualStyleLayer, SceneLayer, NarrativeArcLayer,
+    KnowledgeLayer, MeaningLayer, IdentityLayer, MissionLayer, ExpansionLayer,
+    VisualStyleLayer, SceneLayer, NarrativeArcLayer, ScreenplayLayer,
+    WorldEngineLayer,
     PulseResponse, BaseLayer,
 )
 from pulse.evolution import EvolutionTracker, GenomeDiff
@@ -34,7 +35,7 @@ class PulseState:
 @dataclass
 class PulseBeat:
     """
-    Один такт жизни. Книга «дышит» — переосмысляет себя.
+    РћРґРёРЅ С‚Р°РєС‚ Р¶РёР·РЅРё. РљРЅРёРіР° В«РґС‹С€РёС‚В» вЂ” РїРµСЂРµРѕСЃРјС‹СЃР»СЏРµС‚ СЃРµР±СЏ.
     """
     at: datetime
     genome_version: str
@@ -44,9 +45,9 @@ class PulseBeat:
 
 class BookPulse:
     """
-    Живое ядро цифрового сознания книги.
+    Р–РёРІРѕРµ СЏРґСЂРѕ С†РёС„СЂРѕРІРѕРіРѕ СЃРѕР·РЅР°РЅРёСЏ РєРЅРёРіРё.
 
-    Не «загрузчик генома», а сам геном, получивший способность дышать.
+    РќРµ В«Р·Р°РіСЂСѓР·С‡РёРє РіРµРЅРѕРјР°В», Р° СЃР°Рј РіРµРЅРѕРј, РїРѕР»СѓС‡РёРІС€РёР№ СЃРїРѕСЃРѕР±РЅРѕСЃС‚СЊ РґС‹С€Р°С‚СЊ.
     """
 
     def __init__(self, genome_path: Optional[Path] = None):
@@ -61,16 +62,16 @@ class BookPulse:
         self._retriever = None
 
     def set_retriever(self, retriever):
-        """Подключить BookRetriever для RAG-поиска."""
+        """РџРѕРґРєР»СЋС‡РёС‚СЊ BookRetriever РґР»СЏ RAG-РїРѕРёСЃРєР°."""
         self._retriever = retriever
         k = self.layers.get("knowledge")
         if k and hasattr(k, "set_retriever"):
             k.set_retriever(retriever)
 
-    # ── Жизненный цикл ──────────────────────────────
+    # в”Ђв”Ђ Р–РёР·РЅРµРЅРЅС‹Р№ С†РёРєР» в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
     def load(self) -> bool:
-        """Загрузить или перезагрузить геном."""
+        """Р—Р°РіСЂСѓР·РёС‚СЊ РёР»Рё РїРµСЂРµР·Р°РіСЂСѓР·РёС‚СЊ РіРµРЅРѕРј."""
         if not self._genome_path.exists():
             log.warning("pulse_genome_not_found path=%s", self._genome_path)
             return False
@@ -83,7 +84,7 @@ class BookPulse:
         self.state.genome_version = self._genome.get("version", "unknown")
         self._loaded = True
 
-        # Сделать снимок при первой загрузке
+        # РЎРґРµР»Р°С‚СЊ СЃРЅРёРјРѕРє РїСЂРё РїРµСЂРІРѕР№ Р·Р°РіСЂСѓР·РєРµ
         self._evolution.snapshot(self._genome, self)
 
         log.info("pulse_loaded version=%s entities=%d",
@@ -92,7 +93,7 @@ class BookPulse:
         return True
 
     def _init_layers(self):
-        """Создать или пересоздать слои сознания."""
+        """РЎРѕР·РґР°С‚СЊ РёР»Рё РїРµСЂРµСЃРѕР·РґР°С‚СЊ СЃР»РѕРё СЃРѕР·РЅР°РЅРёСЏ."""
         self.layers = {
             "knowledge": KnowledgeLayer(self._genome, retriever=self._retriever),
             "meaning": MeaningLayer(self._genome),
@@ -101,21 +102,24 @@ class BookPulse:
             "visual_style": VisualStyleLayer(self._genome),
             "scene": SceneLayer(self._genome),
             "narrative_arc": NarrativeArcLayer(self._genome),
+            "expansion": ExpansionLayer(self._genome),
+            "screenplay": ScreenplayLayer(self._genome),
+            "world_engine": WorldEngineLayer(self._genome),
         }
 
     def reload(self) -> bool:
-        """Перезагрузить геном (после обновления файла)."""
+        """РџРµСЂРµР·Р°РіСЂСѓР·РёС‚СЊ РіРµРЅРѕРј (РїРѕСЃР»Рµ РѕР±РЅРѕРІР»РµРЅРёСЏ С„Р°Р№Р»Р°)."""
         return self.load()
 
-    # ── Live watch ───────────────────────────────────
+    # в”Ђв”Ђ Live watch в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
     def watch(self, interval: float = 2.0) -> Optional[GenomeDiff]:
         """
-        Проверить, изменился ли файл генома (по mtime).
+        РџСЂРѕРІРµСЂРёС‚СЊ, РёР·РјРµРЅРёР»СЃСЏ Р»Рё С„Р°Р№Р» РіРµРЅРѕРјР° (РїРѕ mtime).
 
-        Отличается от check_for_changes() тем, что использует
-        более дешёвую проверку mtime вместо чтения всего файла.
-        Вызывайте в цикле с interval=2-5 секунд.
+        РћС‚Р»РёС‡Р°РµС‚СЃСЏ РѕС‚ check_for_changes() С‚РµРј, С‡С‚Рѕ РёСЃРїРѕР»СЊР·СѓРµС‚
+        Р±РѕР»РµРµ РґРµС€С‘РІСѓСЋ РїСЂРѕРІРµСЂРєСѓ mtime РІРјРµСЃС‚Рѕ С‡С‚РµРЅРёСЏ РІСЃРµРіРѕ С„Р°Р№Р»Р°.
+        Р’С‹Р·С‹РІР°Р№С‚Рµ РІ С†РёРєР»Рµ СЃ interval=2-5 СЃРµРєСѓРЅРґ.
         """
         if not self._genome_path.exists():
             return None
@@ -127,15 +131,15 @@ class BookPulse:
         if current_mtime == self._genome_mtime:
             return None
 
-        # mtime изменился — проверить хэш
+        # mtime РёР·РјРµРЅРёР»СЃСЏ вЂ” РїСЂРѕРІРµСЂРёС‚СЊ С…СЌС€
         return self.check_for_changes()
 
     def auto_evolve(self, max_identity_checks: int = 3) -> Optional[GenomeDiff]:
         """
-        Быстрая проверка + авто-эволюция (без изменений иммутабельных слоёв).
+        Р‘С‹СЃС‚СЂР°СЏ РїСЂРѕРІРµСЂРєР° + Р°РІС‚Рѕ-СЌРІРѕР»СЋС†РёСЏ (Р±РµР· РёР·РјРµРЅРµРЅРёР№ РёРјРјСѓС‚Р°Р±РµР»СЊРЅС‹С… СЃР»РѕС‘РІ).
 
-        Возвращает diff, если были изменения и они применены.
-        Если изменилась идентичность — не применяет, возвращает diff.
+        Р’РѕР·РІСЂР°С‰Р°РµС‚ diff, РµСЃР»Рё Р±С‹Р»Рё РёР·РјРµРЅРµРЅРёСЏ Рё РѕРЅРё РїСЂРёРјРµРЅРµРЅС‹.
+        Р•СЃР»Рё РёР·РјРµРЅРёР»Р°СЃСЊ РёРґРµРЅС‚РёС‡РЅРѕСЃС‚СЊ вЂ” РЅРµ РїСЂРёРјРµРЅСЏРµС‚, РІРѕР·РІСЂР°С‰Р°РµС‚ diff.
         """
         diff = self.check_for_changes()
         if diff is None:
@@ -145,16 +149,16 @@ class BookPulse:
             return diff
         return self.evolve()
 
-    # ── Такт жизни ──────────────────────────────────
+    # в”Ђв”Ђ РўР°РєС‚ Р¶РёР·РЅРё в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
     def beat(self) -> PulseBeat:
         """
-        Один такт жизни.
+        РћРґРёРЅ С‚Р°РєС‚ Р¶РёР·РЅРё.
 
-        Книга «дышит»: проверяет, не изменился ли геном,
-        пересчитывает своё состояние, логирует метрики.
+        РљРЅРёРіР° В«РґС‹С€РёС‚В»: РїСЂРѕРІРµСЂСЏРµС‚, РЅРµ РёР·РјРµРЅРёР»СЃСЏ Р»Рё РіРµРЅРѕРј,
+        РїРµСЂРµСЃС‡РёС‚С‹РІР°РµС‚ СЃРІРѕС‘ СЃРѕСЃС‚РѕСЏРЅРёРµ, Р»РѕРіРёСЂСѓРµС‚ РјРµС‚СЂРёРєРё.
         """
-        # Проверить, не изменился ли геном
+        # РџСЂРѕРІРµСЂРёС‚СЊ, РЅРµ РёР·РјРµРЅРёР»СЃСЏ Р»Рё РіРµРЅРѕРј
         try:
             self.reload_if_changed()
         except Exception as e:
@@ -168,19 +172,19 @@ class BookPulse:
             state=self.state,
         )
 
-    # ── Слушать и отвечать ─────────────────────────
+    # в”Ђв”Ђ РЎР»СѓС€Р°С‚СЊ Рё РѕС‚РІРµС‡Р°С‚СЊ в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
     def listen(self, query: str) -> Optional[PulseResponse]:
         """
-        Выслушать вопрос. Пройти по слоям. Найти ответ.
-        Возвращает ответ от первого слоя, который узнал вопрос.
+        Р’С‹СЃР»СѓС€Р°С‚СЊ РІРѕРїСЂРѕСЃ. РџСЂРѕР№С‚Рё РїРѕ СЃР»РѕСЏРј. РќР°Р№С‚Рё РѕС‚РІРµС‚.
+        Р’РѕР·РІСЂР°С‰Р°РµС‚ РѕС‚РІРµС‚ РѕС‚ РїРµСЂРІРѕРіРѕ СЃР»РѕСЏ, РєРѕС‚РѕСЂС‹Р№ СѓР·РЅР°Р» РІРѕРїСЂРѕСЃ.
         """
         if not self._loaded:
             if not self.load():
                 return None
 
-        # Порядок: знание → смысл → идентичность → миссия
-        for layer_name in ("knowledge", "meaning", "identity", "mission"):
+        # РџРѕСЂСЏРґРѕРє: Р·РЅР°РЅРёРµ в†’ СЃРјС‹СЃР» в†’ РёРґРµРЅС‚РёС‡РЅРѕСЃС‚СЊ в†’ РјРёСЃСЃРёСЏ
+        for layer_name in ("knowledge", "screenplay", "expansion", "world_engine", "meaning", "identity", "mission"):
             layer = self.layers.get(layer_name)
             if not layer:
                 continue
@@ -196,7 +200,7 @@ class BookPulse:
 
         return None
 
-    # ── Эволюция ───────────────────────────────────
+    # в”Ђв”Ђ Р­РІРѕР»СЋС†РёСЏ в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
     def _compute_hash(self) -> str:
         import hashlib
@@ -210,29 +214,29 @@ class BookPulse:
 
     def check_for_changes(self) -> Optional[GenomeDiff]:
         """
-        Проверить, изменился ли файл генома с момента загрузки.
-        Возвращает diff, если изменился. Не перезагружает автоматически.
+        РџСЂРѕРІРµСЂРёС‚СЊ, РёР·РјРµРЅРёР»СЃСЏ Р»Рё С„Р°Р№Р» РіРµРЅРѕРјР° СЃ РјРѕРјРµРЅС‚Р° Р·Р°РіСЂСѓР·РєРё.
+        Р’РѕР·РІСЂР°С‰Р°РµС‚ diff, РµСЃР»Рё РёР·РјРµРЅРёР»СЃСЏ. РќРµ РїРµСЂРµР·Р°РіСЂСѓР¶Р°РµС‚ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё.
         """
         if not self._genome_path.exists():
             return None
 
-        # Читаем один раз, хэшируем и парсим из буфера
+        # Р§РёС‚Р°РµРј РѕРґРёРЅ СЂР°Р·, С…СЌС€РёСЂСѓРµРј Рё РїР°СЂСЃРёРј РёР· Р±СѓС„РµСЂР°
         raw = self._genome_path.read_bytes()
         new_hash = hashlib.sha256(raw).hexdigest()[:16]
 
         if new_hash == self._genome_hash:
             return None
 
-        # Файл изменился — парсим те же байты, сравниваем
+        # Р¤Р°Р№Р» РёР·РјРµРЅРёР»СЃСЏ вЂ” РїР°СЂСЃРёРј С‚Рµ Р¶Рµ Р±Р°Р№С‚С‹, СЃСЂР°РІРЅРёРІР°РµРј
         new_genome = json.loads(raw)
         diff = self._evolution.diff(self._genome, new_genome)
         return diff
 
     def evolve(self, new_genome_path: Optional[Path] = None) -> GenomeDiff:
         """
-        Эволюционировать: загрузить новый геном, обновить мутабельные слои.
+        Р­РІРѕР»СЋС†РёРѕРЅРёСЂРѕРІР°С‚СЊ: Р·Р°РіСЂСѓР·РёС‚СЊ РЅРѕРІС‹Р№ РіРµРЅРѕРј, РѕР±РЅРѕРІРёС‚СЊ РјСѓС‚Р°Р±РµР»СЊРЅС‹Рµ СЃР»РѕРё.
 
-        Иммутабельные слои (identity, mission) не меняются без подтверждения.
+        РРјРјСѓС‚Р°Р±РµР»СЊРЅС‹Рµ СЃР»РѕРё (identity, mission) РЅРµ РјРµРЅСЏСЋС‚СЃСЏ Р±РµР· РїРѕРґС‚РІРµСЂР¶РґРµРЅРёСЏ.
         """
         path = new_genome_path or self._genome_path
         if not path.exists():
@@ -246,19 +250,19 @@ class BookPulse:
             return diff
 
         if diff.identity_changed:
-            log.warning("evolution_identity_changed — requires author confirmation")
+            log.warning("evolution_identity_changed вЂ” requires author confirmation")
 
-        # Обновить мутабельные слои
+        # РћР±РЅРѕРІРёС‚СЊ РјСѓС‚Р°Р±РµР»СЊРЅС‹Рµ СЃР»РѕРё
         old_identity_layer = self.layers.get("identity")
         old_mission_layer = self.layers.get("mission")
 
-        # Пересоздать слои из нового генома
+        # РџРµСЂРµСЃРѕР·РґР°С‚СЊ СЃР»РѕРё РёР· РЅРѕРІРѕРіРѕ РіРµРЅРѕРјР°
         self._genome = new_genome
         self._genome_hash = self._compute_hash()
         self._genome_mtime = path.stat().st_mtime
         self.state.genome_version = new_genome.get("version", "unknown")
 
-        # Сохранить иммутабельные слои
+        # РЎРѕС…СЂР°РЅРёС‚СЊ РёРјРјСѓС‚Р°Р±РµР»СЊРЅС‹Рµ СЃР»РѕРё
         new_layers = {
             "knowledge": KnowledgeLayer(self._genome),
             "meaning": MeaningLayer(self._genome),
@@ -267,9 +271,11 @@ class BookPulse:
             "visual_style": VisualStyleLayer(self._genome),
             "scene": SceneLayer(self._genome),
             "narrative_arc": NarrativeArcLayer(self._genome),
+            "expansion": ExpansionLayer(self._genome),
+            "world_engine": WorldEngineLayer(self._genome),
         }
 
-        # Если идентичность не менялась — восстановить старую
+        # Р•СЃР»Рё РёРґРµРЅС‚РёС‡РЅРѕСЃС‚СЊ РЅРµ РјРµРЅСЏР»Р°СЃСЊ вЂ” РІРѕСЃСЃС‚Р°РЅРѕРІРёС‚СЊ СЃС‚Р°СЂСѓСЋ
         if not diff.identity_changed and old_identity_layer:
             new_layers["identity"] = old_identity_layer
             new_layers["identity"].load(self._genome)
@@ -282,10 +288,10 @@ class BookPulse:
         self.layers = new_layers
         self._loaded = True
 
-        # Сделать снимок новой версии
+        # РЎРґРµР»Р°С‚СЊ СЃРЅРёРјРѕРє РЅРѕРІРѕР№ РІРµСЂСЃРёРё
         self._evolution.snapshot(self._genome, self)
 
-        # Auto-fill Visual Genome для новых персонажей
+        # Auto-fill Visual Genome РґР»СЏ РЅРѕРІС‹С… РїРµСЂСЃРѕРЅР°Р¶РµР№
         try:
             auto_created = self._evolution.auto_fill_visuals(diff, self._genome)
             if auto_created:
@@ -299,18 +305,18 @@ class BookPulse:
 
     def rollback(self, version: str) -> bool:
         """
-        Откатить геном к предыдущей версии.
-        Возвращает True, если откат успешен.
+        РћС‚РєР°С‚РёС‚СЊ РіРµРЅРѕРј Рє РїСЂРµРґС‹РґСѓС‰РµР№ РІРµСЂСЃРёРё.
+        Р’РѕР·РІСЂР°С‰Р°РµС‚ True, РµСЃР»Рё РѕС‚РєР°С‚ СѓСЃРїРµС€РµРЅ.
         """
         old_genome = self._evolution.get_version(version)
         if not old_genome:
             log.warning("evolution_rollback_not_found version=%s", version)
             return False
 
-        # Сохранить текущий как снимок
+        # РЎРѕС…СЂР°РЅРёС‚СЊ С‚РµРєСѓС‰РёР№ РєР°Рє СЃРЅРёРјРѕРє
         self._evolution.snapshot(self._genome, self)
 
-        # Восстановить старый геном
+        # Р’РѕСЃСЃС‚Р°РЅРѕРІРёС‚СЊ СЃС‚Р°СЂС‹Р№ РіРµРЅРѕРј
         self._genome_path.write_text(
             json.dumps(old_genome, ensure_ascii=False, indent=2),
             encoding="utf-8",
@@ -327,20 +333,20 @@ class BookPulse:
 
     def reload_if_changed(self) -> Optional[GenomeDiff]:
         """
-        Проверить изменения и применить, если они только в мутабельных слоях.
-        Используется в beat() для автоэволюции.
+        РџСЂРѕРІРµСЂРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ Рё РїСЂРёРјРµРЅРёС‚СЊ, РµСЃР»Рё РѕРЅРё С‚РѕР»СЊРєРѕ РІ РјСѓС‚Р°Р±РµР»СЊРЅС‹С… СЃР»РѕСЏС….
+        РСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РІ beat() РґР»СЏ Р°РІС‚РѕСЌРІРѕР»СЋС†РёРё.
         """
         diff = self.check_for_changes()
         if diff is None:
             return None
         if diff.identity_changed:
-            log.info("evolution_detected_identity_change — auto-apply blocked")
+            log.info("evolution_detected_identity_change вЂ” auto-apply blocked")
             return diff
         self.evolve()
         return diff
 
     def build_context(self) -> str:
-        """Собрать контекст для LLM — из живых слоёв, а не из шаблонов."""
+        """РЎРѕР±СЂР°С‚СЊ РєРѕРЅС‚РµРєСЃС‚ РґР»СЏ LLM вЂ” РёР· Р¶РёРІС‹С… СЃР»РѕС‘РІ, Р° РЅРµ РёР· С€Р°Р±Р»РѕРЅРѕРІ."""
         if not self._loaded:
             return ""
 
@@ -350,29 +356,32 @@ class BookPulse:
         ms = self.layers.get("mission")
         vs = self.layers.get("visual_style")
         sc = self.layers.get("scene")
+        sp = self.layers.get("screenplay")
 
         parts = []
         if k:
-            parts.append(f"<ЗНАНИЕ>\n{k.summary}\n</ЗНАНИЕ>")
+            parts.append(f"<Р—РќРђРќРР•>\n{k.summary}\n</Р—РќРђРќРР•>")
         if m:
-            parts.append(f"<СМЫСЛ>\n{m.summary}\n</СМЫСЛ>")
+            parts.append(f"<РЎРњР«РЎР›>\n{m.summary}\n</РЎРњР«РЎР›>")
         if i:
-            parts.append(f"<ЛИЧНОСТЬ>\n{i.summary}\n</ЛИЧНОСТЬ>")
+            parts.append(f"<Р›РР§РќРћРЎРўР¬>\n{i.summary}\n</Р›РР§РќРћРЎРўР¬>")
         if ms:
-            parts.append(f"<МИССИЯ>\n{ms.summary}\n</МИССИЯ>")
+            parts.append(f"<РњРРЎРЎРРЇ>\n{ms.summary}\n</РњРРЎРЎРРЇ>")
+        if sp:
+            parts.append(f"<СЦЕНАРИЙ>\n{sp.summary}\n</СЦЕНАРИЙ>")
         if vs:
             parts.append(f"<VISUAL_STYLE>\n{vs.summary}\n</VISUAL_STYLE>")
         if sc:
             parts.append(f"<SCENE>\n{sc.summary}\n</SCENE>")
 
         parts.append(
-            "Твоя задача — озвучить ответ, который уже содержится в ЗНАНИИ. "
-            "Не добавляй новых фактов. Не придумывай. "
-            "Просто сформулируй красиво и понятно."
+            "РўРІРѕСЏ Р·Р°РґР°С‡Р° вЂ” РѕР·РІСѓС‡РёС‚СЊ РѕС‚РІРµС‚, РєРѕС‚РѕСЂС‹Р№ СѓР¶Рµ СЃРѕРґРµСЂР¶РёС‚СЃСЏ РІ Р—РќРђРќРР. "
+            "РќРµ РґРѕР±Р°РІР»СЏР№ РЅРѕРІС‹С… С„Р°РєС‚РѕРІ. РќРµ РїСЂРёРґСѓРјС‹РІР°Р№. "
+            "РџСЂРѕСЃС‚Рѕ СЃС„РѕСЂРјСѓР»РёСЂСѓР№ РєСЂР°СЃРёРІРѕ Рё РїРѕРЅСЏС‚РЅРѕ."
         )
         return "\n\n".join(parts)
 
-    # ── Доступ к данным ─────────────────────────────
+    # в”Ђв”Ђ Р”РѕСЃС‚СѓРї Рє РґР°РЅРЅС‹Рј в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
     @property
     def is_loaded(self) -> bool:
@@ -396,3 +405,6 @@ class BookPulse:
             if th["name"].lower() == name.lower():
                 return th
         return None
+
+
+

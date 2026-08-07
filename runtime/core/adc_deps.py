@@ -65,7 +65,13 @@ def _factory_image_provider():
     from providers.image.comfyui import ComfyUIProvider
     from providers.image.pollinations import PollinationsProvider
     from providers.image.mock import MockImageProvider
-    return ImageProviderChain([ComfyUIProvider(), PollinationsProvider(), MockImageProvider()])
+    from config import config
+    comfyui_url = getattr(config, "COMFYUI_URL", "http://127.0.0.1:8188")
+    return ImageProviderChain([
+        ComfyUIProvider(base_url=comfyui_url),
+        PollinationsProvider(),
+        MockImageProvider()
+    ])
 
 
 def _factory_video_provider():

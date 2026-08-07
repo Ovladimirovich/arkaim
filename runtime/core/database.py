@@ -27,9 +27,23 @@ class DatabaseManager:
         migrations_dir: str | Path | None = None,
     ) -> aiosqlite.Connection:
         """Получить соединение с БД. Создаёт при первом вызове, переиспользует далее."""
+        import logging
+        log = logging.getLogger("hermes.database")
+        
         key = str(db_path)
         if key in self._connections:
-            return self._connections[key]
+            conn = self._connections[key]
+            # Проверяем что соединение активно
+            try:
+                await conn.execute("SELECT 1")
+                return conn
+            except Exception as e:
+                log.warning("connection_closed_reconnecting key=%s error=%s", key, e)
+                # Соединение закрыто — удаляем и создаём новое
+                try:
+                    del self._connections[key]
+                except KeyError:
+                    pass
 
         path = Path(db_path)
         path.parent.mkdir(parents=True, exist_ok=True)

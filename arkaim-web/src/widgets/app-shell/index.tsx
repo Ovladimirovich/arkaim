@@ -33,10 +33,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Sidebar collapsed={collapsed} onCollapse={setCollapsed} selectedKey={selectedKey} />
 
       <Layout style={{ marginLeft: sidebarWidth, transition: 'margin-left 0.2s' }}>
-        <Topbar collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)} />
+        <Topbar collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)} pathname={pathname} />
 
         <Content style={{ padding: '1.5rem', width: '100%' }}>
-          {children}
+          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+            {children}
+          </div>
         </Content>
       </Layout>
     </Layout>

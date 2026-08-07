@@ -1,36 +1,12 @@
 'use client';
 
-
-// ── World Tab ──────────────────────────
-function WorldTab() {
-  const [categories, setCategories] = React.useState({});
-  React.useEffect(() => {
-    fetch('/book/world/categories').then(r => r.json()).then(d => setCategories(d.categories || {}));
-  }, []);
-  return (
-    <div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
-        {Object.entries(categories).map(([cat, count]) => (
-          <div key={cat} style={{ padding: 16, border: '1px solid #f0f0f0', borderRadius: 8, textAlign: 'center' }}>
-            <div style={{ fontSize: 24, fontWeight: 'bold' }}>{count}</div>
-            <div>{cat}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-
-import { useState } from 'react';
-import { Card, Typography, Row, Col, Tag, Tabs, List, Empty, Spin, Space, Input, Badge, Avatar, Tooltip, Descriptions, Modal, Divider } from 'antd';
-import { BookOutlined, TeamOutlined, EnvironmentOutlined, HeartOutlined, SearchOutlined, BulbOutlined, StarOutlined, EyeOutlined, HistoryOutlined, ReloadOutlined } from '@ant-design/icons';
+import React, { useState } from 'react';
+import { LCard, LTag, LTabs, LEmpty, LSpin, LSpace, LInput, LAvatar, LModal } from '@/shared/ui/light';
+import { BookOutlined, TeamOutlined, EnvironmentOutlined, SearchOutlined, BulbOutlined, StarOutlined, EyeOutlined, HistoryOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/shared/lib/api';
 import { ProtectedRoute } from '@/shared/lib/guards';
 import Link from 'next/link';
-
-const { Title, Text, Paragraph } = Typography;
 
 type GenomeData = {
   themes: Array<{ name: string; description?: string }>;
@@ -52,193 +28,176 @@ type EvolutionData = {
   snapshots: Array<{ version: string; created_at: string; description?: string }>;
 };
 
-// ── Genome Tab ──────────────────────────────────
-
 function GenomeTab({ genome, isLoading }: { genome?: GenomeData; isLoading: boolean }) {
   const [search, setSearch] = useState('');
-  const [selectedItem, setSelectedItem] = useState<any>(null);
-  const [itemType, setItemType] = useState('');
+  const [selectedItem, setSelectedItem] = useState<{ name: string; id?: string; description?: string; role?: string; type?: string } | null>(null);
 
-  if (isLoading) return <div style={{ textAlign: 'center', padding: 48 }}><Spin size="large" /></div>;
-  if (!genome) return <Empty description="Данные генома не загружены" />;
+  const q = search.toLowerCase();
 
-  const filter = (items: any[]) =>
-    !search ? items : items.filter(item =>
-      (item.name || item.id || '').toLowerCase().includes(search.toLowerCase()) ||
-      (item.description || '').toLowerCase().includes(search.toLowerCase()) ||
-      (item.role || '').toLowerCase().includes(search.toLowerCase())
-    );
+  const themes = (genome?.themes || []).filter(item =>
+    !q || (item.name || '').toLowerCase().includes(q) || (item.description || '').toLowerCase().includes(q)
+  );
+  const characters = (genome?.characters || []).filter(item =>
+    !q || (item.name || '').toLowerCase().includes(q) || (item.role || '').toLowerCase().includes(q)
+  );
+  const values = (genome?.values || []).filter(item =>
+    !q || (item.name || '').toLowerCase().includes(q) || (item.description || '').toLowerCase().includes(q)
+  );
+  const entities = (genome?.world_entities || []).filter(item =>
+    !q || (item.name || '').toLowerCase().includes(q) || (item.type || '').toLowerCase().includes(q)
+  );
 
-  const themes = filter(genome.themes);
-  const characters = filter(genome.characters);
-  const values = filter(genome.values);
-  const entities = filter(genome.world_entities);
+  const input = (
+    <LInput prefix={<SearchOutlined />} placeholder="Поиск по геному..." value={search} onChange={e => setSearch(e.target.value)} style={{ marginBottom: 16, maxWidth: 400 }} />
+  );
+
+  const loadingBlock = isLoading ? <div style={{ textAlign: 'center', padding: 48 }}><LSpin size="large" /></div> : null;
+  const emptyBlock = (!isLoading && !genome) ? <LEmpty description="Данные генома не загружены" /> : null;
+  const contentBlock = (!isLoading && genome) ? (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+      <div style={{ flex: '1 1 calc(50% - 16px)', minWidth: 300 }}>
+        <LCard title={<><BulbOutlined style={{ color: '#7c3aed' }} /> Темы</>} extra={<LTag>{themes.length}</LTag>}>
+          {themes.length === 0 ? <LEmpty description="Нет тем" /> : themes.map((item, i) => (
+            <div key={i} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: '1px solid var(--card-border)' }}
+              onClick={() => setSelectedItem(item)}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--card-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><BulbOutlined style={{ color: '#7c3aed' }} /></div>
+              <div style={{ flex: 1 }}><strong>{item.name}</strong>{item.description && <div style={{ fontSize: 12, color: 'var(--foreground)' }}>{item.description}</div>}</div>
+              <EyeOutlined style={{ color: 'var(--foreground)' }} />
+            </div>
+          ))}
+        </LCard>
+      </div>
+
+      <div style={{ flex: '1 1 calc(50% - 16px)', minWidth: 300 }}>
+        <LCard title={<><TeamOutlined style={{ color: '#2563eb' }} /> Персонажи</>} extra={<LTag>{characters.length}</LTag>}>
+          {characters.length === 0 ? <LEmpty description="Нет персонажей" /> : characters.map((item, i) => (
+            <div key={i} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: '1px solid var(--card-border)' }}
+              onClick={() => setSelectedItem(item)}>
+              <LAvatar size={32} style={{ backgroundColor: 'var(--card-border)', color: '#2563eb' }}>{item.name?.[0] || '?'}</LAvatar>
+              <div style={{ flex: 1 }}><strong>{item.name}</strong>{item.role && <LSpace size={4}><LTag color="blue" style={{ fontSize: 10 }}>{item.role}</LTag></LSpace>}</div>
+              <EyeOutlined style={{ color: 'var(--foreground)' }} />
+            </div>
+          ))}
+        </LCard>
+      </div>
+
+      <div style={{ flex: '1 1 calc(50% - 16px)', minWidth: 300 }}>
+        <LCard title={<><StarOutlined style={{ color: '#059669' }} /> Ценности</>} extra={<LTag>{values.length}</LTag>}>
+          {values.length === 0 ? <LEmpty description="Нет ценностей" /> : (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {values.map((item, i) => (
+                <LTag key={i} color="green" style={{ padding: '4px 12px', fontSize: 13, cursor: 'pointer' }} title={item.description}
+                  onClick={() => setSelectedItem(item)}>
+                  {item.name}
+                </LTag>
+              ))}
+            </div>
+          )}
+        </LCard>
+      </div>
+
+      <div style={{ flex: '1 1 calc(50% - 16px)', minWidth: 300 }}>
+        <LCard title={<><EnvironmentOutlined style={{ color: '#d97706' }} /> Мир</>} extra={<LTag>{entities.length}</LTag>}>
+          {entities.length === 0 ? <LEmpty description="Нет сущностей мира" /> : entities.map((item, i) => (
+            <div key={i} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: '1px solid var(--card-border)' }}
+              onClick={() => setSelectedItem(item)}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--card-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><EnvironmentOutlined style={{ color: '#d97706' }} /></div>
+              <div style={{ flex: 1 }}><strong>{item.name}</strong>{item.type && <LTag style={{ fontSize: 10 }}>{item.type}</LTag>}</div>
+              <EyeOutlined style={{ color: 'var(--foreground)' }} />
+            </div>
+          ))}
+        </LCard>
+      </div>
+    </div>
+  ) : null;
+
+  const modal = (
+    <LModal title={selectedItem?.name || ''} open={!!selectedItem} onCancel={() => setSelectedItem(null)} footer={null} width={500}>
+      {selectedItem && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {selectedItem.id && <div><strong>ID:</strong> <code>{selectedItem.id}</code></div>}
+          <div><strong>Название:</strong> {selectedItem.name}</div>
+          {selectedItem.description && <div><strong>Описание:</strong> {selectedItem.description}</div>}
+          {selectedItem.role && <div><strong>Роль:</strong> <LTag color="blue">{selectedItem.role}</LTag></div>}
+          {selectedItem.type && <div><strong>Тип:</strong> <LTag>{selectedItem.type}</LTag></div>}
+        </div>
+      )}
+    </LModal>
+  );
 
   return (
     <div>
-      <Input prefix={<SearchOutlined />} placeholder="Поиск по геному..." value={search} onChange={e => setSearch(e.target.value)} allowClear style={{ marginBottom: 16, maxWidth: 400 }} />
-
-      <Row gutter={[16, 16]}>
-        {/* Themes */}
-        <Col xs={24} lg={12}>
-          <Card title={<><BulbOutlined style={{ color: '#7c3aed' }} /> Темы</>} extra={<Tag>{themes.length}</Tag>}>
-            {themes.length === 0 ? <Empty description="Нет тем" /> : (
-              <List size="small" dataSource={themes} renderItem={(item: any) => (
-                <List.Item style={{ cursor: 'pointer' }} onClick={() => { setSelectedItem(item); setItemType('theme'); }}>
-                  <List.Item.Meta
-                    avatar={<div style={{ width: 32, height: 32, borderRadius: 8, background: '#f3e8ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><BulbOutlined style={{ color: '#7c3aed' }} /></div>}
-                    title={<Text strong>{item.name}</Text>}
-                    description={item.description && <Text type="secondary" style={{ fontSize: 12 }} ellipsis>{item.description}</Text>}
-                  />
-                  <EyeOutlined style={{ color: '#999' }} />
-                </List.Item>
-              )} />
-            )}
-          </Card>
-        </Col>
-
-        {/* Characters */}
-        <Col xs={24} lg={12}>
-          <Card title={<><TeamOutlined style={{ color: '#2563eb' }} /> Персонажи</>} extra={<Tag>{characters.length}</Tag>}>
-            {characters.length === 0 ? <Empty description="Нет персонажей" /> : (
-              <List size="small" dataSource={characters} renderItem={(item: any) => (
-                <List.Item style={{ cursor: 'pointer' }} onClick={() => { setSelectedItem(item); setItemType('character'); }}>
-                  <List.Item.Meta
-                    avatar={<Avatar size={32} style={{ backgroundColor: '#dbeafe', color: '#2563eb' }}>{item.name?.[0] || '?'}</Avatar>}
-                    title={<Text strong>{item.name}</Text>}
-                    description={<Space size={4}>{item.role && <Tag color="blue" style={{ fontSize: 10 }}>{item.role}</Tag>}</Space>}
-                  />
-                  <EyeOutlined style={{ color: '#999' }} />
-                </List.Item>
-              )} />
-            )}
-          </Card>
-        </Col>
-
-        {/* Values */}
-        <Col xs={24} lg={12}>
-          <Card title={<><StarOutlined style={{ color: '#059669' }} /> Ценности</>} extra={<Tag>{values.length}</Tag>}>
-            {values.length === 0 ? <Empty description="Нет ценностей" /> : (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {values.map((item: any, i: number) => (
-                  <Tooltip key={i} title={item.description}>
-                    <Tag color="green" style={{ padding: '4px 12px', fontSize: 13, cursor: 'pointer' }}
-                      onClick={() => { setSelectedItem(item); setItemType('value'); }}>
-                      {item.name}
-                    </Tag>
-                  </Tooltip>
-                ))}
-              </div>
-            )}
-          </Card>
-        </Col>
-
-        {/* World entities */}
-        <Col xs={24} lg={12}>
-          <Card title={<><EnvironmentOutlined style={{ color: '#d97706' }} /> Мир</>} extra={<Tag>{entities.length}</Tag>}>
-            {entities.length === 0 ? <Empty description="Нет сущностей мира" /> : (
-              <List size="small" dataSource={entities} renderItem={(item: any) => (
-                <List.Item style={{ cursor: 'pointer' }} onClick={() => { setSelectedItem(item); setItemType('entity'); }}>
-                  <List.Item.Meta
-                    avatar={<div style={{ width: 32, height: 32, borderRadius: 8, background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><EnvironmentOutlined style={{ color: '#d97706' }} /></div>}
-                    title={<Text strong>{item.name}</Text>}
-                    description={item.type && <Tag style={{ fontSize: 10 }}>{item.type}</Tag>}
-                  />
-                  <EyeOutlined style={{ color: '#999' }} />
-                </List.Item>
-              )} />
-            )}
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Detail Modal */}
-      <Modal title={<Space>{selectedItem?.name}</Space>} open={!!selectedItem} onCancel={() => setSelectedItem(null)} footer={null} width={500}>
-        {selectedItem && (
-          <Descriptions bordered size="small" column={1}>
-            {selectedItem.id && <Descriptions.Item label="ID"><Text code>{selectedItem.id}</Text></Descriptions.Item>}
-            <Descriptions.Item label="Название">{selectedItem.name}</Descriptions.Item>
-            {selectedItem.description && <Descriptions.Item label="Описание">{selectedItem.description}</Descriptions.Item>}
-            {selectedItem.role && <Descriptions.Item label="Роль"><Tag color="blue">{selectedItem.role}</Tag></Descriptions.Item>}
-            {selectedItem.type && <Descriptions.Item label="Тип"><Tag>{selectedItem.type}</Tag></Descriptions.Item>}
-          </Descriptions>
-        )}
-      </Modal>
+      {input}
+      {loadingBlock}
+      {emptyBlock}
+      {contentBlock}
+      {modal}
     </div>
   );
 }
 
-// ── Layers Tab ──────────────────────────────────
-
 function LayersTab({ layers, isLoading }: { layers?: LayersData; isLoading: boolean }) {
-  if (isLoading) return <div style={{ textAlign: 'center', padding: 48 }}><Spin size="large" /></div>;
-  if (!layers) return <Empty description="Слои сознания не сформированы" />;
+  if (isLoading) return <div style={{ textAlign: 'center', padding: 48 }}><LSpin size="large" /></div>;
+  if (!layers) return <LEmpty description="Слои сознания не сформированы" />;
 
   const layerConfig = [
-    { key: 'knowledge_layer', title: 'Знание', color: '#2563eb', desc: 'Факты, события, персонажи', icon: '📚' },
-    { key: 'meaning_layer', title: 'Смысл', color: '#7c3aed', desc: 'Метафоры, символы, аллегории', icon: '💡' },
-    { key: 'identity_layer', title: 'Идентичность', color: '#059669', desc: 'Кто мы в контексте книги', icon: '🪞' },
-    { key: 'mission_layer', title: 'Миссия', color: '#d97706', desc: 'Зачем книга существует', icon: '🎯' },
+    { key: 'knowledge_layer' as const, title: 'Знание', color: '#2563eb', desc: 'Факты, события, персонажи', icon: '📚' },
+    { key: 'meaning_layer' as const, title: 'Смысл', color: '#7c3aed', desc: 'Метафоры, символы, аллегории', icon: '💡' },
+    { key: 'identity_layer' as const, title: 'Идентичность', color: '#059669', desc: 'Кто мы в контексте книги', icon: '🪞' },
+    { key: 'mission_layer' as const, title: 'Миссия', color: '#d97706', desc: 'Зачем книга существует', icon: '🎯' },
   ];
 
   return (
-    <Row gutter={[16, 16]}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
       {layerConfig.map(layer => {
-        const content = layers[layer.key as keyof LayersData];
+        const content = layers[layer.key];
         return (
-          <Col xs={24} sm={12} key={layer.key}>
-            <Card size="small" style={{ height: '100%', borderTop: `3px solid ${layer.color}` }}
-              title={<Space><span style={{ fontSize: 18 }}>{layer.icon}</span> <span style={{ color: layer.color }}>{layer.title}</span></Space>}
-              extra={<Text type="secondary" style={{ fontSize: 11 }}>{layer.desc}</Text>}>
+          <div key={layer.key} style={{ flex: '1 1 calc(50% - 16px)', minWidth: 250 }}>
+            <LCard size="small" style={{ height: '100%', borderTop: `3px solid ${layer.color}` }}
+              title={<LSpace><span style={{ fontSize: 18 }}>{layer.icon}</span> <span style={{ color: layer.color }}>{layer.title}</span></LSpace>}
+              extra={<span style={{ color: 'var(--foreground)', fontSize: 11 }}>{layer.desc}</span>}>
               {content ? (
-                <Paragraph style={{ margin: 0, fontSize: 13, lineHeight: 1.6 }}>{content}</Paragraph>
+                <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: 'var(--foreground)' }}>{content}</p>
               ) : (
-                <Text type="secondary" style={{ fontSize: 13, fontStyle: 'italic' }}>Слой пока не определён</Text>
+                <span style={{ color: 'var(--foreground)', fontSize: 13, fontStyle: 'italic' }}>Слой пока не определён</span>
               )}
-            </Card>
-          </Col>
+            </LCard>
+          </div>
         );
       })}
-    </Row>
+    </div>
   );
 }
 
-// ── Evolution Tab ──────────────────────────────────
-
 function EvolutionTab({ evolution, isLoading }: { evolution?: EvolutionData; isLoading: boolean }) {
-  if (isLoading) return <div style={{ textAlign: 'center', padding: 48 }}><Spin size="large" /></div>;
-  if (!evolution) return <Empty description="Данные об эволюции не загружены" />;
+  if (isLoading) return <div style={{ textAlign: 'center', padding: 48 }}><LSpin size="large" /></div>;
+  if (!evolution) return <LEmpty description="Данные об эволюции не загружены" />;
 
   return (
     <div>
-      <Card size="small" style={{ marginBottom: 16 }}>
-        <Space>
-          <Text strong>Текущая версия:</Text>
-          <Tag color="blue" style={{ fontSize: 14 }}>{evolution.current_version}</Tag>
-        </Space>
-      </Card>
+      <LCard size="small" style={{ marginBottom: 16 }}>
+        <LSpace>
+          <strong>Текущая версия:</strong>
+          <LTag color="blue" style={{ fontSize: 14 }}>{evolution.current_version}</LTag>
+        </LSpace>
+      </LCard>
 
       {evolution.snapshots && evolution.snapshots.length > 0 ? (
-        <List
-          dataSource={evolution.snapshots}
-          renderItem={(item) => (
-            <List.Item>
-              <List.Item.Meta
-                avatar={<HistoryOutlined style={{ fontSize: 16, color: '#2563eb' }} />}
-                title={<Space><Tag>{item.version}</Tag> <Text type="secondary" style={{ fontSize: 12 }}>{new Date(item.created_at).toLocaleString('ru')}</Text></Space>}
-                description={item.description}
-              />
-            </List.Item>
-          )}
-        />
+        evolution.snapshots.map((item, i) => (
+          <div key={i} style={{ display: 'flex', gap: 12, padding: '12px 0', borderBottom: '1px solid var(--card-border)' }}>
+            <HistoryOutlined style={{ fontSize: 16, color: '#2563eb', marginTop: 2 }} />
+            <div>
+              <LSpace><LTag>{item.version}</LTag> <span style={{ fontSize: 12, color: 'var(--foreground)' }}>{new Date(item.created_at).toLocaleString('ru')}</span></LSpace>
+              {item.description && <div style={{ fontSize: 12, color: 'var(--foreground)', marginTop: 4 }}>{item.description}</div>}
+            </div>
+          </div>
+        ))
       ) : (
-        <Empty description="Пока нет снапшотов эволюции" />
+        <LEmpty description="Пока нет снапшотов эволюции" />
       )}
     </div>
   );
 }
-
-// ── Main Page ──────────────────────────────────
 
 function LibraryContent() {
   const { data: genome, isLoading: genomeLoading } = useQuery({
@@ -273,25 +232,25 @@ function LibraryContent() {
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <div>
-          <Title level={2} style={{ marginBottom: 4 }}>Библиотека</Title>
-          <Text type="secondary">Содержимое книги «Наследие Аркаима» — темы, персонажи, ценности, мир</Text>
+          <h2 style={{ marginBottom: 4 }}>Библиотека</h2>
+          <span style={{ color: 'var(--foreground)' }}>Содержимое книги «Наследие Аркаима» — темы, персонажи, ценности, мир</span>
         </div>
-        <Space>
-          <Link href="/genres"><Tag color="purple" style={{ cursor: 'pointer', padding: '4px 12px' }}>Жанры</Tag></Link>
-          <Link href="/search"><Tag color="blue" style={{ cursor: 'pointer', padding: '4px 12px' }}>Поиск</Tag></Link>
-        </Space>
+        <LSpace>
+          <Link href="/genres"><LTag color="purple" style={{ cursor: 'pointer', padding: '4px 12px' }}>Жанры</LTag></Link>
+          <Link href="/search"><LTag color="blue" style={{ cursor: 'pointer', padding: '4px 12px' }}>Поиск</LTag></Link>
+        </LSpace>
       </div>
 
       {stats && (
-        <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
-          <Col xs={12} sm={6}><Card size="small" hoverable><Space><BulbOutlined style={{ color: '#7c3aed', fontSize: 18 }} /><div><Text strong style={{ fontSize: 18 }}>{stats.themes}</Text><br /><Text type="secondary" style={{ fontSize: 11 }}>тем</Text></div></Space></Card></Col>
-          <Col xs={12} sm={6}><Card size="small" hoverable><Space><TeamOutlined style={{ color: '#2563eb', fontSize: 18 }} /><div><Text strong style={{ fontSize: 18 }}>{stats.characters}</Text><br /><Text type="secondary" style={{ fontSize: 11 }}>персонажей</Text></div></Space></Card></Col>
-          <Col xs={12} sm={6}><Card size="small" hoverable><Space><StarOutlined style={{ color: '#059669', fontSize: 18 }} /><div><Text strong style={{ fontSize: 18 }}>{stats.values}</Text><br /><Text type="secondary" style={{ fontSize: 11 }}>ценностей</Text></div></Space></Card></Col>
-          <Col xs={12} sm={6}><Card size="small" hoverable><Space><EnvironmentOutlined style={{ color: '#d97706', fontSize: 18 }} /><div><Text strong style={{ fontSize: 18 }}>{stats.entities}</Text><br /><Text type="secondary" style={{ fontSize: 11 }}>сущностей мира</Text></div></Space></Card></Col>
-        </Row>
+        <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+          <div style={{ flex: 1 }}><LCard size="small" hoverable><LSpace><BulbOutlined style={{ color: '#7c3aed', fontSize: 18 }} /><div><strong style={{ fontSize: 18 }}>{stats.themes}</strong><br /><span style={{ fontSize: 11, color: 'var(--foreground)' }}>тем</span></div></LSpace></LCard></div>
+          <div style={{ flex: 1 }}><LCard size="small" hoverable><LSpace><TeamOutlined style={{ color: '#2563eb', fontSize: 18 }} /><div><strong style={{ fontSize: 18 }}>{stats.characters}</strong><br /><span style={{ fontSize: 11, color: 'var(--foreground)' }}>персонажей</span></div></LSpace></LCard></div>
+          <div style={{ flex: 1 }}><LCard size="small" hoverable><LSpace><StarOutlined style={{ color: '#059669', fontSize: 18 }} /><div><strong style={{ fontSize: 18 }}>{stats.values}</strong><br /><span style={{ fontSize: 11, color: 'var(--foreground)' }}>ценностей</span></div></LSpace></LCard></div>
+          <div style={{ flex: 1 }}><LCard size="small" hoverable><LSpace><EnvironmentOutlined style={{ color: '#d97706', fontSize: 18 }} /><div><strong style={{ fontSize: 18 }}>{stats.entities}</strong><br /><span style={{ fontSize: 11, color: 'var(--foreground)' }}>сущностей мира</span></div></LSpace></LCard></div>
+        </div>
       )}
 
-      <Tabs items={items} />
+      <LTabs items={items} />
     </div>
   );
 }

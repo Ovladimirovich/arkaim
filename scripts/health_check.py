@@ -7,9 +7,8 @@ import sys
 from datetime import datetime
 
 SERVICES = [
-    ("Gateway", "http://127.0.0.1:8080/health"),
-    ("Core + Book API", "http://127.0.0.1:8642/health"),
-    ("Book /book/health", "http://127.0.0.1:8642/book/health"),
+    ("Core", "http://127.0.0.1:8642/health"),
+    ("Frontend", "http://127.0.0.1:3000"),
 ]
 
 

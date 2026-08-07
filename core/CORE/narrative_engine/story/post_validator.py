@@ -1,4 +1,4 @@
-"""Post Validator — проверка сгенерированного текста на соответствие ограничениям."""
+"""Post Validator — проверка сгенерированного текста на соответствие ограничениям и плану."""
 
 import re
 import logging
@@ -9,6 +9,15 @@ from narrative_engine.constraint_engine import ConstraintModel
 from narrative_engine.world_model import WorldModel
 
 log = logging.getLogger("hermes.narrative.validator")
+
+
+# Type hint for NarrativePlan (avoids circular import)
+class _NarrativePlanStub(BaseModel):
+    """Minimal stub for type checking. Real type is NarrativePlan."""
+    cause_effect: Optional[BaseModel] = None
+    character_arcs: list = Field(default_factory=list)
+    conflicts: list = Field(default_factory=list)
+    story_structure: list = Field(default_factory=list)
 
 
 class ConstraintViolation(BaseModel):
@@ -158,6 +167,86 @@ def validate_story(text: str, constraints: ConstraintModel,
     soft_violations = sum(1 for v in violations if v.severity == "soft")
     score = max(0.0, 1.0 - (hard_violations * 0.3) - (soft_violations * 0.1) - (len(warnings) * 0.05))
 
+    passed = hard_violations == 0
+
+    return PostValidation(
+        passed=passed,
+        violations=violations,
+        warnings=warnings,
+        score=round(score, 2),
+    )
+
+
+def validate_story_with_plan(
+    text: str,
+    constraints: ConstraintModel,
+    world_model: Optional[WorldModel] = None,
+    plan: Optional[BaseModel] = None,
+) -> PostValidation:
+    """
+    Расширенная валидация: проверка по ограничениям + по плану.
+
+    Дополнительно к validate_story проверяет:
+    - Упоминаются ли персонажи из арок
+    - Есть ли конфликтная дуга в тексте
+    - Соответствует ли структура плану
+    """
+    # Базовая валидация
+    base = validate_story(text, constraints, world_model)
+
+    if plan is None:
+        return base
+
+    violations = list(base.violations)
+    warnings = list(base.warnings)
+    text_lower = text.lower()
+
+    # Проверка: персонажи из арок упоминаются в тексте
+    arcs = getattr(plan, 'character_arcs', [])
+    if arcs:
+        mentioned_chars = set()
+        for word in text.split():
+            w = word.strip('.,!?;:').lower()
+            if len(w) > 3:
+                for arc in arcs:
+                    if w in arc.character.lower():
+                        mentioned_chars.add(arc.character)
+
+        missing = [arc.character for arc in arcs if arc.character not in mentioned_chars]
+        if missing and len(missing) == len(arcs):
+            warnings.append(
+                f"Ни один персонаж из арок не упомянут: {', '.join(missing)}."
+            )
+
+    # Проверка: конфликт отражён в тексте
+    conflicts = getattr(plan, 'conflicts', [])
+    if conflicts:
+        conflict = conflicts[0]
+        tension_words = conflict.tension_source.lower().split()[:3]
+        if not any(w in text_lower for w in tension_words if len(w) > 3):
+            warnings.append(
+                f"Источник конфликта '{conflict.tension_source}' может не отражён в тексте."
+            )
+
+    # Проверка: структура истории
+    structure = getattr(plan, 'story_structure', [])
+    if structure:
+        # Проверяем что есть хотя бы завязка и развязка
+        has_beginning = any(
+            kw in text_lower
+            for kw in ["начал", "перв", "однажд", "в то время"]
+        )
+        has_ending = any(
+            kw in text_lower
+            for kw in ["заверш", "в конце", "наконец", "таким образом"]
+        )
+        if len(structure) >= 3 and not has_beginning and not has_ending:
+            warnings.append("Структура плана (3+ шагов) может не отражена в тексте.")
+
+    # Пересчёт score
+    hard_violations = sum(1 for v in violations if v.severity == "hard")
+    soft_violations = sum(1 for v in violations if v.severity == "soft")
+    score = max(0.0, 1.0 - (hard_violations * 0.3) - (soft_violations * 0.1) - (len(warnings) * 0.05))
     passed = hard_violations == 0
 
     return PostValidation(

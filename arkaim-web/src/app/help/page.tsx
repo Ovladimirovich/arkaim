@@ -1,13 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Typography, Row, Col, Tag, Tabs, List, Space, Button, Divider, Alert } from 'antd';
 import { BookOutlined, MessageOutlined, ReadOutlined, SearchOutlined, UserOutlined, TrophyOutlined, HistoryOutlined, DollarOutlined, RiseOutlined, BellOutlined, CodeOutlined, SettingOutlined, UploadOutlined, PictureOutlined, EditOutlined, EyeOutlined, LoginOutlined, QuestionCircleOutlined, ThunderboltOutlined, StarOutlined, BulbOutlined, KeyOutlined } from '@ant-design/icons';
 import Link from 'next/link';
-
-const { Title, Text, Paragraph } = Typography;
-
-// ── Page Descriptions ──────────────────────────────────
+import { LCard } from '@/shared/ui/light/LCard';
+import { LTag } from '@/shared/ui/light/LTag';
+import { LButton } from '@/shared/ui/light/LButton';
+import { LAlert } from '@/shared/ui/light/LAlert';
 
 const PAGES = [
   {
@@ -85,119 +84,25 @@ const SHORTCUTS = [
   { keys: 'Клик по теме', desc: 'Быстрый переход к вопросу по теме' },
 ];
 
-// ── Main Page ──────────────────────────────────
-
 function HelpContent() {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-
-  const filteredPages = selectedCategory
-    ? PAGES.filter(p => p.category === selectedCategory)
-    : PAGES;
-
+  const [activeTab, setActiveTab] = useState('all');
   const allPages = PAGES.flatMap(p => p.items);
 
-  const categoryItems = [
-    {
-      key: 'all',
-      label: '📋 Все страницы',
-      children: (
-        <List
-          dataSource={allPages}
-          renderItem={(item) => (
-            <List.Item
-              actions={[<Link key="go" href={item.path}><Button size="small" type="link">Перейти →</Button></Link>]}
-            >
-              <List.Item.Meta
-                avatar={<div style={{ fontSize: 18 }}>{item.icon}</div>}
-                title={<Space>{item.title} <Text type="secondary" style={{ fontSize: 12 }}>({item.path})</Text></Space>}
-                description={
-                  <div>
-                    <Text style={{ fontSize: 13 }}>{item.desc}</Text>
-                    {item.roles[0] !== 'all' && (
-                      <div style={{ marginTop: 4 }}>
-                        {item.roles.map(r => <Tag key={r} style={{ fontSize: 10 }}>{r}</Tag>)}
-                      </div>
-                    )}
-                  </div>
-                }
-              />
-            </List.Item>
-          )}
-        />
-      ),
-    },
-    ...PAGES.map(cat => ({
-      key: cat.category,
-      label: <Space><span style={{ color: cat.color }}>●</span> {cat.category}</Space>,
-      children: (
-        <Row gutter={[12, 12]}>
-          {cat.items.map(item => (
-            <Col xs={24} sm={12} lg={8} key={item.path}>
-              <Card size="small" hoverable style={{ height: '100%', borderTop: `3px solid ${cat.color}` }}>
-                <Space direction="vertical" size={4} style={{ width: '100%' }}>
-                  <Space>
-                    <span style={{ fontSize: 18, color: cat.color }}>{item.icon}</span>
-                    <Text strong>{item.title}</Text>
-                  </Space>
-                  <Text type="secondary" style={{ fontSize: 12 }}>{item.desc}</Text>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-                    <Text code style={{ fontSize: 11 }}>{item.path}</Text>
-                    <Link href={item.path}><Button size="small" type="link">Открыть →</Button></Link>
-                  </div>
-                </Space>
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      ),
-    })),
-    {
-      key: 'nav',
-      label: '🧭 Навигация',
-      children: (
-        <Row gutter={[16, 16]}>
-          {NAV_GROUPS.map(group => (
-            <Col xs={24} sm={12} lg={8} key={group.title}>
-              <Card size="small" title={<span style={{ color: group.color }}>{group.title}</span>}>
-                <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>{group.desc}</Text>
-                <List size="small" dataSource={group.pages} renderItem={(page) => (
-                  <List.Item style={{ padding: '2px 0' }}><Text style={{ fontSize: 12 }}>• {page}</Text></List.Item>
-                )} />
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      ),
-    },
-    {
-      key: 'shortcuts',
-      label: <><KeyOutlined /> Горячие клавиши</>,
-      children: (
-        <Card>
-          <List
-            dataSource={SHORTCUTS}
-            renderItem={(item) => (
-              <List.Item>
-                <Space>
-                  <Tag color="blue" style={{ fontFamily: 'monospace' }}>{item.keys}</Tag>
-                  <Text>{item.desc}</Text>
-                </Space>
-              </List.Item>
-            )}
-          />
-        </Card>
-      ),
-    },
+  const tabs = [
+    { key: 'all', label: 'Все страницы' },
+    ...PAGES.map(cat => ({ key: cat.category, label: cat.category })),
+    { key: 'nav', label: 'Навигация' },
+    { key: 'shortcuts', label: 'Горячие клавиши' },
   ];
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
       <div style={{ marginBottom: 16 }}>
-        <Title level={2} style={{ marginBottom: 4 }}>Инструкции</Title>
-        <Text type="secondary">Справочник по всем страницам и функциям приложения</Text>
+        <h2 style={{ fontSize: 24, fontWeight: 600, marginBottom: 4 }}>Инструкции</h2>
+        <p style={{ color: '#999', margin: 0 }}>Справочник по всем страницам и функциям приложения</p>
       </div>
 
-      <Alert
+      <LAlert
         message="Добро пожаловать в «Наследие Аркаима»"
         description="Эта страница поможет вам разобраться в функционале. Выберите нужный раздел или воспользуйтесь поиском."
         type="info"
@@ -206,13 +111,121 @@ function HelpContent() {
       />
 
       {/* Stats */}
-      <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
-        <Col xs={8}><Card size="small" hoverable><div style={{ textAlign: 'center' }}><BookOutlined style={{ fontSize: 20, color: '#2563eb' }} /><div><Text strong style={{ fontSize: 18 }}>{allPages.length}</Text></div><Text type="secondary" style={{ fontSize: 11 }}>страниц</Text></div></Card></Col>
-        <Col xs={8}><Card size="small" hoverable><div style={{ textAlign: 'center' }}><ThunderboltOutlined style={{ fontSize: 20, color: '#7c3aed' }} /><div><Text strong style={{ fontSize: 18 }}>{PAGES.length}</Text></div><Text type="secondary" style={{ fontSize: 11 }}>категорий</Text></div></Card></Col>
-        <Col xs={8}><Card size="small" hoverable><div style={{ textAlign: 'center' }}><KeyOutlined style={{ fontSize: 20, color: '#059669' }} /><div><Text strong style={{ fontSize: 18 }}>{SHORTCUTS.length}</Text></div><Text type="secondary" style={{ fontSize: 11 }}>команд</Text></div></Card></Col>
-      </Row>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
+        <LCard size="small" hoverable>
+          <div style={{ textAlign: 'center' }}>
+            <BookOutlined style={{ fontSize: 20, color: '#2563eb' }} />
+            <div style={{ fontWeight: 600, fontSize: 18 }}>{allPages.length}</div>
+            <div style={{ color: '#999', fontSize: 11 }}>страниц</div>
+          </div>
+        </LCard>
+        <LCard size="small" hoverable>
+          <div style={{ textAlign: 'center' }}>
+            <ThunderboltOutlined style={{ fontSize: 20, color: '#7c3aed' }} />
+            <div style={{ fontWeight: 600, fontSize: 18 }}>{PAGES.length}</div>
+            <div style={{ color: '#999', fontSize: 11 }}>категорий</div>
+          </div>
+        </LCard>
+        <LCard size="small" hoverable>
+          <div style={{ textAlign: 'center' }}>
+            <KeyOutlined style={{ fontSize: 20, color: '#059669' }} />
+            <div style={{ fontWeight: 600, fontSize: 18 }}>{SHORTCUTS.length}</div>
+            <div style={{ color: '#999', fontSize: 11 }}>команд</div>
+          </div>
+        </LCard>
+      </div>
 
-      <Tabs items={categoryItems} />
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--divider-color)', marginBottom: 24, overflowX: 'auto' }}>
+        {tabs.map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            style={{
+              padding: '12px 16px',
+              border: 'none',
+              background: 'transparent',
+              cursor: 'pointer',
+              fontSize: 14,
+              color: activeTab === tab.key ? '#1677ff' : '#666',
+              borderBottom: activeTab === tab.key ? '2px solid #1677ff' : '2px solid transparent',
+              marginBottom: -1,
+              fontWeight: activeTab === tab.key ? 500 : 400,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* All pages */}
+      {activeTab === 'all' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {allPages.map(item => (
+            <div key={item.path} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8 }}>
+              <span style={{ fontSize: 18, color: '#666' }}>{item.icon}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 500 }}>{item.title} <span style={{ color: '#999', fontSize: 12 }}>({item.path})</span></div>
+                <div style={{ fontSize: 13, color: '#666' }}>{item.desc}</div>
+                {item.roles[0] !== 'all' && (
+                  <div style={{ marginTop: 4, display: 'flex', gap: 4 }}>
+                    {item.roles.map(r => <LTag key={r} style={{ fontSize: 10 }}>{r}</LTag>)}
+                  </div>
+                )}
+              </div>
+              <Link href={item.path}><LButton size="small" type="link">Перейти →</LButton></Link>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Category pages */}
+      {PAGES.filter(cat => cat.category === activeTab).map(cat => (
+        <div key={cat.category} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+          {cat.items.map(item => (
+            <LCard key={item.path} size="small" hoverable style={{ borderTop: `3px solid ${cat.color}` }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 18, color: cat.color }}>{item.icon}</span>
+                  <strong>{item.title}</strong>
+                </div>
+                <div style={{ fontSize: 12, color: '#999' }}>{item.desc}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                  <code style={{ fontSize: 11, background: 'var(--surface-bg)', padding: '2px 6px', borderRadius: 4 }}>{item.path}</code>
+                  <Link href={item.path}><LButton size="small" type="link">Открыть →</LButton></Link>
+                </div>
+              </div>
+            </LCard>
+          ))}
+        </div>
+      ))}
+
+      {/* Navigation */}
+      {activeTab === 'nav' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+          {NAV_GROUPS.map(group => (
+            <LCard key={group.title} size="small" title={<span style={{ color: group.color }}>{group.title}</span>}>
+              <div style={{ fontSize: 12, color: '#999', marginBottom: 8 }}>{group.desc}</div>
+              {group.pages.map(page => (
+                <div key={page} style={{ padding: '2px 0', fontSize: 12 }}>• {page}</div>
+              ))}
+            </LCard>
+          ))}
+        </div>
+      )}
+
+      {/* Shortcuts */}
+      {activeTab === 'shortcuts' && (
+        <LCard>
+          {SHORTCUTS.map(item => (
+            <div key={item.keys} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+              <LTag color="blue" style={{ fontFamily: 'monospace' }}>{item.keys}</LTag>
+              <span>{item.desc}</span>
+            </div>
+          ))}
+        </LCard>
+      )}
     </div>
   );
 }
