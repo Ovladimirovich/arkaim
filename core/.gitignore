@@ -33,6 +33,5 @@ DRAFTS/
 LOGS/*.log
 
 # Generated data (not committed)
-GENOME/
 WORLD/
 MEMORY/
