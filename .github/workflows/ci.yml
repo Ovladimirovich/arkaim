@@ -39,7 +39,7 @@ jobs:
       - name: Run backend tests
         run: |
           cd runtime
-          python -m pytest tests/ -v --tb=short --continue-on-collection-errors
+          python -m pytest tests/ -v --tb=short
         env:
           SESSION_SECRET: test-secret-key
           AUTH_DB_PATH: ":memory:"
@@ -47,7 +47,7 @@ jobs:
       - name: Run narrative engine tests
         run: |
           cd runtime
-          python -m pytest tests/test_narrative_*.py -v --tb=short --continue-on-collection-errors
+          python -m pytest tests/test_narrative_*.py -v --tb=short
 
   # ── Frontend Tests ─────────────────────────────────────
   frontend-test:
