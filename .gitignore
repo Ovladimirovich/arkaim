@@ -71,7 +71,6 @@ core/CHROMA_DB/*.parquet
 # ── Project data (not code) ────────────────────────────
 core/OUTPUT/
 core/DRAFTS/
-core/GENOME/
 core/WORLD/
 core/MEMORY/
 core/OS_DATA/
@@ -79,6 +78,10 @@ data/
 runtime/world_engine_backups/
 runtime/knowledge_base/
 runtime/test_reports/
+
+# ── Runtime artifacts ─────────────────────────────────────
+runtime/uv.lock
+runtime/.hypothesis/
 
 # ── Temporary / Generated files ────────────────────────
 *.tmp
