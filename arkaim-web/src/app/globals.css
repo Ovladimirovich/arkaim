@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+/* Токены темы. Светлая тема — базовая, тёмная включается классом `dark` на body
+   (его ставит ThemeProvider в app/providers.tsx). Раньше значения были только
+   тёмными, из-за чего переключатель темы менял AntD-токены, но не фон/текст
+   страницы — визуально оставался тёмный фон со светлыми компонентами. */
+:root,
+body:not(.dark) {
+  --background: #f4f6fb;
+  --foreground: #1e293b;
+  --card-bg: #ffffff;
+  --card-border: #e2e8f0;
+  --surface-bg: #ffffff;
+  --input-bg: #ffffff;
+  --input-border: #cbd5e1;
+  --modal-mask: rgba(15, 23, 42, 0.45);
+  --divider-color: #e2e8f0;
+  --muted-fg: #64748b;
+  --accent: #2563eb;
+  --accent-soft: rgba(37, 99, 235, 0.10);
+  color-scheme: light;
+}
+
+body.dark {
+  --background: #0f172a;
+  --foreground: #e2e8f0;
+  --card-bg: #1e293b;
+  --card-border: #334155;
+  --surface-bg: #1e293b;
+  --input-bg: #1e293b;
+  --input-border: #475569;
+  --modal-mask: rgba(0, 0, 0, 0.7);
+  --divider-color: #334155;
+  --muted-fg: #94a3b8;
+  --accent: #60a5fa;
+  --accent-soft: rgba(96, 165, 250, 0.14);
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+* { box-sizing: border-box; }
+
+/* Уважаем системную настройку «уменьшить движение». */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Горизонтальная прокрутка от широких таблиц/сеток на узких экранах. */
+body { overflow-x: hidden; }
+
+/* Узкие экраны (≤575px): крошки и имя пользователя в Topbar выталкивают
+   правый блок управления за пределы вьюпорта — скрываем их,
+   чтобы не было горизонтального overflow. */
+@media (max-width: 575px) {
+  .app-shell-breadcrumb,
+  .app-shell-user {
+    display: none !important;
+  }
+}

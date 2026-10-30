@@ -1,0 +1,39 @@
+{
+  "_provenance_metadata": {
+    "category": "EXTERNAL_SOURCE",
+    "source_level": "HISTORICAL",
+    "notes": "Technological data from external sources Записи с пустым content удалены 2026-10-22 (решение владельца G1.4): пустое утверждение с confidence 1.0 — ложная метка.",
+    "enriched_at": "Milestone B"
+  },
+  "items": [
+    {
+      "topic": "",
+      "content": "Археологические данные, подтверждающие или дополняющие описание в книге. Аркаим — непреложный факт.",
+      "layers": {
+        "literal": "Археологические данные, подтверждающие или дополняющие описание в книге. Аркаим — непреложный факт.",
+        "metaphorical": "",
+        "cosmic": ""
+      },
+      "cross_references": [],
+      "patterns": [],
+      "connections": [],
+      "graph_links": [],
+      "source": "core\\KNOWLEDGE\\ARCHAEOLOGY.json",
+      "validation_score": 0.5,
+      "confidence": 0.0,
+      "metadata": {
+        "layers": {},
+        "cross_references": [],
+        "keys": [
+          "description",
+          "sites",
+          "geographic_correspondence"
+        ],
+        "claim_status": "UNKNOWN",
+        "provenance_note": "Источник claim'ов не подтверждён: нет библиографической ссылки. См. docs/G1_UNCONFIRMED_CLAIMS_REGISTER_2026-10-22.md."
+      },
+      "added_at": "2026-07-16T02:05:51.083289+00:00"
+    }
+  ],
+  "item_count": 1
+}

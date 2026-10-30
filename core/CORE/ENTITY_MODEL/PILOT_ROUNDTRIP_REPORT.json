@@ -1,0 +1,4881 @@
+[
+  {
+    "category": "geography",
+    "card_id": "region_arkaim",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:presentation: card classification tag, not migrated",
+      "coordinates": "ok",
+      "era": "time",
+      "color": "unmapped:presentation: map coloring, not knowledge",
+      "icon": "unmapped:presentation: UI icon, not knowledge"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "climate",
+    "card_id": "steppe_climate",
+    "status": "migrated",
+    "properties": {
+      "type": "ok",
+      "temperature_range": "ok",
+      "precipitation": "ok",
+      "seasons": "ok"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "architecture",
+    "card_id": "arkaim_settlement",
+    "status": "migrated",
+    "properties": {
+      "type": "ok",
+      "style": "ok",
+      "materials": "ok",
+      "era": "time"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "civilizations",
+    "card_id": "civ_hyperborea",
+    "status": "migrated",
+    "properties": {
+      "epoch": "time",
+      "values": "ok"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "civilizations",
+    "card_id": "civ_arkaim_civilization",
+    "status": "migrated",
+    "properties": {
+      "epoch": "time",
+      "values": "ok"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "geography",
+    "card_id": "region_hyperborea",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:presentation: card classification tag, not migrated",
+      "coordinates": "ok",
+      "era": "time",
+      "color": "unmapped:presentation: map coloring, not knowledge",
+      "icon": "unmapped:presentation: UI icon, not knowledge"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "geography",
+    "card_id": "region_gardarika",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:presentation: card classification tag, not migrated",
+      "coordinates": "ok",
+      "era": "time",
+      "color": "unmapped:presentation: map coloring, not knowledge",
+      "icon": "unmapped:presentation: UI icon, not knowledge"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "geography",
+    "card_id": "region_sintashta",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:presentation: card classification tag, not migrated",
+      "coordinates": "ok",
+      "era": "time",
+      "color": "unmapped:presentation: map coloring, not knowledge",
+      "icon": "unmapped:presentation: UI icon, not knowledge"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "geography",
+    "card_id": "region_oceania",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:presentation: card classification tag, not migrated",
+      "coordinates": "ok",
+      "era": "time",
+      "color": "unmapped:presentation: map coloring, not knowledge",
+      "icon": "unmapped:presentation: UI icon, not knowledge"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "geography",
+    "card_id": "region_mehenjo",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:presentation: card classification tag, not migrated",
+      "coordinates": "ok",
+      "era": "time",
+      "color": "unmapped:presentation: map coloring, not knowledge",
+      "icon": "unmapped:presentation: UI icon, not knowledge"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "geography",
+    "card_id": "region_sumer",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:presentation: card classification tag, not migrated",
+      "coordinates": "ok",
+      "era": "time",
+      "color": "unmapped:presentation: map coloring, not knowledge",
+      "icon": "unmapped:presentation: UI icon, not knowledge"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "geography",
+    "card_id": "region_gobekli",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:presentation: card classification tag, not migrated",
+      "coordinates": "ok",
+      "era": "time",
+      "color": "unmapped:presentation: map coloring, not knowledge",
+      "icon": "unmapped:presentation: UI icon, not knowledge"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "geography",
+    "card_id": "region_bolgar",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:presentation: card classification tag, not migrated",
+      "coordinates": "ok",
+      "era": "time",
+      "color": "unmapped:presentation: map coloring, not knowledge",
+      "icon": "unmapped:presentation: UI icon, not knowledge"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "geography",
+    "card_id": "region_lepeni_vir",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:presentation: card classification tag, not migrated",
+      "coordinates": "ok",
+      "era": "time",
+      "color": "unmapped:presentation: map coloring, not knowledge",
+      "icon": "unmapped:presentation: UI icon, not knowledge"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "geography",
+    "card_id": "route_migration_north_south",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:presentation: card classification tag, not migrated",
+      "from_location": "unmapped:review",
+      "to_location": "unmapped:review",
+      "distance": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "geography",
+    "card_id": "route_migration_to_south",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:presentation: card classification tag, not migrated",
+      "from_location": "unmapped:review",
+      "to_location": "unmapped:review",
+      "distance": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "geography",
+    "card_id": "route_migration_to_india",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:presentation: card classification tag, not migrated",
+      "from_location": "unmapped:review",
+      "to_location": "unmapped:review",
+      "distance": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "geography",
+    "card_id": "route_migration_to_europe",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:presentation: card classification tag, not migrated",
+      "from_location": "unmapped:review",
+      "to_location": "unmapped:review",
+      "distance": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "geography",
+    "card_id": "energy_line_уральская_линия",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:presentation: card classification tag, not migrated",
+      "direction": "unmapped:review",
+      "power": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "geography",
+    "card_id": "energy_line_меридиан_аркаима",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:presentation: card classification tag, not migrated",
+      "direction": "unmapped:review",
+      "power": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "geography",
+    "card_id": "char_location_гиперборея",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:presentation: card classification tag, not migrated",
+      "character": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "climate",
+    "card_id": "hyperborea_climate",
+    "status": "migrated",
+    "properties": {
+      "type": "ok",
+      "temperature_range": "ok",
+      "precipitation": "ok",
+      "seasons": "ok"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "architecture",
+    "card_id": "hyperborea_palace",
+    "status": "migrated",
+    "properties": {
+      "type": "ok",
+      "style": "ok",
+      "materials": "ok",
+      "era": "time"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "architecture",
+    "card_id": "sanctuary_temple",
+    "status": "migrated",
+    "properties": {
+      "type": "ok",
+      "style": "ok",
+      "materials": "ok",
+      "era": "time"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "architecture",
+    "card_id": "underground_city",
+    "status": "migrated",
+    "properties": {
+      "type": "ok",
+      "style": "ok",
+      "materials": "ok",
+      "era": "time"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "architecture",
+    "card_id": "village_house",
+    "status": "migrated",
+    "properties": {
+      "type": "ok",
+      "style": "ok",
+      "materials": "ok",
+      "era": "time"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "civilizations",
+    "card_id": "civ_oceania",
+    "status": "migrated",
+    "properties": {
+      "epoch": "time",
+      "values": "ok"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "daily_life",
+    "card_id": "communal_living",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review",
+      "activities": "unmapped:review",
+      "values": "ok"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "daily_life",
+    "card_id": "agricultural_life",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review",
+      "activities": "unmapped:review",
+      "tools": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "daily_life",
+    "card_id": "spiritual_practice",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review",
+      "activities": "unmapped:review",
+      "symbols": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_предыстория_человечества",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_развенчание_академических_догм",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_культурное_наследие",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_иная_позиция_миропонимания",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_свечение_истины_изнутри",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_переходная_эпоха",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_импульс_преобразования",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_самозаконсервированное_состояние",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_иерархия_света",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_архат",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_канал_связи_с_космосом",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_эволюционное_развитие",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_миссия_учителя",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_путешествие_героя",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_глобальные_катаклизмы",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_возвышение_духа",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_встреча_духовных_братьев",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_учитель_и_ученики",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_мистический_северный_народ",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_могущественная_держава",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_цивилизация_океании",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_гиперборея",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_паломничество_к_гиперборее",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_психосенсорика_и_телекинез",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_сверхъестественные_силы_гипербореи",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_взаимодействие_с_гипербореями",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_эгоизм_и_деградация",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_черная_магия_и_колдовство",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_энергетика_хаоса",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_закон_причинности",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_саморегуляция_земли",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_космическая_изоляция_земли",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_трагедия_человечества",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_роль_посвящённых",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_духовное_пробуждение",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_выбор_пути",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_эволюционные_циклы",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_средства_передвижения_гипербореев",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_борьба_с_гравитацией",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_жилища_и_поселения",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_ландшафтная_энергетика",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_смена_мест_проживания",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_роль_женщины_в_обществе",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_философия_единого_учения",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_учитель_гипербореев",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_идея_вечности",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_саморегуляция_организма",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_телепортация_и_психическая_энергия",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_гиперборейская_цивилизация",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_звукознание_и_энергоакустика",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_архитектура_и_культурный_универсализм",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_тайные_знания",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_посвящение_в_тайное_общество",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_телепатическая_связь",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_саморазвитие_и_внутренний_рост",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_община_мудрецов",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_великосвет_(велиусмус)",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_учение_истины",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_путешествие_по_гиперборее",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_передача_знаний_от_посвященных",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_духовное_преображение",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_просветление_и_осознание_источника",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_космопланетарные_сроки",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_перемещение_литосферных_плит",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_геофизическое_оружие",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_миграция_народов",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_наставники",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_психотелекоммуникационная_связь",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_эволюционные_силы",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_учитель_(световит)",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_трансцендентное_состояние",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_эволюция_человека",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_кали_юга",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_биологическое_бессмертие",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_посредник",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_историческое_распространение",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_эмиграция_гипербореев",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_объективность_в_действиях",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_закрытие_эры_гипербореи",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_переход_к_новой_эре_(кали_юга)",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_духовное_наследие",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_миграция_гипербореев",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_выбор_места_проживания",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_энергетический_центр",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_энергоинформационное_поле_земли",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_обустройство_поселения",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_проектирование_и_строительство_города",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_городская_инфраструктура",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_инженерные_системы",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_сельскохозяйственные_работы",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_традиция_обращения_за_благословением",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_влияние_культуры_и_традиций",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_любовь_и_взаимопонимание",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_роль_наставничества",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_астрологическое_влияние",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_вселенское_воспитание",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_школа_гипербореев",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_эволюционное_взаимодействие",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_эпоха_кали_юги",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_духовные_наставники",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_угроза_деградации",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_необходимость_изоляции",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_служение_истине",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_видение_будущего",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_посредник_(световит)",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_освоение_новых_территорий",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_кровное_родство",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_совершение_и_духовный_рост",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_новая_миссия",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_ученики",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_гипербореи",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_реинкарнация",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_мост_между_миром_людей_и_высшим_миром",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_белые_бородатые_люди",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_передача_знаний",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_культурное_пространство_гипербореи",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_эволюция_сознания",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_культурный_диалог",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_изменение_физических_условий",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_смена_мест_обитания",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_долголетие_гипербореев",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_физиологические_изменения",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_эволюция_культуры",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_миграционные_следы",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_историческое_наследие",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_деградация_сознания",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_возрождение_духа",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_великая_битва",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_аркаим",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_гардарикия_(страна_городов)",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_энергетика_аркаима",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_исцеление_души_и_тела",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_связь_поколений",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "language",
+    "card_id": "lang_преемственность_культурного_наследия",
+    "status": "migrated",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "myth_гиперборея",
+    "status": "migrated",
+    "properties": {
+      "source_file": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "myth_аркаим",
+    "status": "migrated",
+    "properties": {
+      "source_file": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "myth_учитель_/_наставник",
+    "status": "migrated",
+    "properties": {
+      "source_file": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "myth_велик_/_великосвет",
+    "status": "migrated",
+    "properties": {
+      "source_file": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "myth_перевалы_/_горы",
+    "status": "migrated",
+    "properties": {
+      "source_file": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "myth_свет_/_тьма",
+    "status": "migrated",
+    "properties": {
+      "source_file": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "myth_звук_/_молчание",
+    "status": "migrated",
+    "properties": {
+      "source_file": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "myth_вода_/_потоп",
+    "status": "migrated",
+    "properties": {
+      "source_file": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "myth_огонь",
+    "status": "migrated",
+    "properties": {
+      "source_file": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "myth_земля_/_город",
+    "status": "migrated",
+    "properties": {
+      "source_file": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "myth_дорога_/_путь",
+    "status": "migrated",
+    "properties": {
+      "source_file": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "myth_круг_/_окружность",
+    "status": "migrated",
+    "properties": {
+      "source_file": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "myth_белые_бородатые_люди",
+    "status": "migrated",
+    "properties": {
+      "source_file": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "myth_посредник_(световит)",
+    "status": "migrated",
+    "properties": {
+      "source_file": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "cosmo_myth_гиперборея",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "cosmo_myth_аркаим",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "cosmo_myth_учитель_(наставник)",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "cosmo_myth_велик_(великосвет)",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "cosmo_myth_кали_юга",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "cosmo_myth_иерархия_света",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "cosmo_myth_звукознание",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "cosmo_myth_эмиграция_/_миграция_гипербореев",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "cosmo_myth_духовное_пробуждение",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "cosmo_myth_передача_знаний",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "cosmo_myth_архат",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "cosmo_myth_космическая_изоляция_земли",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "cosmo_myth_энергетика_мест",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "cosmo_myth_герметизм",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "cosmo_myth_пифагорейство",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "cosmo_myth_непервоначальная_традиция_(элиаде)",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "cosmo_myth_агни-йога_(живая_этика)",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "cosmo_myth_теософия",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "cosmo_myth_суфизм",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "cosmo_myth_каббала",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "cosmo_myth_алхимия",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "cosmo_myth_буддизм_(махаяна)",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "mythology",
+    "card_id": "cosmo_myth_зороастризм",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_предыстория_человечества",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_развенчание_академических_догм",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_культурное_наследие",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_иная_позиция_миропонимания",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_свечение_истины_изнутри",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_переходная_эпоха",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_импульс_преобразования",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_самозаконсервированное_состояние",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_иерархия_света",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_архат",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_канал_связи_с_космосом",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_эволюционное_развитие",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_миссия_учителя",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_путешествие_героя",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_глобальные_катаклизмы",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_возвышение_духа",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_встреча_духовных_братьев",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_учитель_и_ученики",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_мистический_северный_народ",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_могущественная_держава",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_цивилизация_океании",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_гиперборея",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_паломничество_к_гиперборее",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_психосенсорика_и_телекинез",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_сверхъестественные_силы_гипербореи",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_взаимодействие_с_гипербореями",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_эгоизм_и_деградация",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_черная_магия_и_колдовство",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_энергетика_хаоса",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_закон_причинности",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_саморегуляция_земли",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_космическая_изоляция_земли",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_трагедия_человечества",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_роль_посвящённых",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_духовное_пробуждение",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_выбор_пути",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_эволюционные_циклы",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_средства_передвижения_гипербореев",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_борьба_с_гравитацией",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_жилища_и_поселения",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_ландшафтная_энергетика",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_смена_мест_проживания",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_роль_женщины_в_обществе",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_философия_единого_учения",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_учитель_гипербореев",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_идея_вечности",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_саморегуляция_организма",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_телепортация_и_психическая_энергия",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_гиперборейская_цивилизация",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_звукознание_и_энергоакустика",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_архитектура_и_культурный_универсализм",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_тайные_знания",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_посвящение_в_тайное_общество",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_телепатическая_связь",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_саморазвитие_и_внутренний_рост",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_община_мудрецов",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_великосвет_(велиусмус)",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_учение_истины",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_путешествие_по_гиперборее",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_передача_знаний_от_посвященных",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_духовное_преображение",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_просветление_и_осознание_источника",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_космопланетарные_сроки",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_перемещение_литосферных_плит",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_геофизическое_оружие",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_миграция_народов",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_наставники",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_психотелекоммуникационная_связь",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_эволюционные_силы",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_учитель_(световит)",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_трансцендентное_состояние",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_эволюция_человека",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_кали_юга",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_биологическое_бессмертие",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_посредник",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_историческое_распространение",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_эмиграция_гипербореев",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_объективность_в_действиях",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_закрытие_эры_гипербореи",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_переход_к_новой_эре_(кали_юга)",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_духовное_наследие",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_миграция_гипербореев",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_выбор_места_проживания",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_энергетический_центр",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_энергоинформационное_поле_земли",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_обустройство_поселения",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_проектирование_и_строительство_города",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_городская_инфраструктура",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_инженерные_системы",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_сельскохозяйственные_работы",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_традиция_обращения_за_благословением",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_влияние_культуры_и_традиций",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_любовь_и_взаимопонимание",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_роль_наставничества",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_астрологическое_влияние",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_вселенское_воспитание",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_школа_гипербореев",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_эволюционное_взаимодействие",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_эпоха_кали_юги",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_духовные_наставники",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_угроза_деградации",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_необходимость_изоляции",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_служение_истине",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_видение_будущего",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_посредник_(световит)",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_освоение_новых_территорий",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_кровное_родство",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_совершение_и_духовный_рост",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_новая_миссия",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_ученики",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_гипербореи",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_реинкарнация",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_мост_между_миром_людей_и_высшим_миром",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_белые_бородатые_люди",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_передача_знаний",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_культурное_пространство_гипербореи",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_эволюция_сознания",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_культурный_диалог",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_изменение_физических_условий",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_смена_мест_обитания",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_долголетие_гипербореев",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_физиологические_изменения",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_эволюция_культуры",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_миграционные_следы",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_историческое_наследие",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_деградация_сознания",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_возрождение_духа",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_великая_битва",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_аркаим",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_гардарикия_(страна_городов)",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_энергетика_аркаима",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_исцеление_души_и_тела",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_связь_поколений",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_deep_преемственность_культурного_наследия",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_предыстория_человечества",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_развенчание_академических_догм",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_культурное_наследие",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_иная_позиция_миропонимания",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_свечение_истины_изнутри",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_переходная_эпоха",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_импульс_преобразования",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_самозаконсервированное_состояние",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_иерархия_света",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_архат",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_канал_связи_с_космосом",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_эволюционное_развитие",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_миссия_учителя",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_путешествие_героя",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_глобальные_катаклизмы",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_возвышение_духа",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_встреча_духовных_братьев",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_учитель_и_ученики",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_мистический_северный_народ",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_могущественная_держава",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_цивилизация_океании",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_гиперборея",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_паломничество_к_гиперборее",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_психосенсорика_и_телекинез",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_сверхъестественные_силы_гипербореи",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_взаимодействие_с_гипербореями",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_эгоизм_и_деградация",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_черная_магия_и_колдовство",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_энергетика_хаоса",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_закон_причинности",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_саморегуляция_земли",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_космическая_изоляция_земли",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_трагедия_человечества",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_роль_посвящённых",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_духовное_пробуждение",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_выбор_пути",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_эволюционные_циклы",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_средства_передвижения_гипербореев",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_борьба_с_гравитацией",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_жилища_и_поселения",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_ландшафтная_энергетика",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_смена_мест_проживания",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_роль_женщины_в_обществе",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_философия_единого_учения",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_учитель_гипербореев",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_идея_вечности",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_саморегуляция_организма",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_телепортация_и_психическая_энергия",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_гиперборейская_цивилизация",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_звукознание_и_энергоакустика",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_архитектура_и_культурный_универсализм",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_тайные_знания",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_посвящение_в_тайное_общество",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_телепатическая_связь",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_саморазвитие_и_внутренний_рост",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_община_мудрецов",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_великосвет_(велиусмус)",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_учение_истины",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_путешествие_по_гиперборее",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_передача_знаний_от_посвященных",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_духовное_преображение",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_просветление_и_осознание_источника",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_космопланетарные_сроки",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_перемещение_литосферных_плит",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_геофизическое_оружие",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_миграция_народов",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_наставники",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_психотелекоммуникационная_связь",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_эволюционные_силы",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_учитель_(световит)",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_трансцендентное_состояние",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_эволюция_человека",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_кали_юга",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_биологическое_бессмертие",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_посредник",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_историческое_распространение",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_эмиграция_гипербореев",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_объективность_в_действиях",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_закрытие_эры_гипербореи",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_переход_к_новой_эре_(кали_юга)",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_духовное_наследие",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_миграция_гипербореев",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_выбор_места_проживания",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_энергетический_центр",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_энергоинформационное_поле_земли",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_обустройство_поселения",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_проектирование_и_строительство_города",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_городская_инфраструктура",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_инженерные_системы",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_сельскохозяйственные_работы",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_традиция_обращения_за_благословением",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_влияние_культуры_и_традиций",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_любовь_и_взаимопонимание",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_роль_наставничества",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_астрологическое_влияние",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_вселенское_воспитание",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_школа_гипербореев",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_эволюционное_взаимодействие",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_эпоха_кали_юги",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_духовные_наставники",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_угроза_деградации",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_необходимость_изоляции",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_служение_истине",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_видение_будущего",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_посредник_(световит)",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_освоение_новых_территорий",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_кровное_родство",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_совершение_и_духовный_рост",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_новая_миссия",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_ученики",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_гипербореи",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_реинкарнация",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_мост_между_миром_людей_и_высшим_миром",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_белые_бородатые_люди",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_передача_знаний",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_культурное_пространство_гипербореи",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_эволюция_сознания",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_культурный_диалог",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_изменение_физических_условий",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_смена_мест_обитания",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_долголетие_гипербореев",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_физиологические_изменения",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_эволюция_культуры",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_миграционные_следы",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_историческое_наследие",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_деградация_сознания",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_возрождение_духа",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_великая_битва",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_аркаим",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_гардарикия_(страна_городов)",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_энергетика_аркаима",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_исцеление_души_и_тела",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_связь_поколений",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "philosophy",
+    "card_id": "phil_преемственность_культурного_наследия",
+    "status": "migrated",
+    "properties": {
+      "depth": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "religion",
+    "card_id": "ritual_герметизм",
+    "status": "migrated",
+    "properties": {
+      "type": "ok"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "religion",
+    "card_id": "ritual_пифагорейство",
+    "status": "migrated",
+    "properties": {
+      "type": "ok"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "religion",
+    "card_id": "ritual_непервоначальная_традиция_(элиаде)",
+    "status": "migrated",
+    "properties": {
+      "type": "ok"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "religion",
+    "card_id": "ritual_агни-йога_(живая_этика)",
+    "status": "migrated",
+    "properties": {
+      "type": "ok"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "religion",
+    "card_id": "ritual_теософия",
+    "status": "migrated",
+    "properties": {
+      "type": "ok"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "religion",
+    "card_id": "ritual_суфизм",
+    "status": "migrated",
+    "properties": {
+      "type": "ok"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "religion",
+    "card_id": "ritual_каббала",
+    "status": "migrated",
+    "properties": {
+      "type": "ok"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "religion",
+    "card_id": "ritual_алхимия",
+    "status": "migrated",
+    "properties": {
+      "type": "ok"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "religion",
+    "card_id": "ritual_буддизм_(махаяна)",
+    "status": "migrated",
+    "properties": {
+      "type": "ok"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "religion",
+    "card_id": "ritual_зороастризм",
+    "status": "migrated",
+    "properties": {
+      "type": "ok"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "rituals",
+    "card_id": "ritual_герметизм",
+    "status": "duplicate_skipped",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true,
+    "duplicate_of": "religion:ritual_герметизм",
+    "duplicate_reason": "та же карточка уже смоделирована из другой категории-проекции; артефакт pilot/ именуется по card_id, сохранена более полная проекция"
+  },
+  {
+    "category": "rituals",
+    "card_id": "ritual_пифагорейство",
+    "status": "duplicate_skipped",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true,
+    "duplicate_of": "religion:ritual_пифагорейство",
+    "duplicate_reason": "та же карточка уже смоделирована из другой категории-проекции; артефакт pilot/ именуется по card_id, сохранена более полная проекция"
+  },
+  {
+    "category": "rituals",
+    "card_id": "ritual_непервоначальная_традиция_(элиаде)",
+    "status": "duplicate_skipped",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true,
+    "duplicate_of": "religion:ritual_непервоначальная_традиция_(элиаде)",
+    "duplicate_reason": "та же карточка уже смоделирована из другой категории-проекции; артефакт pilot/ именуется по card_id, сохранена более полная проекция"
+  },
+  {
+    "category": "rituals",
+    "card_id": "ritual_агни-йога_(живая_этика)",
+    "status": "duplicate_skipped",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true,
+    "duplicate_of": "religion:ritual_агни-йога_(живая_этика)",
+    "duplicate_reason": "та же карточка уже смоделирована из другой категории-проекции; артефакт pilot/ именуется по card_id, сохранена более полная проекция"
+  },
+  {
+    "category": "rituals",
+    "card_id": "ritual_теософия",
+    "status": "duplicate_skipped",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true,
+    "duplicate_of": "religion:ritual_теософия",
+    "duplicate_reason": "та же карточка уже смоделирована из другой категории-проекции; артефакт pilot/ именуется по card_id, сохранена более полная проекция"
+  },
+  {
+    "category": "rituals",
+    "card_id": "ritual_суфизм",
+    "status": "duplicate_skipped",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true,
+    "duplicate_of": "religion:ritual_суфизм",
+    "duplicate_reason": "та же карточка уже смоделирована из другой категории-проекции; артефакт pilot/ именуется по card_id, сохранена более полная проекция"
+  },
+  {
+    "category": "rituals",
+    "card_id": "ritual_каббала",
+    "status": "duplicate_skipped",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true,
+    "duplicate_of": "religion:ritual_каббала",
+    "duplicate_reason": "та же карточка уже смоделирована из другой категории-проекции; артефакт pilot/ именуется по card_id, сохранена более полная проекция"
+  },
+  {
+    "category": "rituals",
+    "card_id": "ritual_алхимия",
+    "status": "duplicate_skipped",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true,
+    "duplicate_of": "religion:ritual_алхимия",
+    "duplicate_reason": "та же карточка уже смоделирована из другой категории-проекции; артефакт pilot/ именуется по card_id, сохранена более полная проекция"
+  },
+  {
+    "category": "rituals",
+    "card_id": "ritual_буддизм_(махаяна)",
+    "status": "duplicate_skipped",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true,
+    "duplicate_of": "religion:ritual_буддизм_(махаяна)",
+    "duplicate_reason": "та же карточка уже смоделирована из другой категории-проекции; артефакт pilot/ именуется по card_id, сохранена более полная проекция"
+  },
+  {
+    "category": "rituals",
+    "card_id": "ritual_зороастризм",
+    "status": "duplicate_skipped",
+    "properties": {},
+    "issues": [],
+    "relationships_ok": true,
+    "duplicate_of": "religion:ritual_зороастризм",
+    "duplicate_reason": "та же карточка уже смоделирована из другой категории-проекции; артефакт pilot/ именуется по card_id, сохранена более полная проекция"
+  },
+  {
+    "category": "social_structure",
+    "card_id": "role_main",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review",
+      "count": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "social_structure",
+    "card_id": "role_secondary",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review",
+      "count": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "social_structure",
+    "card_id": "role_главные",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review",
+      "count": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "social_structure",
+    "card_id": "daily_social_hyperborea_daily_life_food",
+    "status": "migrated",
+    "properties": {
+      "source_file": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "social_structure",
+    "card_id": "daily_social_hyperborea_daily_life_clothing",
+    "status": "migrated",
+    "properties": {
+      "source_file": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "social_structure",
+    "card_id": "daily_social_hyperborea_daily_life_family",
+    "status": "migrated",
+    "properties": {
+      "source_file": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "social_structure",
+    "card_id": "daily_social_hyperborea_daily_life_women_role",
+    "status": "migrated",
+    "properties": {
+      "source_file": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "social_structure",
+    "card_id": "daily_social_hyperborea_daily_life_leisure",
+    "status": "migrated",
+    "properties": {
+      "source_file": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "social_structure",
+    "card_id": "daily_social_hyperborea_daily_life_celebrations",
+    "status": "migrated",
+    "properties": {
+      "source_file": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "social_structure",
+    "card_id": "daily_social_hyperborea_daily_life_migration_life",
+    "status": "migrated",
+    "properties": {
+      "source_file": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "social_structure",
+    "card_id": "daily_social_oceania_daily_life_known_details",
+    "status": "migrated",
+    "properties": {
+      "source_file": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "social_structure",
+    "card_id": "daily_social_oceania_daily_life_contrast_with_hyperborea",
+    "status": "migrated",
+    "properties": {
+      "source_file": "unmapped:review"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "transport",
+    "card_id": "horse_travel",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review",
+      "speed": "unmapped:review",
+      "range": "unmapped:review",
+      "usage": "ok"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "transport",
+    "card_id": "river_boats",
+    "status": "migrated",
+    "properties": {
+      "type": "unmapped:review",
+      "speed": "unmapped:review",
+      "range": "unmapped:review",
+      "usage": "ok"
+    },
+    "issues": [],
+    "relationships_ok": true
+  },
+  {
+    "category": "native",
+    "card_id": "svetovit",
+    "status": "native",
+    "source_file": "ENTITY_MODEL/pilot/svetovit.json",
+    "issues": []
+  },
+  {
+    "category": "native",
+    "card_id": "location_temple",
+    "status": "native",
+    "source_file": "ENTITY_MODEL/pilot/location_temple.json",
+    "issues": []
+  },
+  {
+    "category": "native",
+    "card_id": "person_velik",
+    "status": "native",
+    "source_file": "ENTITY_MODEL/pilot/person_velik.json",
+    "issues": []
+  }
+]

@@ -1,0 +1,149 @@
+﻿# Changelog
+
+## [arkaim-book G-1 snapshot] — 2026-10-30
+
+### Added
+- **G-1 clean snapshot** — новый локальный репозиторий rkaim-book собран по реестру docs/G1_PUBLICATION_REGISTRY_2026-10-30.md:
+  - исключения E-1..E-5, E-10, E-6/E-7/E-8/E-9 (секреты/тяжёлые артефакты/PID/сканеры/логи)
+  - замена абсолютных путей P-6..P-9 (.clinerules/project-map.md, MEDIA_PRODUCTION, md-line/*, АУДИТ_ARKAIM.md → docs/archive/ARKAIM_AUDIT_ORIGIN.md)
+  - дедупликация Genome (W-8): 46 файлов → 6 уникальных версий + index.json + 4 .txt-слоя (40 дублей удалены, связи/индекс сохранены)
+  - .gitignore дополнен G-1-исключениями
+- **Состав публикации (§1 реестра)** включён: core/** (KNOWLEDGE/GENOME/CORE/SOURCE_OF_TRUTH), untime/**, rkaim-web/**, rkaim-mobile/**, docs/**, SCHEMAS/**, scripts/**, 
+otebooks/**, Makefile, Dockerfile.*, docker-compose.yml, .github/**
+
+### Excluded
+- **W-2/B** untime/core/routes/comfyui.py — ComfyUI-заглушка НЕ включена в основную публикацию (сохраняется в бэкапе Arkaim_Backup_2026-10-30)
+- **E-6** PS-обрывок — удалён с диска (был untracked)
+- **E-7** WORLD_MODEL.json.backup_20261029_141101 — snapshot вне репозитория (в бэкапе)
+- **E-8** тяжёлые артефакты (
+ode_modules/, .venv/, .next/, .kilo/, .opencode/) — в .gitignore
+- **E-9** реальные .env-секреты — в .gitignore
+
+### Open items (не блокируют сборку; сохранены в реестре)
+- **W-1** Google OAuth — live-сценарий требует Google-credentials (остаток до публикации)
+- **W-5** arkaim-mobile dev-login — решение по dev-кнопке + tsc-баррел shared/api (OWNER-GO E)
+- **W-3/KNOWLEDGE C** — 8 FAIL-ов (пустые записи ARCHAEOLOGY_DEEP/GEOGRAPHY + provenance-метаданные) сохранены как OPEN, не повышены до канона
+- Чистая Git-история: git init + одиночный смысловой коммит (без переноса накопленной истории)
+
+---
+
+## [Unreleased] — 2026-10-26
+
+### Added
+- **EDM E1 (дизайн-фаза + решения владельца, CLOSED 2026-10-26): native-карточки в EDM-каталоге** — утверждены: `svetovit` (Световит: персонаж подтверждён геном char_009; неподтверждённые эпоха/локации/роль — `unknown` до авторского источника), `location_temple` (опора: FORM-карточка «Святилище — храм»; архитектурные параметры — `unknown`), `person_velik` (Велик, главный герой, геном char_003; именованные варианты Велиусмус/Великосвет — char_022/char_014; связи student_of char_006/char_004, associated_with civ_hyperborea). Fail-closed: не подтверждённые источниками значения опущены до `unknown` (черновое значение зафиксировано в note) — вымышленные факты не материализуются.
+- Отклонены владельцем (нет источника в мире): `person_arkaim_elder` (именованный персонаж не подтверждён; знание о старейшинах как социальной роли сохраняется в KNOWLEDGE-базе, не как EDM-персонаж) и `artifact_ankh` (в книге/геноме «Анх» не найден, draft-source — placeholder `example.com`) — карточки удалены из `pilot/`.
+- Механика native-карточек в EDM-загрузчике (`ENTITY_MODEL/loader.py`: `NATIVE_CARDS` + `collect_native_entities()`, единый отчёт 5 migrated + 3 native, issues: 0).
+- Приоритет pilot-карточек над examples при одинаковом `canonical_id` в индексе EDM (`runtime/core/services/edm_pilot.py`, order-ранг §4.1: ранг b < c).
+- RAG-осознанное разрешение связанных сущностей: `resolve_related_entities` возвращает (entities, rationale) с взвешиванием по RAG-контексту (тема/персонаж/чанк +1.0, категория +0.5); rationale уходит в SSE-фреймы; 6 production-вызывающих и тесты обновлены.
+
+### Fixed
+- Исправлен E1-срез: native-карточки, ошибочно зарегистрированные как migrated-карточки extended_world, ломали `build_pilot_entities()` (KeyError) и попадали в production-индекс EDM невалидным форматом.
+- Связь `svetovit` ↔ Гиперборея переоперта на корректный источник (theme_070 «Учитель (Световит)»); добавлена связь `mentor_of` Славного (char_010, из описания char_009 «Старший брат Славного»).
+
+## [Unreleased] — 2026-10-14
+
+### Added
+- **Очистка диалога на странице «Задать вопрос»** — кнопка «Очистить» с подтверждением удаляет сохранённые сообщения текущей сессии читателя; добавлено пояснение, что ответы формирует ИИ на основе RAG-поиска по знаниям книги.
+  - Backend: `DELETE /book/reader/history/session?session_id=…` и `DELETE /book/reader/history` (роль `reader`, удаление строго по `user_id`).
+  - Backend: `MemoryStore.clear_session()` и `MemoryStore.clear_user_history()`.
+  - Frontend: контракты `clearReaderSession()` / `clearReaderHistory()`, карта конвертов `ENVELOPE_MAP`.
+  - Тесты: `runtime/tests/test_reader_clear_history.py`, `runtime/tests/test_memory.py`, `arkaim-web/tests/unit/ask-clear-history.test.tsx`.
+- M20.1: добавлены 5 одобренных связей книга↔сценарий, pair-keyed provenance; реестр содержит 14 пар.
+
+---
+
+## [2.0.1] — 2026-10-12
+
+### Fixed
+- **Страница «Чтение»** — исправлена структура оглавления и отображение титульной страницы
+  - «Часть 0» больше не отображается как глава в оглавлении
+  - Титульная страница (автор + аннотация) отображается без номера и без заголовка «Часть 0»
+  - «Пролог» и «Часть 1» разделены на отдельные разделы (ранее «Часть 1» была внутри «Пролог»)
+  - «Эпилог» корректно отображается как завершающий раздел
+  - Оглавление: титульная → Пролог → Часть 1 → Часть 2 … Часть 15 → Эпилог
+  - Убрана сквозная нумерация перед пунктами оглавления (названия частей уже содержат свои номера)
+- **Контрастность текста** — текст страниц был невидим в тёмной теме (жёсткие тёмные цвета `#1f2937`/`#374151`/`#555`); теперь весь текст, оглавление и разделители используют CSS-переменные темы (`--foreground`, `--muted-fg`, `--accent`), читаемы в светлой и тёмной темах
+- **Типографика** — улучшена читаемость текста (увеличен межстрочный интервал, оптимизирована ширина колонки)
+
+### Changed
+- Backend `/book/chapters` — добавлено поле `section_type` (title/prologue/part/epilogue) в список и деталь глав
+- Frontend mock-данные — синхронизированы с фактической структурой (18 глав, включая «Часть 1»)
+- `ReadingView` — различает титульную страницу, пролог, части и эпилог по `section_type`; титульная страница отображает автора и заголовок аннотации из реального текста без дублирования
+- `globals.css` — добавлены токен-переменные `--muted-fg`, `--accent`, `--accent-soft` для обеих тем
+
+---
+
+## [2.0.0] — 2026-07-20
+
+### Major
+- **World Engine** — вычислимая модель мира книги
+  - 547 сущностей мира в 13 категориях
+  - 287 связей между сущностями (8 типов)
+  - 55 форм для визуализации (11 категорий)
+  - 5 правил консистентности мира
+  - 10 режимов работы
+  - 10 API эндпоинтов на `/book/world/`
+- **34 страницы** интерфейса (полностью реализованы)
+- **Knowledge Expansion Pipeline** — 11 модулей обогащения, 168 тем
+- **ReaderProfile + Adaptive Responses** — 4 уровня, стили обучения, адаптация
+
+### Added
+- Interactive Map + Timeline (страница `/map`)
+- Community страницы (Interpretations, Artifacts)
+- Streaming чат (`/ask`)
+- Краудфандинг интеграция
+- World Engine CLI (`world_cli.py`)
+- Batch processing (`world_batch.py`)
+
+### Changed
+- Pulse расширен с 4 до 10 слоёв
+- API эндпоинты: 195 → 219
+- База знаний: 40+ JSON-файлов
+
+### Fixed
+- ServiceRegistry — единый DI-контейнер
+- WebSocket LiveFeedPanel (7 типов событий)
+- RAG dense mode — 2123 чанка
+
+---
+
+## [1.0.0] — 2026-07-09
+
+### Major
+- **BookPulse** — живое ядро (4 слоя: Knowledge, Meaning, Identity, Mission)
+- **BookVoice** — LLM как микрофон, не личность
+- **ReaderMemory** — книга помнит читателей (SQLite)
+- **Presence** — наблюдение + предложения автору
+- **EvolutionTracker** — версионирование генома
+
+### Added
+- 34 теста Auth (Telegram, Google, API Keys, JWT, RBAC)
+- 15 тестов Memory
+- 19 тестов Contract
+- 14 тестов Identity
+- ~60 тестов Core isolation
+- 20 тестов Gateway
+- 26 тестов Provider reliability
+- 50+ тестов Book UI
+- **349 тестов** общее покрытие
+- NSSM-службы (ArkaimCore, ArkaimGateway)
+- WebSocket real-time уведомления
+- Jinja2 + HTMX Web UI (5 страниц)
+ - GigaChat, OpenRouter провайдеры
+
+### Infrastructure
+- Gateway :8080 + Core :8642 (NSSM, автозапуск)
+- Cloudflare Tunnel / Tailscale Funnel (HTTPS)
+- health_monitor (Telegram-алёрты)
+
+---
+
+## [0.1.0] — 2026-06
+
+### Initial
+- Первый прототип: FastAPI + Next.js
+- RAG на ChromaDB (1037 чанков)
+- Book Intelligence — базовые слои Pulse
+- Docker Compose для разработки
+- CLI инструменты
+

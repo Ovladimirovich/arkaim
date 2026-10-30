@@ -1,0 +1,180 @@
+"""
+shared_config — единый источник конфигурации для Runtime и Book Intelligence.
+Загружает .env из runtime/ один раз.
+"""
+
+from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+SHARED_ROOT = Path(__file__).resolve().parent  # runtime/
+PROJECT_ROOT = SHARED_ROOT.parent  # корень проекта
+RUNTIME_DIR = SHARED_ROOT
+BOOK_DIR = PROJECT_ROOT / "core"
+
+dotenv_path = RUNTIME_DIR / ".env"
+if dotenv_path.exists():
+    load_dotenv(dotenv_path)
+
+
+class SharedSettings:
+    _validated = False
+
+    # Значения-заглушки, которые НИКОГДА не должны использоваться как боевой
+    # секрет подписи JWT. Совпадают с placeholder-политикой .env.example.
+    _INSECURE_SECRETS = frozenset(
+        {
+            "",
+            "change-me",
+            "change-me-in-production",
+            "change-me-in-production-min-32-chars",
+            "your-secure-random-key-here",
+            "your-secret",
+            "secret",
+            "xxx",
+            "abc123",
+            "test",
+        }
+    )
+
+    # Минимальная длина секрета. Меньше — значение слишком слабое для подписи.
+    _MIN_SECRET_LENGTH = 32
+
+    @classmethod
+    def _secret_is_valid(cls, secret) -> bool:
+        """Проверить, что значение пригодно как боевой SESSION_SECRET."""
+        if not isinstance(secret, str):
+            return False
+        stripped = secret.strip()
+        if len(stripped) < cls._MIN_SECRET_LENGTH:
+            return False
+        # Секрет не должен быть заготовкой/заглушкой и не должен хранить
+        # пробелы на краях (визуально похож на placeholder).
+        if stripped != secret:
+            return False
+        return stripped.lower() not in cls._INSECURE_SECRETS
+
+    @classmethod
+    def validate(cls):
+        """Проверить критические настройки при старте (fail-fast).
+
+        Если SESSION_SECRET отсутствует, пуст, короче длины по умолчанию или
+        равен известной заглушке — запуск прекращается с понятной диагностикой.
+        Небезопасное значение по умолчанию не используется.
+        """
+        if cls._validated:
+            return
+        secret = cls.SESSION_SECRET
+        if not cls._secret_is_valid(secret):
+            raise RuntimeError(
+                "SESSION_SECRET отсутствует или недопустим! "
+                "Задайте безопасный случайный ключ (>=32 символов) в .env "
+                "(SESSION_SECRET=<random>). "
+                'Генерация: python -c "import secrets; print(secrets.token_urlsafe(48))"'
+            )
+        cls._validated = True
+
+    # ── Gateway / Core ──────────────────────────────────
+    GATEWAY_HOST: str = os.getenv("GATEWAY_HOST", "127.0.0.1")
+    GATEWAY_PORT: int = int(os.getenv("GATEWAY_PORT", "8080"))
+    CORE_HOST: str = os.getenv("CORE_HOST", "127.0.0.1")
+    CORE_PORT: int = int(os.getenv("CORE_PORT", "8642"))
+
+    # ── LLM / Hermes ────────────────────────────────────
+    HERMES_URL: str = os.getenv("HERMES_URL", f"http://{GATEWAY_HOST}:{GATEWAY_PORT}")
+    HERMES_API_KEY: str = os.getenv("HERMES_API_KEY", "hermes-local-dev-key")
+
+    # ── Публичная сеть ─────────────────────────────────
+    PUBLIC_BASE_URL: str = os.getenv("PUBLIC_BASE_URL", "")
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "")  # For Telegram login links
+
+    # ── GigaChat (Сбер) ─────────────────────────────────
+    GIGACHAT_URL: str = os.getenv("GIGACHAT_URL", "https://gigachat.devices.sberbank.ru/api/v1")
+    GIGACHAT_CLIENT_ID: str = os.getenv("GIGACHAT_CLIENT_ID", "")
+    GIGACHAT_CLIENT_SECRET: str = os.getenv("GIGACHAT_CLIENT_SECRET", "")
+    GIGACHAT_SCOPE: str = os.getenv("GIGACHAT_SCOPE", "GIGACHAT_API_PERS")
+    GIGACHAT_TOKEN: str = os.getenv("GIGACHAT_TOKEN", "")
+    GIGACHAT_VERIFY_SSL: bool = os.getenv("GIGACHAT_VERIFY_SSL", "true").lower() == "true"
+
+    # ── Фоллбэки ───────────────────────────────────────
+    OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")
+    OPENROUTER_MODEL: str = os.getenv("OPENROUTER_MODEL", "qwen/qwen-2.5-7b-instruct")
+
+    # ── Telegram ────────────────────────────────────────
+    TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
+
+    # ── Auth / Security ─────────────────────────────────
+    SESSION_SECRET: str = os.getenv("SESSION_SECRET")  # REQUIRED: must be set in .env
+    JWT_ALGORITHM: str = "HS256"
+    JWT_EXPIRY_HOURS: int = int(os.getenv("JWT_EXPIRY_HOURS", "12"))
+
+    # P0 security gate for the server-side dev-auth endpoint
+    # (POST /auth/dev/generate-token). Default is OFF: in production the route
+    # must not exist and must never be able to issue a token (let alone an
+    # admin one). Enable ONLY in a controlled development environment by
+    # setting DEV_AUTH_ENABLED=true.
+    DEV_AUTH_ENABLED: bool = os.getenv("DEV_AUTH_ENABLED", "false").strip().lower() in ("1", "true", "yes", "on")
+
+    # ── Database ────────────────────────────────────────
+    AUTH_DB_PATH: str = os.getenv("AUTH_DB_PATH", str(RUNTIME_DIR / "memory" / "data" / "auth.db"))
+    MEMORY_DB_PATH: str = os.getenv("MEMORY_DB_PATH", str(RUNTIME_DIR / "memory" / "data" / "memory.db"))
+
+    # ── CORS ────────────────────────────────────────────
+    CORS_ORIGINS: list = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+
+    # ── Rate Limiting ───────────────────────────────────
+    RATE_LIMIT_REQUESTS_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_REQUESTS_PER_MINUTE", "6000"))
+
+    # ── Provider / Circuit Breaker ──────────────────────
+    # Note: huggingface provider was removed by owner (commit 963322a).
+    # Default matches core/config.py:44 — no huggingface.
+    PROVIDER_CHAIN: list = os.getenv("PROVIDER_CHAIN", "gigachat,openrouter").split(",")
+    PROVIDER_FAILURE_THRESHOLD: int = int(os.getenv("PROVIDER_FAILURE_THRESHOLD", "3"))
+    PROVIDER_COOLDOWN_SECONDS: int = int(os.getenv("PROVIDER_COOLDOWN_SECONDS", "60"))
+
+    # ── Google OAuth ────────────────────────────────────
+    GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID", "")
+    GOOGLE_CLIENT_SECRET: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
+
+    # ── Email ───────────────────────────────────────────
+    SMTP_HOST: str = os.getenv("SMTP_HOST", "")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USER: str = os.getenv("SMTP_USER", "")
+    SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
+    EMAIL_FROM: str = os.getenv("EMAIL_FROM", "")
+
+    # ComfyUI (Colab + Cloudflare Tunnel)
+    COMFYUI_URL: str = os.getenv("COMFYUI_URL", "http://127.0.0.1:8188")
+
+    # ── Genome (данные книги) ──────────────────────────
+    GENOME_DIR: Path = Path(os.getenv("GENOME_DIR", str(BOOK_DIR / "GENOME")))
+    GENOME_VERSION: str = os.getenv("GENOME_VERSION", "1.0.0")
+
+    # ── API (для health_monitor) ───────────────────────
+    API_HOST: str = os.getenv("API_HOST", CORE_HOST)
+    API_PORT: int = int(os.getenv("API_PORT", str(CORE_PORT)))
+
+    # ── Knowledge chunks (enriched_chunks.json) ────────
+    KNOWLEDGE_DIR: Path = Path(os.getenv("KNOWLEDGE_DIR", str(BOOK_DIR / "KNOWLEDGE")))
+
+    # ── Stage 2: gap-driven расширение знаний (OWNER-GATE) ──
+    # Принцип №4 «никаких автономных действий»: по умолчанию выключено.
+    # Даже при включении Stage 2 пишет ПРЕДЛОЖЕНИЯ в runtime-пространство
+    # (ASK_EXPANSIONS_DIR), а не в каноническую папку core/KNOWLEDGE:
+    # в канон знания попадают только через решение владельца.
+    STAGE2_ENABLED: bool = os.getenv("STAGE2_ENABLED", "false").lower() == "true"
+    ASK_EXPANSIONS_DIR: Path = Path(os.getenv("ASK_EXPANSIONS_DIR", str(RUNTIME_DIR / "runtime_data" / "ask_expansions")))
+
+    # ── EDM-RES pilot: Entity Description Model в /book/ask и /visualize (OWNER-GATE, 25.10.2026) ──
+    # По умолчанию ВЫКЛЮЧЕНО: при flag off публичные контракты /book/ask и
+    # /visualize byte-идентичны legacy (нет ключа `edm`, нет EDM-материала в
+    # prompt, Weather остаётся дефолтным). При включении: /book/ask получает
+    # опциональный metadata-блок `edm` (слоистое описание сущностей EDM),
+    # /visualize наполняет SceneContext из EDM-сущностей (architecture/
+    # landscape/environment), weather/season → явный UNKNOWN вместо fail-open
+    # дефолта. Провенанс — в блоке `edm` + source_refs "edm:<entity_id>".
+    EDM_RES_PILOT_ENABLED: bool = os.getenv("EDM_RES_PILOT_ENABLED", "false").lower() == "true"
+    EDM_RES_DIR: Path = Path(os.getenv("EDM_RES_DIR", str(BOOK_DIR / "CORE" / "ENTITY_MODEL")))
+
+
+settings = SharedSettings

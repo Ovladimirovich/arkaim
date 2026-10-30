@@ -1,0 +1,82 @@
+{
+  "_provenance_metadata": {
+    "category": "DERIVED",
+    "source_level": "SYSTEM_INTERPRETATION",
+    "notes": "Records extracted from ESOTERIC_CONNECTIONS.json — file misnamed as RITUALS.json; contains esoteric traditions, not rituals",
+    "enriched_at": "Milestone B"
+  },
+  "items": [
+    {
+      "topic": "",
+      "content": "Связи книги с изотерическими и эзотерическими традициями. Книга построена на древних сокрытых знаниях.",
+      "layers": {
+        "literal": "Связи книги с изотерическими и эзотерическими традициями. Книга построена на древних сокрытых знаниях.",
+        "metaphorical": "",
+        "cosmic": ""
+      },
+      "cross_references": [],
+      "patterns": [],
+      "connections": [],
+      "graph_links": [],
+      "source": "core\\KNOWLEDGE\\ESOTERIC_CONNECTIONS.json",
+      "validation_score": 0.5,
+      "confidence": 1.0,
+      "metadata": {
+        "layers": {},
+        "cross_references": [],
+        "keys": [
+          "description",
+          "traditions",
+          "universal_symbols"
+        ]
+      },
+      "added_at": "2026-07-16T02:05:51.079276+00:00"
+    },
+    {
+      "topic": "Герметизм",
+      "mirrors_from": "ESOTERIC_CONNECTIONS.json#traditions[0]"
+    },
+    {
+      "topic": "Пифагорейство",
+      "mirrors_from": "ESOTERIC_CONNECTIONS.json#traditions[1]"
+    },
+    {
+      "topic": "Непервоначальная Традиция (Элиаде)",
+      "mirrors_from": "ESOTERIC_CONNECTIONS.json#traditions[2]"
+    },
+    {
+      "topic": "Традиционализм (Генон)",
+      "mirrors_from": "ESOTERIC_CONNECTIONS.json#traditions[3]"
+    },
+    {
+      "topic": "Агни-Йога (Живая Этика)",
+      "mirrors_from": "ESOTERIC_CONNECTIONS.json#traditions[4]"
+    },
+    {
+      "topic": "Теософия",
+      "mirrors_from": "ESOTERIC_CONNECTIONS.json#traditions[5]"
+    },
+    {
+      "topic": "Суфизм",
+      "mirrors_from": "ESOTERIC_CONNECTIONS.json#traditions[6]"
+    },
+    {
+      "topic": "Каббала",
+      "mirrors_from": "ESOTERIC_CONNECTIONS.json#traditions[7]"
+    },
+    {
+      "topic": "Алхимия",
+      "mirrors_from": "ESOTERIC_CONNECTIONS.json#traditions[8]"
+    },
+    {
+      "topic": "Буддизм (Махаяна)",
+      "mirrors_from": "ESOTERIC_CONNECTIONS.json#traditions[9]"
+    },
+    {
+      "topic": "Зороастризм",
+      "mirrors_from": "ESOTERIC_CONNECTIONS.json#traditions[10]"
+    }
+  ],
+  "item_count": 12,
+  "_mirrors_from": "ESOTERIC_CONNECTIONS.json#traditions[*]"
+}

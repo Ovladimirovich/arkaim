@@ -1,0 +1,311 @@
+{
+  "_provenance_metadata": {
+    "category": "EXTERNAL_SOURCE",
+    "source_level": "HISTORICAL",
+    "notes": "Map data from external sources",
+    "enriched_at": "Milestone B"
+  },
+  "description": "Географические данные для интерактивной карты мира книги. Пункты, маршруты, регионы.",
+  "regions": [
+    {
+      "id": "hyperborea",
+      "name": "Гиперборея",
+      "type": "civilization",
+      "coordinates": {
+        "lat": 65.0,
+        "lng": 40.0
+      },
+      "description": "Древняя северная цивилизация, источник знаний",
+      "era": "~7000-3000 до н.э.",
+      "color": "#FFD700",
+      "icon": "star"
+    },
+    {
+      "id": "arkaim",
+      "name": "Аркаим",
+      "type": "city",
+      "coordinates": {
+        "lat": 52.98,
+        "lng": 59.57
+      },
+      "description": "Древнее городище на Южном Урале, датируемое ~4000 лет до н.э.",
+      "era": "~4000-3700 до н.э.",
+      "color": "#8B4513",
+      "icon": "fortress"
+    },
+    {
+      "id": "gardarika",
+      "name": "Гардарика (Страна Городов)",
+      "type": "region",
+      "coordinates": {
+        "lat": 53.0,
+        "lng": 60.0
+      },
+      "description": "Сеть городищ вокруг Аркаима",
+      "era": "~3000-2000 до н.э.",
+      "color": "#D2691E",
+      "icon": "cluster"
+    },
+    {
+      "id": "sintashta",
+      "name": "Синташта",
+      "type": "city",
+      "coordinates": {
+        "lat": 52.48,
+        "lng": 59.55
+      },
+      "description": "Крепость с древнейшими колесницами",
+      "era": "~2100-1800 до н.э.",
+      "color": "#A0522D",
+      "icon": "fortress"
+    },
+    {
+      "id": "oceania",
+      "name": "Океания (цивилизация)",
+      "type": "civilization",
+      "coordinates": {
+        "lat": 36.0,
+        "lng": -10.0
+      },
+      "description": "Могущественная держава, утратившая духовность",
+      "era": "~3000-2000 до н.э.",
+      "color": "#1E3A5F",
+      "icon": "wave"
+    },
+    {
+      "id": "mehenjo",
+      "name": "Мехенджо-Даро",
+      "type": "city",
+      "coordinates": {
+        "lat": 27.33,
+        "lng": 68.14
+      },
+      "description": "Древний город Индии, potentially связанный с миграцией",
+      "era": "~2500-1900 до н.э.",
+      "color": "#B0C4DE",
+      "icon": "city"
+    },
+    {
+      "id": "sumer",
+      "name": "Шумер (Междуречье)",
+      "type": "civilization",
+      "coordinates": {
+        "lat": 31.0,
+        "lng": 45.0
+      },
+      "description": "Колыбель цивилизации, потенциально связанная с гиперборейской миграцией",
+      "era": "~4000-2000 до н.э.",
+      "color": "#4A6FA5",
+      "icon": "ziggurat"
+    },
+    {
+      "id": "gobekli",
+      "name": "Гёбекли-Тепе",
+      "type": "monument",
+      "coordinates": {
+        "lat": 37.22,
+        "lng": 38.92
+      },
+      "description": "Древнейшее монументальное сооружение (~9500 до н.э.)",
+      "era": "~9500-8000 до н.э.",
+      "color": "#CD853F",
+      "icon": "temple"
+    },
+    {
+      "id": "bolgar",
+      "name": "Болгар",
+      "type": "city",
+      "coordinates": {
+        "lat": 54.97,
+        "lng": 49.03
+      },
+      "description": "Столица Волжской Болгарии — потомков гипербореев",
+      "era": "~7-15 век н.э.",
+      "color": "#228B22",
+      "icon": "city"
+    },
+    {
+      "id": "lepeni_vir",
+      "name": "Лепенски-Вир",
+      "type": "monument",
+      "coordinates": {
+        "lat": 44.54,
+        "lng": 22.02
+      },
+      "description": "Древнее поселение с каменными скульптурами",
+      "era": "~7000-5500 до н.э.",
+      "color": "#8FBC8F",
+      "icon": "sculpture"
+    }
+  ],
+  "routes": [
+    {
+      "id": "migration_north_south",
+      "name": "Миграция Север → Юг",
+      "type": "migration",
+      "points": [
+        {
+          "lat": 65.0,
+          "lng": 40.0
+        },
+        {
+          "lat": 60.0,
+          "lng": 50.0
+        },
+        {
+          "lat": 55.0,
+          "lng": 55.0
+        },
+        {
+          "lat": 52.98,
+          "lng": 59.57
+        },
+        {
+          "lat": 50.0,
+          "lng": 55.0
+        },
+        {
+          "lat": 45.0,
+          "lng": 50.0
+        }
+      ],
+      "color": "#FFD700",
+      "dash": false,
+      "description": "Основной маршрут миграции гипербореев на юг"
+    },
+    {
+      "id": "migration_to_south",
+      "name": "Миграция на Ближний Восток",
+      "type": "migration",
+      "points": [
+        {
+          "lat": 52.98,
+          "lng": 59.57
+        },
+        {
+          "lat": 45.0,
+          "lng": 55.0
+        },
+        {
+          "lat": 38.0,
+          "lng": 50.0
+        },
+        {
+          "lat": 35.0,
+          "lng": 45.0
+        },
+        {
+          "lat": 31.0,
+          "lng": 45.0
+        }
+      ],
+      "color": "#D2691E",
+      "dash": true,
+      "description": "Возможный путь миграции к Междуречью"
+    },
+    {
+      "id": "migration_to_india",
+      "name": "Миграция в Индию",
+      "type": "migration",
+      "points": [
+        {
+          "lat": 52.98,
+          "lng": 59.57
+        },
+        {
+          "lat": 40.0,
+          "lng": 65.0
+        },
+        {
+          "lat": 35.0,
+          "lng": 70.0
+        },
+        {
+          "lat": 27.33,
+          "lng": 68.14
+        }
+      ],
+      "color": "#90EE90",
+      "dash": true,
+      "description": "Возможный путь миграции в Индию"
+    },
+    {
+      "id": "migration_to_europe",
+      "name": "Миграция в Европу",
+      "type": "migration",
+      "points": [
+        {
+          "lat": 52.98,
+          "lng": 59.57
+        },
+        {
+          "lat": 55.0,
+          "lng": 45.0
+        },
+        {
+          "lat": 54.0,
+          "lng": 35.0
+        },
+        {
+          "lat": 52.0,
+          "lng": 25.0
+        },
+        {
+          "lat": 48.0,
+          "lng": 20.0
+        }
+      ],
+      "color": "#4FC3F7",
+      "dash": true,
+      "description": "Возможный путь миграции в Центральную Европу"
+    }
+  ],
+  "energy_lines": [
+    {
+      "name": "Уральская линия",
+      "points": [
+        {
+          "lat": 70.0,
+          "lng": 60.0
+        },
+        {
+          "lat": 60.0,
+          "lng": 60.0
+        },
+        {
+          "lat": 52.98,
+          "lng": 59.57
+        },
+        {
+          "lat": 45.0,
+          "lng": 60.0
+        },
+        {
+          "lat": 35.0,
+          "lng": 60.0
+        }
+      ],
+      "color": "#FFD700",
+      "description": "Энергетическая ось Урала"
+    },
+    {
+      "name": "Меридиан Аркаима",
+      "points": [
+        {
+          "lat": 60.0,
+          "lng": 59.57
+        },
+        {
+          "lat": 52.98,
+          "lng": 59.57
+        },
+        {
+          "lat": 45.0,
+          "lng": 59.57
+        }
+      ],
+      "color": "#E1BEE7",
+      "description": "Меридиан, проходящий через Аркаим"
+    }
+  ]
+}

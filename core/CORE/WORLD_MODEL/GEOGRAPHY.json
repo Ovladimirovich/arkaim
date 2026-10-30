@@ -1,0 +1,361 @@
+[
+  {
+    "id": "region_hyperborea",
+    "name": "Гиперборея",
+    "name_ru": "Гиперборея",
+    "category": "geography",
+    "description": "Древняя северная цивилизация, источник знаний",
+    "properties": {
+      "type": "region",
+      "coordinates": {
+        "lat": 65.0,
+        "lng": 40.0
+      },
+      "era": "~7000-3000 до н.э.",
+      "color": "#FFD700",
+      "icon": "star"
+    },
+    "relationships": [],
+    "source": "MAP_DATA.json",
+    "confidence": 0.8,
+    "provenance_category": "EXTERNAL_SOURCE",
+    "provenance_notes": "Картографические данные",
+    "source_level": "HISTORICAL"
+  },
+  {
+    "id": "region_arkaim",
+    "name": "Аркаим",
+    "name_ru": "Аркаим",
+    "category": "geography",
+    "description": "Древнее городище на Южном Урале, датируемое ~4000 лет до н.э.",
+    "properties": {
+      "type": "region",
+      "coordinates": {
+        "lat": 52.98,
+        "lng": 59.57
+      },
+      "era": "~4000-3700 до н.э.",
+      "color": "#8B4513",
+      "icon": "fortress"
+    },
+    "relationships": [],
+    "source": "MAP_DATA.json",
+    "confidence": 0.8,
+    "provenance_category": "EXTERNAL_SOURCE",
+    "provenance_notes": "Картографические данные",
+    "source_level": "HISTORICAL"
+  },
+  {
+    "id": "region_gardarika",
+    "name": "Гардарика (Страна Городов)",
+    "name_ru": "Гардарика (Страна Городов)",
+    "category": "geography",
+    "description": "Сеть городищ вокруг Аркаима",
+    "properties": {
+      "type": "region",
+      "coordinates": {
+        "lat": 53.0,
+        "lng": 60.0
+      },
+      "era": "~3000-2000 до н.э.",
+      "color": "#D2691E",
+      "icon": "cluster"
+    },
+    "relationships": [],
+    "source": "MAP_DATA.json",
+    "confidence": 0.8,
+    "provenance_category": "EXTERNAL_SOURCE",
+    "provenance_notes": "Картографические данные",
+    "source_level": "HISTORICAL"
+  },
+  {
+    "id": "region_sintashta",
+    "name": "Синташта",
+    "name_ru": "Синташта",
+    "category": "geography",
+    "description": "Крепость с древнейшими колесницами",
+    "properties": {
+      "type": "region",
+      "coordinates": {
+        "lat": 52.48,
+        "lng": 59.55
+      },
+      "era": "~2100-1800 до н.э.",
+      "color": "#A0522D",
+      "icon": "fortress"
+    },
+    "relationships": [],
+    "source": "MAP_DATA.json",
+    "confidence": 0.8,
+    "provenance_category": "EXTERNAL_SOURCE",
+    "provenance_notes": "Картографические данные",
+    "source_level": "HISTORICAL"
+  },
+  {
+    "id": "region_oceania",
+    "name": "Океания (цивилизация)",
+    "name_ru": "Океания (цивилизация)",
+    "category": "geography",
+    "description": "Могущественная держава, утратившая духовность",
+    "properties": {
+      "type": "region",
+      "coordinates": {
+        "lat": 36.0,
+        "lng": -10.0
+      },
+      "era": "~3000-2000 до н.э.",
+      "color": "#1E3A5F",
+      "icon": "wave"
+    },
+    "relationships": [],
+    "source": "MAP_DATA.json",
+    "confidence": 0.8,
+    "provenance_category": "EXTERNAL_SOURCE",
+    "provenance_notes": "Картографические данные",
+    "source_level": "HISTORICAL"
+  },
+  {
+    "id": "region_mehenjo",
+    "name": "Мехенджо-Даро",
+    "name_ru": "Мехенджо-Даро",
+    "category": "geography",
+    "description": "Древний город Индии, potentially связанный с миграцией",
+    "properties": {
+      "type": "region",
+      "coordinates": {
+        "lat": 27.33,
+        "lng": 68.14
+      },
+      "era": "~2500-1900 до н.э.",
+      "color": "#B0C4DE",
+      "icon": "city"
+    },
+    "relationships": [],
+    "source": "MAP_DATA.json",
+    "confidence": 0.8,
+    "provenance_category": "EXTERNAL_SOURCE",
+    "provenance_notes": "Картографические данные",
+    "source_level": "HISTORICAL"
+  },
+  {
+    "id": "region_sumer",
+    "name": "Шумер (Междуречье)",
+    "name_ru": "Шумер (Междуречье)",
+    "category": "geography",
+    "description": "Колыбель цивилизации, потенциально связанная с гиперборейской миграцией",
+    "properties": {
+      "type": "region",
+      "coordinates": {
+        "lat": 31.0,
+        "lng": 45.0
+      },
+      "era": "~4000-2000 до н.э.",
+      "color": "#4A6FA5",
+      "icon": "ziggurat"
+    },
+    "relationships": [],
+    "source": "MAP_DATA.json",
+    "confidence": 0.8,
+    "provenance_category": "EXTERNAL_SOURCE",
+    "provenance_notes": "Картографические данные",
+    "source_level": "HISTORICAL"
+  },
+  {
+    "id": "region_gobekli",
+    "name": "Гёбекли-Тепе",
+    "name_ru": "Гёбекли-Тепе",
+    "category": "geography",
+    "description": "Древнейшее монументальное сооружение (~9500 до н.э.)",
+    "properties": {
+      "type": "region",
+      "coordinates": {
+        "lat": 37.22,
+        "lng": 38.92
+      },
+      "era": "~9500-8000 до н.э.",
+      "color": "#CD853F",
+      "icon": "temple"
+    },
+    "relationships": [],
+    "source": "MAP_DATA.json",
+    "confidence": 0.8,
+    "provenance_category": "EXTERNAL_SOURCE",
+    "provenance_notes": "Картографические данные",
+    "source_level": "HISTORICAL"
+  },
+  {
+    "id": "region_bolgar",
+    "name": "Болгар",
+    "name_ru": "Болгар",
+    "category": "geography",
+    "description": "Столица Волжской Болгарии — потомков гипербореев",
+    "properties": {
+      "type": "region",
+      "coordinates": {
+        "lat": 54.97,
+        "lng": 49.03
+      },
+      "era": "~7-15 век н.э.",
+      "color": "#228B22",
+      "icon": "city"
+    },
+    "relationships": [],
+    "source": "MAP_DATA.json",
+    "confidence": 0.8,
+    "provenance_category": "EXTERNAL_SOURCE",
+    "provenance_notes": "Картографические данные",
+    "source_level": "HISTORICAL"
+  },
+  {
+    "id": "region_lepeni_vir",
+    "name": "Лепенски-Вир",
+    "name_ru": "Лепенски-Вир",
+    "category": "geography",
+    "description": "Древнее поселение с каменными скульптурами",
+    "properties": {
+      "type": "region",
+      "coordinates": {
+        "lat": 44.54,
+        "lng": 22.02
+      },
+      "era": "~7000-5500 до н.э.",
+      "color": "#8FBC8F",
+      "icon": "sculpture"
+    },
+    "relationships": [],
+    "source": "MAP_DATA.json",
+    "confidence": 0.8,
+    "provenance_category": "EXTERNAL_SOURCE",
+    "provenance_notes": "Картографические данные",
+    "source_level": "HISTORICAL"
+  },
+  {
+    "id": "route_migration_north_south",
+    "name": "Миграция Север → Юг",
+    "name_ru": "Миграция Север → Юг",
+    "category": "geography",
+    "description": "Основной маршрут миграции гипербореев на юг",
+    "properties": {
+      "type": "route",
+      "from_location": null,
+      "to_location": null,
+      "distance": null
+    },
+    "relationships": [],
+    "source": "MAP_DATA.json",
+    "confidence": 0.8,
+    "provenance_category": "EXTERNAL_SOURCE",
+    "provenance_notes": "Картографические данные",
+    "source_level": "HISTORICAL"
+  },
+  {
+    "id": "route_migration_to_south",
+    "name": "Миграция на Ближний Восток",
+    "name_ru": "Миграция на Ближний Восток",
+    "category": "geography",
+    "description": "Возможный путь миграции к Междуречью",
+    "properties": {
+      "type": "route",
+      "from_location": null,
+      "to_location": null,
+      "distance": null
+    },
+    "relationships": [],
+    "source": "MAP_DATA.json",
+    "confidence": 0.8,
+    "provenance_category": "EXTERNAL_SOURCE",
+    "provenance_notes": "Картографические данные",
+    "source_level": "HISTORICAL"
+  },
+  {
+    "id": "route_migration_to_india",
+    "name": "Миграция в Индию",
+    "name_ru": "Миграция в Индию",
+    "category": "geography",
+    "description": "Возможный путь миграции в Индию",
+    "properties": {
+      "type": "route",
+      "from_location": null,
+      "to_location": null,
+      "distance": null
+    },
+    "relationships": [],
+    "source": "MAP_DATA.json",
+    "confidence": 0.8,
+    "provenance_category": "EXTERNAL_SOURCE",
+    "provenance_notes": "Картографические данные",
+    "source_level": "HISTORICAL"
+  },
+  {
+    "id": "route_migration_to_europe",
+    "name": "Миграция в Европу",
+    "name_ru": "Миграция в Европу",
+    "category": "geography",
+    "description": "Возможный путь миграции в Центральную Европу",
+    "properties": {
+      "type": "route",
+      "from_location": null,
+      "to_location": null,
+      "distance": null
+    },
+    "relationships": [],
+    "source": "MAP_DATA.json",
+    "confidence": 0.8,
+    "provenance_category": "EXTERNAL_SOURCE",
+    "provenance_notes": "Картографические данные",
+    "source_level": "HISTORICAL"
+  },
+  {
+    "id": "energy_line_уральская_линия",
+    "name": "Уральская линия",
+    "name_ru": "Уральская линия",
+    "category": "geography",
+    "description": "Энергетическая ось Урала",
+    "properties": {
+      "type": "energy_line",
+      "direction": null,
+      "power": null
+    },
+    "relationships": [],
+    "source": "MAP_DATA.json",
+    "confidence": 0.8,
+    "provenance_category": "EXTERNAL_SOURCE",
+    "provenance_notes": "Картографические данные",
+    "source_level": "HISTORICAL"
+  },
+  {
+    "id": "energy_line_меридиан_аркаима",
+    "name": "Меридиан Аркаима",
+    "name_ru": "Меридиан Аркаима",
+    "category": "geography",
+    "description": "Меридиан, проходящий через Аркаим",
+    "properties": {
+      "type": "energy_line",
+      "direction": null,
+      "power": null
+    },
+    "relationships": [],
+    "source": "MAP_DATA.json",
+    "confidence": 0.8,
+    "provenance_category": "EXTERNAL_SOURCE",
+    "provenance_notes": "Картографические данные",
+    "source_level": "HISTORICAL"
+  },
+  {
+    "id": "char_location_гиперборея",
+    "name": "Гиперборея",
+    "name_ru": "Гиперборея",
+    "category": "geography",
+    "description": "Локация, упомянутая в описании персонажа Велик",
+    "properties": {
+      "type": "character_location",
+      "character": "Велик"
+    },
+    "relationships": [],
+    "source": "CHARACTERS.json",
+    "confidence": 1.0,
+    "provenance_category": "AUTHOR_CANON",
+    "provenance_notes": "Место из книги",
+    "source_level": "CANON"
+  }
+]

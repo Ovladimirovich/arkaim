@@ -1,0 +1,232 @@
+[
+  {
+    "topic": "Пройвикс",
+    "content": "Полковник или офицер, обладающий формальной дисциплиной и уважением к командиру (Великусу). Сдержанный в оценках способностей командующего.",
+    "layers": {
+      "literal": "Полковник или офицер, обладающий формальной дисциплиной и уважением к командиру (Великусу). Сдержанный в оценках способностей командующего.",
+      "metaphorical": "",
+      "cosmic": ""
+    },
+    "cross_references": [],
+    "patterns": [],
+    "connections": [],
+    "graph_links": [],
+    "source": "core\\KNOWLEDGE\\screenplay_extracts.json.oceania_officers[0]",
+    "validation_score": 1.0,
+    "confidence": 1.0,
+    "metadata": {
+      "layers": {},
+      "cross_references": [],
+      "keys": [
+        "name",
+        "rank",
+        "description",
+        "relationship_with_velik",
+        "key_dialogue",
+        "after_departure"
+      ]
+    },
+    "added_at": "2026-10-29T01:39:36.509266+00:00"
+  },
+  {
+    "topic": "Лин",
+    "content": "Офицер, преданный команде, но выражающий тревогу за исход миссии. Прямо высказывает сомнения в компетентности Великуса.",
+    "layers": {
+      "literal": "Офицер, преданный команде, но выражающий тревогу за исход миссии. Прямо высказывает сомнения в компетентности Великуса.",
+      "metaphorical": "",
+      "cosmic": ""
+    },
+    "cross_references": [],
+    "patterns": [],
+    "connections": [],
+    "graph_links": [],
+    "source": "core\\KNOWLEDGE\\screenplay_extracts.json.oceania_officers[1]",
+    "validation_score": 1.0,
+    "confidence": 1.0,
+    "metadata": {
+      "layers": {},
+      "cross_references": [],
+      "keys": [
+        "name",
+        "rank",
+        "description",
+        "relationship_with_velik",
+        "key_dialogue",
+        "after_departure"
+      ]
+    },
+    "added_at": "2026-10-29T01:39:36.509287+00:00"
+  },
+  {
+    "topic": "",
+    "content": "Комната круглой формы, без окон, иллюминированные стены и потолок, абсолютно пустая, лишенная какой-либо мебели.",
+    "layers": {
+      "literal": "Комната круглой формы, без окон, иллюминированные стены и потолок, абсолютно пустая, лишенная какой-либо мебели.",
+      "metaphorical": "",
+      "cosmic": ""
+    },
+    "cross_references": [],
+    "patterns": [],
+    "connections": [],
+    "graph_links": [],
+    "source": "core\\KNOWLEDGE\\screenplay_extracts.json.teaching_room",
+    "validation_score": 0.5,
+    "confidence": 1.0,
+    "metadata": {
+      "layers": {},
+      "cross_references": [],
+      "keys": [
+        "description",
+        "purpose"
+      ]
+    },
+    "added_at": "2026-10-29T01:39:36.509298+00:00"
+  },
+  {
+    "topic": "поездка в город",
+    "content": "",
+    "layers": {
+      "literal": "",
+      "metaphorical": "",
+      "cosmic": ""
+    },
+    "cross_references": [],
+    "patterns": [],
+    "connections": [],
+    "graph_links": [],
+    "source": "core\\KNOWLEDGE\\screenplay_extracts.json.key_dialogues[0]",
+    "validation_score": 0.7,
+    "confidence": 1.0,
+    "metadata": {
+      "layers": {},
+      "cross_references": [],
+      "keys": [
+        "scene",
+        "participants",
+        "topic",
+        "excerpt",
+        "significance"
+      ]
+    },
+    "added_at": "2026-10-29T01:39:36.509307+00:00"
+  },
+  {
+    "topic": "назначение городских объектов",
+    "content": "",
+    "layers": {
+      "literal": "",
+      "metaphorical": "",
+      "cosmic": ""
+    },
+    "cross_references": [],
+    "patterns": [],
+    "connections": [],
+    "graph_links": [],
+    "source": "core\\KNOWLEDGE\\screenplay_extracts.json.key_dialogues[1]",
+    "validation_score": 0.7,
+    "confidence": 1.0,
+    "metadata": {
+      "layers": {},
+      "cross_references": [],
+      "keys": [
+        "scene",
+        "participants",
+        "topic",
+        "excerpt",
+        "significance"
+      ]
+    },
+    "added_at": "2026-10-29T01:39:36.509316+00:00"
+  },
+  {
+    "topic": "Гиперборея",
+    "content": "",
+    "layers": {
+      "literal": "",
+      "metaphorical": "",
+      "cosmic": ""
+    },
+    "cross_references": [],
+    "patterns": [],
+    "connections": [],
+    "graph_links": [
+      {
+        "source": "Гиперборея",
+        "source_id": "fafeeb55-09eb-48cd-af18-ae3836354669",
+        "source_ambiguous": true,
+        "target": "Атлантида",
+        "target_id": "d0c74617-3231-47f5-8565-00a4cb611a96",
+        "type": "friend",
+        "depth": 1,
+        "provenance_category": "SYSTEM_INTERPRETATION",
+        "source_level": "SYSTEM_INTERPRETATION",
+        "requires_author_review": true
+      },
+      {
+        "source": "Гиперборея",
+        "source_id": "fafeeb55-09eb-48cd-af18-ae3836354669",
+        "source_ambiguous": true,
+        "target": "Наставники",
+        "target_id": "9a314463-a583-4436-b430-236b86fd8ffc",
+        "type": "friend",
+        "depth": 1,
+        "provenance_category": "SYSTEM_INTERPRETATION",
+        "source_level": "SYSTEM_INTERPRETATION",
+        "requires_author_review": true
+      },
+      {
+        "source": "Гиперборея",
+        "source_id": "fafeeb55-09eb-48cd-af18-ae3836354669",
+        "source_ambiguous": true,
+        "target": "Аркаим",
+        "target_id": "50d27ac0-ee44-48b4-8ac7-85463067ff1e",
+        "type": "legacy",
+        "depth": 1,
+        "provenance_category": "SYSTEM_INTERPRETATION",
+        "source_level": "SYSTEM_INTERPRETATION",
+        "requires_author_review": true
+      }
+    ],
+    "source": "core\\KNOWLEDGE\\screenplay_extracts.json.key_dialogues[2]",
+    "validation_score": 0.7,
+    "confidence": 1.0,
+    "metadata": {
+      "layers": {},
+      "cross_references": [],
+      "keys": [
+        "scene",
+        "participants",
+        "topic",
+        "excerpt",
+        "significance"
+      ]
+    },
+    "added_at": "2026-10-29T01:39:36.509326+00:00"
+  },
+  {
+    "topic": "устройство гиперборейского общества",
+    "content": "Города создают систему, распределяющую энергии территории страны, некоторые объекты гармонизируют энергополе.",
+    "layers": {
+      "literal": "Города создают систему, распределяющую энергии территории страны, некоторые объекты гармонизируют энергополе.",
+      "metaphorical": "",
+      "cosmic": ""
+    },
+    "cross_references": [],
+    "patterns": [],
+    "connections": [],
+    "graph_links": [],
+    "source": "core\\KNOWLEDGE\\screenplay_extracts.json.hyperborean_explanations[0]",
+    "validation_score": 1.0,
+    "confidence": 1.0,
+    "metadata": {
+      "layers": {},
+      "cross_references": [],
+      "keys": [
+        "topic",
+        "explained_by",
+        "content"
+      ]
+    },
+    "added_at": "2026-10-29T01:39:36.509335+00:00"
+  }
+]

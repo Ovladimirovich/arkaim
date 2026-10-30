@@ -1,0 +1,201 @@
+﻿"""
+Knowledge Store — сохранение знаний в JSON + обновление Knowledge Graph.
+"""
+
+import json
+import logging
+import os
+import re
+from pathlib import Path
+from datetime import datetime, timezone
+
+from . import BaseStore
+from ..models import ValidatedKnowledge, SaveResult
+
+log = logging.getLogger("hermes.knowledge_expansion.knowledge_store")
+
+
+class KnowledgeStore(BaseStore):
+    """Сохраняет знания в JSON-файлы и обновляет Knowledge Graph."""
+
+    def __init__(self, knowledge_dir: Path = None):
+        self._dir = knowledge_dir or Path("core/KNOWLEDGE")
+
+    async def save(
+        self, validated: list[ValidatedKnowledge], output_path: Path
+    ) -> SaveResult:
+        """Сохранить знания в JSON."""
+        items_saved = 0
+        items_skipped = 0
+
+        # Загрузить существующие данные. Поддерживаются оба формата:
+        #   - список записей (исторический формат стора);
+        #   - {"_provenance_metadata": {...}, "items": [...]} — формат
+        #     KNOWLEDGE-файлов. Обёртку и file-level provenance сохраняем:
+        #     перезапись bare-списком уничтожила бы провенанс файла.
+        document = None
+        wrapped = False
+        existing = []
+        if output_path.exists():
+            try:
+                raw = json.loads(output_path.read_text(encoding="utf-8"))
+                if isinstance(raw, list):
+                    existing = raw
+                elif isinstance(raw, dict) and isinstance(raw.get("items"), list):
+                    document = raw
+                    existing = raw["items"]
+                    wrapped = True
+                else:
+                    raise ValueError("ожидался список или объект с полем items")
+            except Exception as e:
+                log.error("load_existing_error path=%s error=%s", output_path, e)
+                # Не перезаписываем незнакомый формат: это мог быть канон.
+                return SaveResult(
+                    success=False,
+                    items_saved=0,
+                    items_skipped=0,
+                    output_path=str(output_path),
+                    graph_updates=0,
+                )
+
+        # Добавить новые знания
+        for item in validated:
+            entry = {
+                "topic": item.topic,
+                "content": item.content,
+                "layers": item.layers,
+                "cross_references": item.cross_references,
+                "patterns": item.patterns,
+                "connections": item.connections,
+                "graph_links": item.graph_links,
+                "source": item.source,
+                "validation_score": item.validation_score,
+                "confidence": item.confidence,
+                "metadata": item.metadata,
+                "added_at": datetime.now(tz=timezone.utc).isoformat(),
+            }
+            # M16.3 record-level provenance: если item несёт
+            # _provenance_metadata в metadata — повторяем его на уровне
+            # записи (как в screenplay_links.json).
+            prov_meta = item.metadata.get("_provenance_metadata")
+            if isinstance(prov_meta, dict) and prov_meta:
+                entry["_provenance_metadata"] = prov_meta
+
+            # Проверка на дубли (по теме)
+            is_duplicate = any(
+                isinstance(existing_item, dict)
+                and existing_item.get("topic") == item.topic
+                for existing_item in existing
+            )
+
+            if is_duplicate:
+                items_skipped += 1
+                log.info("duplicate_skipped topic=%s", item.topic)
+            else:
+                existing.append(entry)
+                items_saved += 1
+
+        # Сохранить атомарно: запись во временный файл + os.replace.
+        # Прямой write_text оставлял окно, в котором параллельный запрос
+        # мог прочитать недописанный JSON (read-modify-write без блокировки).
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        payload = document if wrapped else existing
+        tmp_path = output_path.with_name(output_path.name + ".tmp")
+        tmp_path.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        os.replace(tmp_path, output_path)
+
+        log.info(
+            "knowledge_saved path=%s saved=%d skipped=%d",
+            output_path,
+            items_saved,
+            items_skipped,
+        )
+
+        # Update knowledge graph with new items
+        graph_updates = 0
+        try:
+            from book_os.entity_store import EntityStore
+            from book_os.relationship_store import RelationshipStore
+            from book_os.fact_store import FactStore
+            from schemas.entity import Entity
+            from schemas.relationship import Relationship
+            from schemas.fact import Fact
+
+            entity_store = EntityStore()
+            rel_store = RelationshipStore()
+            fact_store = FactStore()
+
+            for item in validated:
+                # LLM-кандидат (requires_author_review) не публикуется в граф:
+                # сначала авторская проверка. Файл — propose-слой, граф — нет.
+                prov_meta = item.metadata.get("_provenance_metadata")
+                if isinstance(prov_meta, dict) and prov_meta.get(
+                    "requires_author_review"
+                ):
+                    log.info(
+                        "graph_update_skipped_requires_review topic=%s", item.topic
+                    )
+                    continue
+
+                # Knowledge topic как entity.
+                # ВАЖНО: type обязан быть валидным enum из schemas.entity
+                # (person|location|civilization|concept|symbol|artifact|era|
+                # event|organization|character|theme|conflict|value) -
+                # иначе Pydantic падает на pattern и весь graph-update loop
+                # прерывается (исключение ловится выше и теряются все updates).
+                #
+                # Entity ID строится из базовой части topic (subject ::
+                # predicate), без источника/чанка, чтобы ID оставался
+                # каноничным (один сущностный узел на (субъект, предикат),
+                # а не по одной на каждое доказательство).
+                base_topic = item.topic
+                if " :: " in base_topic and base_topic.count(" :: ") >= 2:
+                    base_topic = base_topic.rsplit(" :: ", 1)[0]
+                entity_id = "knowledge_" + re.sub(
+                    r"[^0-9a-zа-яё_]+", "_", base_topic.lower()
+                ).rstrip("_")
+                entity = Entity(
+                    id=entity_id,
+                    type="concept",
+                    name=item.topic,
+                    description=item.content[:500] if item.content else "",
+                )
+                entity_store.add(entity)
+                graph_updates += 1
+
+                # Add connections as relationships
+                for conn in item.connections:
+                    target_id = f"knowledge_{conn.lower().replace(' ', '_')}"
+                    rel = Relationship(
+                        source_id=entity_id,
+                        target_id=target_id,
+                        type="related_to",
+                        weight=0.8,
+                    )
+                    rel_store.add(rel)
+                    graph_updates += 1
+
+                # Add graph links as facts
+                for link in item.graph_links:
+                    fact = Fact(
+                        entity_id=entity_id,
+                        content=link,
+                        source="knowledge_expansion",
+                    )
+                    fact_store.add(fact)
+                    graph_updates += 1
+
+            log.info("graph_updated items=%d updates=%d", items_saved, graph_updates)
+        except Exception as e:
+            log.warning("graph_update_failed: %s", e)
+
+        return SaveResult(
+            success=True,
+            items_saved=items_saved,
+            items_skipped=items_skipped,
+            output_path=str(output_path),
+            graph_updates=graph_updates,
+        )

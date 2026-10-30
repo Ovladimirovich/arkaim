@@ -1,0 +1,598 @@
+{
+  "schema_version": "2.1",
+  "status": "APPROVED",
+  "scope": "B3-CW first batch + EDM-RES Tier-2 relations (v1 batch, OWNER-approved 2026-10-25) + E5 category expansion (2026-10-26)",
+  "owner_decision": "language_agnostic_stable_ids",
+  "runtime_connected": false,
+  "runtime_note": "Этап 4 (2026-10-28): runtime_connected — историческая декларативная метка (осталась от B3b), НЕ является переключателем. Рантайм (M3/M4/EDM/E2/visual/synopsis) читает crosswalk по status=APPROVED каждой записи (см. _load_approved_crosswalk/_load_approved_relations), независимо от этого флага. Значение НЕ переводится в true механически: критерий «runtime_connected=true для пар с DERIVED_FROM» не применим — у 11 одобренных пар (geography/climate/architecture/civilization) нет и не должно быть DERIVED_FROM (это не производные традиции). Семантика проверки готовности — статус APPROVED + аудит целостности (scripts/check_provenance_integrity.py, CI).",
+  "mappings": [
+    {
+      "id": "cw_arkaim_location",
+      "canonical_id": "region_arkaim",
+      "provenance": {
+        "category": "EXTERNAL_SOURCE",
+        "source_level": "HISTORICAL",
+        "confidence": 0.8,
+        "source_title": "MAP_DATA.json / GEOGRAPHY.json"
+      },
+      "category": "region",
+      "labels": {
+        "ru": "Аркаим",
+        "en": "Arkaim"
+      },
+      "relation": "same_subject",
+      "status": "APPROVED",
+      "owner_reviewed": true,
+      "evidence": [
+        {
+          "type": "world_engine_source",
+          "file": "core/CORE/WORLD_MODEL/GEOGRAPHY.json",
+          "entity_id": "region_arkaim",
+          "source": "MAP_DATA.json",
+          "source_level": "HISTORICAL"
+        },
+        {
+          "type": "external_source",
+          "file": "core/KNOWLEDGE/MAP_DATA.json",
+          "source_id": "arkaim",
+          "coordinates": {
+            "lat": 52.98,
+            "lng": 59.57
+          }
+        },
+        {
+          "type": "canonical_location",
+          "file": "core/CORE/narrative_engine/data/WORLD_MODEL.json",
+          "location_id": "аркаим",
+          "name_ru": "Аркаим",
+          "source_level": "CANON"
+        },
+        {
+          "type": "canonical_event_link",
+          "file": "core/CORE/narrative_engine/data/WORLD_MODEL.json",
+          "event_id": "event_arkaim_construction",
+          "location_id": "аркаим",
+          "chapter": 11,
+          "epoch": "arkaim_era"
+        }
+      ],
+      "rejected_candidates": [
+        "arkaim"
+      ],
+      "rejection_reason": "Английский и русские названия не являются канонической идентичностью; являются labels/aliases. Канонический ID: region_arkaim (language-agnostic, стабильный)."
+    },
+    {
+      "id": "cw_hyperborea_location",
+      "canonical_id": "region_hyperborea",
+      "provenance": {
+        "category": "EXTERNAL_SOURCE",
+        "source_level": "HISTORICAL",
+        "confidence": 0.8,
+        "source_title": "MAP_DATA.json / GEOGRAPHY.json"
+      },
+      "category": "region",
+      "labels": {
+        "ru": "Гиперборея",
+        "en": "Hyperborea"
+      },
+      "relation": "same_subject",
+      "status": "APPROVED",
+      "owner_reviewed": true,
+      "evidence": [
+        {
+          "type": "world_engine_source",
+          "file": "core/CORE/WORLD_MODEL/GEOGRAPHY.json",
+          "entity_id": "region_hyperborea",
+          "source": "MAP_DATA.json",
+          "source_level": "HISTORICAL"
+        },
+        {
+          "type": "external_source",
+          "file": "core/KNOWLEDGE/MAP_DATA.json",
+          "source_id": "hyperborea",
+          "coordinates": {
+            "lat": 65.0,
+            "lng": 40.0
+          }
+        },
+        {
+          "type": "canonical_location",
+          "file": "core/CORE/narrative_engine/data/WORLD_MODEL.json",
+          "location_id": "гиперборея",
+          "name_ru": "Гиперборея",
+          "source_level": "CANON"
+        },
+        {
+          "type": "canonical_event_link",
+          "file": "core/CORE/narrative_engine/data/WORLD_MODEL.json",
+          "event_id": "event_journey_to_hyperborea",
+          "location_id": "гиперборея",
+          "chapter": 3,
+          "epoch": "satya_yuga"
+        }
+      ],
+      "rejected_candidates": [
+        "hyperborea"
+      ],
+      "rejection_reason": "Английский и русские названия не являются канонической идентичностью; являются labels/aliases. Канонический ID: region_hyperborea (language-agnostic, стабильный)."
+    },
+    {
+      "id": "cw_oceania_location",
+      "canonical_id": "region_oceania",
+      "provenance": {
+        "category": "EXTERNAL_SOURCE",
+        "source_level": "HISTORICAL",
+        "confidence": 0.8,
+        "source_title": "MAP_DATA.json / GEOGRAPHY.json"
+      },
+      "category": "region",
+      "labels": {
+        "ru": "Океания",
+        "en": "Oceania"
+      },
+      "relation": "same_subject",
+      "status": "APPROVED",
+      "owner_reviewed": true,
+      "evidence": [
+        {
+          "type": "world_engine_source",
+          "file": "core/CORE/WORLD_MODEL/GEOGRAPHY.json",
+          "entity_id": "region_oceania",
+          "source": "MAP_DATA.json",
+          "source_level": "HISTORICAL"
+        },
+        {
+          "type": "external_source",
+          "file": "core/KNOWLEDGE/MAP_DATA.json",
+          "source_id": "oceania",
+          "coordinates": {
+            "lat": 36.0,
+            "lng": -10.0
+          }
+        },
+        {
+          "type": "canonical_location",
+          "file": "core/CORE/narrative_engine/data/WORLD_MODEL.json",
+          "location_id": "океания",
+          "name_ru": "Океания",
+          "source_level": "CANON"
+        }
+      ],
+      "rejected_candidates": [
+        "oceania",
+        "geo_океания_(цивилизация)"
+      ],
+      "rejection_reason": "Английское и русское названия, а также дублирующая запись GEOGRAPHY.json не являются канонической идентичностью; являются labels/aliases. Канонический ID: region_oceania (language-agnostic, стабильный). Блок canonical_event_link не приведён: каноническое событие об упадке Океании (event_oceania_decline) в WORLD_MODEL.json расположено в канонической локации океания; «Атлантида» и «Океания» — два названия одной южной цивилизации (решение владельца 2026-10-20, core/KNOWLEDGE/location_aliases.json)."
+    },
+    {
+      "id": "cw_steppe_climate",
+      "canonical_id": "steppe_climate",
+      "provenance": {
+        "category": "EXTERNAL_SOURCE",
+        "source_level": "HISTORICAL",
+        "confidence": 0.8,
+        "source_title": "WORLD_MODEL/CLIMATE.json (extended_world climate layer)"
+      },
+      "category": "climate",
+      "labels": {
+        "ru": "Климат степи",
+        "en": "Steppe Climate"
+      },
+      "relation": "same_subject",
+      "status": "APPROVED",
+      "owner_reviewed": true,
+      "evidence": [
+        {
+          "type": "edm_pilot_card",
+          "file": "core/CORE/ENTITY_MODEL/pilot/steppe_climate.json",
+          "entity_id": "steppe_climate"
+        },
+        {
+          "type": "edm_relation_tier1",
+          "file": "core/CORE/ENTITY_MODEL/pilot/steppe_climate.json",
+          "relation": "climate_of",
+          "target": "region_arkaim"
+        }
+      ],
+      "owner_decision_ref": "E5 GO (2026-10-26): extension of crosswalk to climate category"
+    },
+    {
+      "id": "cw_hyperborea_climate",
+      "canonical_id": "hyperborea_climate",
+      "provenance": {
+        "category": "EXTERNAL_SOURCE",
+        "source_level": "HISTORICAL",
+        "confidence": 0.8,
+        "source_title": "WORLD_MODEL/CLIMATE.json (extended_world climate layer)"
+      },
+      "category": "climate",
+      "labels": {
+        "ru": "Климат Гипербореи",
+        "en": "Hyperborean Climate"
+      },
+      "relation": "same_subject",
+      "status": "APPROVED",
+      "owner_reviewed": true,
+      "evidence": [
+        {
+          "type": "edm_pilot_card",
+          "file": "core/CORE/ENTITY_MODEL/pilot/hyperborea_climate.json",
+          "entity_id": "hyperborea_climate"
+        }
+      ],
+      "owner_decision_ref": "E5 GO (2026-10-26): extension of crosswalk to climate category"
+    },
+    {
+      "id": "cw_arkaim_settlement",
+      "canonical_id": "arkaim_settlement",
+      "provenance": {
+        "category": "EXTERNAL_SOURCE",
+        "source_level": "HISTORICAL",
+        "confidence": 0.8,
+        "source_title": "WORLD_MODEL/ARCHITECTURE.json (extended_world architecture layer)"
+      },
+      "category": "building",
+      "labels": {
+        "ru": "Аркаимское поселение",
+        "en": "Arkaim Settlement"
+      },
+      "relation": "same_subject",
+      "status": "APPROVED",
+      "owner_reviewed": true,
+      "evidence": [
+        {
+          "type": "edm_pilot_card",
+          "file": "core/CORE/ENTITY_MODEL/pilot/arkaim_settlement.json",
+          "entity_id": "arkaim_settlement"
+        },
+        {
+          "type": "edm_relation_tier1",
+          "file": "core/CORE/ENTITY_MODEL/pilot/arkaim_settlement.json",
+          "relation": "located_in",
+          "target": "region_arkaim"
+        }
+      ],
+      "owner_decision_ref": "E5 GO (2026-10-26): extension of crosswalk to architecture category"
+    },
+    {
+      "id": "cw_sanctuary_temple",
+      "canonical_id": "sanctuary_temple",
+      "provenance": {
+        "category": "EXTERNAL_SOURCE",
+        "source_level": "HISTORICAL",
+        "confidence": 0.8,
+        "source_title": "WORLD_MODEL/ARCHITECTURE.json (extended_world architecture layer)"
+      },
+      "category": "building",
+      "labels": {
+        "ru": "Святилище",
+        "en": "Sanctuary Temple"
+      },
+      "relation": "same_subject",
+      "status": "APPROVED",
+      "owner_reviewed": true,
+      "evidence": [
+        {
+          "type": "edm_pilot_card",
+          "file": "core/CORE/ENTITY_MODEL/pilot/sanctuary_temple.json",
+          "entity_id": "sanctuary_temple"
+        }
+      ],
+      "owner_decision_ref": "E5 GO (2026-10-26): extension of crosswalk to architecture category"
+    },
+    {
+      "id": "cw_underground_city",
+      "canonical_id": "underground_city",
+      "provenance": {
+        "category": "EXTERNAL_SOURCE",
+        "source_level": "HISTORICAL",
+        "confidence": 0.8,
+        "source_title": "WORLD_MODEL/ARCHITECTURE.json (extended_world architecture layer)"
+      },
+      "category": "building",
+      "labels": {
+        "ru": "Подземный город",
+        "en": "Underground City"
+      },
+      "relation": "same_subject",
+      "status": "APPROVED",
+      "owner_reviewed": true,
+      "evidence": [
+        {
+          "type": "edm_pilot_card",
+          "file": "core/CORE/ENTITY_MODEL/pilot/underground_city.json",
+          "entity_id": "underground_city"
+        }
+      ],
+      "owner_decision_ref": "E5 GO (2026-10-26): extension of crosswalk to architecture category"
+    },
+    {
+      "id": "cw_civ_hyperborea",
+      "canonical_id": "civ_hyperborea",
+      "provenance": {
+        "category": "AUTHOR_CANON",
+        "source_level": "CANON",
+        "confidence": 1.0,
+        "source_title": "WORLD_MODEL/CIVILIZATIONS.json (extended_world civilizations layer)"
+      },
+      "category": "culture",
+      "labels": {
+        "ru": "Гиперборейская цивилизация",
+        "en": "Hyperborean Civilization"
+      },
+      "relation": "same_subject",
+      "status": "APPROVED",
+      "owner_reviewed": true,
+      "evidence": [
+        {
+          "type": "edm_pilot_card",
+          "file": "core/CORE/ENTITY_MODEL/pilot/civ_hyperborea.json",
+          "entity_id": "civ_hyperborea"
+        }
+      ],
+      "owner_decision_ref": "E5 GO (2026-10-26): extension of crosswalk to civilization category"
+    },
+    {
+      "id": "cw_civ_arkaim_civilization",
+      "canonical_id": "civ_arkaim_civilization",
+      "provenance": {
+        "category": "RECONSTRUCTION",
+        "source_level": "HISTORICAL",
+        "confidence": 0.7,
+        "source_title": "WORLD_MODEL/CIVILIZATIONS.json (extended_world civilizations layer)"
+      },
+      "category": "culture",
+      "labels": {
+        "ru": "Аркаимская цивилизация",
+        "en": "Arkaim Civilization"
+      },
+      "relation": "same_subject",
+      "status": "APPROVED",
+      "owner_reviewed": true,
+      "evidence": [
+        {
+          "type": "edm_pilot_card",
+          "file": "core/CORE/ENTITY_MODEL/pilot/civ_arkaim_civilization.json",
+          "entity_id": "civ_arkaim_civilization"
+        }
+      ],
+      "owner_decision_ref": "E5 GO (2026-10-26): extension of crosswalk to civilization category"
+    },
+    {
+      "id": "cw_civ_oceania",
+      "canonical_id": "civ_oceania",
+      "provenance": {
+        "category": "EXTERNAL_SOURCE",
+        "source_level": "HISTORICAL",
+        "confidence": 0.8,
+        "source_title": "WORLD_MODEL/CIVILIZATIONS.json (extended_world civilizations layer)"
+      },
+      "category": "culture",
+      "labels": {
+        "ru": "Океанийская цивилизация",
+        "en": "Oceanic Civilization"
+      },
+      "relation": "same_subject",
+      "status": "APPROVED",
+      "owner_reviewed": true,
+      "evidence": [
+        {
+          "type": "edm_pilot_card",
+          "file": "core/CORE/ENTITY_MODEL/pilot/civ_oceania.json",
+          "entity_id": "civ_oceania"
+        }
+      ],
+      "owner_decision_ref": "E5 GO (2026-10-26): extension of crosswalk to civilization category"
+    }
+  ],
+  "relations_policy": {
+    "tier_model": "Tier-1 = relations внутри EDM-карточек (derived/ai_model_artistic, confidence < 1.0) — только маркированные гипотезы; Tier-2 = секция `relations` ниже — owner-утверждённые связи, единственный источник утверждённых связей для публичного EDM-контекста.",
+    "policy_G6_extended": "Связи НЕ выводятся по сходству названий (G6, расширена на relations решением 2026-10-25). Fuzzy-строки legacy `locations.*.related_entities` в v1 не утверждаются: «Гиперборея» ID-согласуется с region_hyperborea (mapping существует), «Страна Городов» без ID-соответствия — остаётся unapproved.",
+    "character_identity": "Character relations идентифицируются ИМЕНАМИ (P3: ключи legacy character_relations); namespace char_* не выдумывается (ID reconciliation персонажей — отдельная задача).",
+    "batch_decision": "v1 batch из 10 связей утверждён OWNERом целиком 2026-10-25 (GATE A, S3; включён спорный #10 associated_with 0.7 — решение владельца, зафиксировано в evidence).",
+    "fail_closed": "Политика §4.5 правил: нет утверждённой связи — свойство не материализуется нигде; absence не порождает default-связей."
+  },
+  "relations": [
+    {
+      "id": "rel_located_settlement_in_arkaim_region",
+      "source_id": "arkaim_settlement",
+      "relation": "located_in",
+      "target_id": "region_arkaim",
+      "provenance": "Tier-1 EDM relation (arkaim_settlement.relations) + engine GEOGRAPHY.json (era «Уральская степь», region_arkaim)",
+      "status": "APPROVED",
+      "owner_reviewed": true,
+      "evidence": [
+        {
+          "type": "edm_relation_tier1",
+          "file": "core/CORE/ENTITY_MODEL/pilot/arkaim_settlement.json",
+          "relation": "located_in",
+          "target": "region_arkaim"
+        },
+        {
+          "type": "world_engine_source",
+          "file": "core/CORE/WORLD_MODEL/GEOGRAPHY.json",
+          "entity_id": "region_arkaim"
+        }
+      ]
+    },
+    {
+      "id": "rel_has_climate_region_arkaim_steppe",
+      "source_id": "region_arkaim",
+      "relation": "has_climate",
+      "target_id": "steppe_climate",
+      "provenance": "Обе карточки в engine: CLIMATE.json steppe_climate («континентальный климат Южного Урала») + GEOGRAPHY.json region_arkaim (Южный Урал)",
+      "status": "APPROVED",
+      "owner_reviewed": true,
+      "evidence": [
+        {
+          "type": "world_engine_source",
+          "file": "core/CORE/WORLD_MODEL/CLIMATE.json",
+          "entity_id": "steppe_climate"
+        },
+        {
+          "type": "world_engine_source",
+          "file": "core/CORE/WORLD_MODEL/GEOGRAPHY.json",
+          "entity_id": "region_arkaim"
+        }
+      ]
+    },
+    {
+      "id": "rel_has_climate_region_hyperborea",
+      "source_id": "region_hyperborea",
+      "relation": "has_climate",
+      "target_id": "hyperborea_climate",
+      "provenance": "Аналогично #2: CLIMATE.json hyperborea_climate + GEOGRAPHY.json region_hyperborea",
+      "status": "APPROVED",
+      "owner_reviewed": true,
+      "evidence": [
+        {
+          "type": "world_engine_source",
+          "file": "core/CORE/WORLD_MODEL/CLIMATE.json",
+          "entity_id": "hyperborea_climate"
+        },
+        {
+          "type": "world_engine_source",
+          "file": "core/CORE/WORLD_MODEL/GEOGRAPHY.json",
+          "entity_id": "region_hyperborea"
+        }
+      ]
+    },
+    {
+      "id": "rel_existed_civ_arkaim_in_arkaim_era",
+      "source_id": "civ_arkaim_civilization",
+      "relation": "existed_in",
+      "target_id": "arkaim_era",
+      "provenance": "Legacy эпоха arkaim_era + событие event_arkaim_construction (epoch=arkaim_era, location=аркаим) в narrative_engine/data/WORLD_MODEL.json",
+      "status": "APPROVED",
+      "owner_reviewed": true,
+      "evidence": [
+        {
+          "type": "canonical_event_link",
+          "file": "core/CORE/narrative_engine/data/WORLD_MODEL.json",
+          "event_id": "event_arkaim_construction",
+          "epoch": "arkaim_era",
+          "location_id": "аркаим"
+        }
+      ]
+    },
+    {
+      "id": "rel_mentor_teacher_velik",
+      "source_id": "Учитель",
+      "relation": "mentor_of",
+      "target_id": "Велик",
+      "provenance": "Legacy character_relations, AUTHOR_CANON confidence 1.0 (части 5–13), narrative_engine/data/WORLD_MODEL.json",
+      "status": "APPROVED",
+      "owner_reviewed": true,
+      "evidence": [
+        {
+          "type": "author_canon_character_relation",
+          "file": "core/CORE/narrative_engine/data/WORLD_MODEL.json",
+          "sections": "5–13",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "id": "rel_mentor_svetovit_velik",
+      "source_id": "Световит",
+      "relation": "mentor_of",
+      "target_id": "Велик",
+      "provenance": "Legacy character_relations, AUTHOR_CANON confidence 1.0 (части 5–13)",
+      "status": "APPROVED",
+      "owner_reviewed": true,
+      "evidence": [
+        {
+          "type": "author_canon_character_relation",
+          "file": "core/CORE/narrative_engine/data/WORLD_MODEL.json",
+          "sections": "5–13",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "id": "rel_mentor_velik_miroslav",
+      "source_id": "Велик",
+      "relation": "mentor_of",
+      "target_id": "Мирослав",
+      "provenance": "Legacy character_relations, AUTHOR_CANON confidence 1.0",
+      "status": "APPROVED",
+      "owner_reviewed": true,
+      "evidence": [
+        {
+          "type": "author_canon_character_relation",
+          "file": "core/CORE/narrative_engine/data/WORLD_MODEL.json",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "id": "rel_mentor_teacher_nastavniki",
+      "source_id": "Учитель",
+      "relation": "mentor_of",
+      "target_id": "Наставники",
+      "provenance": "Legacy character_relations, AUTHOR_CANON confidence 1.0 (группа наставников)",
+      "status": "APPROVED",
+      "owner_reviewed": true,
+      "evidence": [
+        {
+          "type": "author_canon_character_relation",
+          "file": "core/CORE/narrative_engine/data/WORLD_MODEL.json",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "id": "rel_peer_radomir_velik",
+      "source_id": "Радомир",
+      "relation": "peer_of",
+      "target_id": "Велик",
+      "provenance": "Legacy character_relations, AUTHOR_CANON confidence 1.0 (соратники в одной эпохе; связь симметрична)",
+      "status": "APPROVED",
+      "owner_reviewed": true,
+      "evidence": [
+        {
+          "type": "author_canon_character_relation",
+          "file": "core/CORE/narrative_engine/data/WORLD_MODEL.json",
+          "confidence": 1.0,
+          "note": "симметрична: Радомир ↔ Велик"
+        }
+      ]
+    },
+    {
+      "id": "rel_assoc_civ_arkaim_civ_hyperborea",
+      "source_id": "civ_arkaim_civilization",
+      "relation": "associated_with",
+      "target_id": "civ_hyperborea",
+      "provenance": "Tier-1 EDM relation (derived, confidence 0.7, «потомки гипербореев» из описания карточки) — самая спорная связь батча: «вывод, не канон». Утверждена в Tier-2 решением OWNERа 2026-10-25 (GATE A, S3: утверждён весь v1-батч целиком).",
+      "status": "APPROVED",
+      "owner_reviewed": true,
+      "owner_decision_ref": "GATE A S3 (2026-10-25): утверждаю весь v1-батч, включая #10",
+      "evidence": [
+        {
+          "type": "edm_relation_tier1",
+          "file": "core/CORE/ENTITY_MODEL/pilot/civ_arkaim_civilization.json",
+          "relation": "associated_with",
+          "target": "civ_hyperborea",
+          "confidence": 0.7,
+          "note": "вывод, не канон — утверждено владельцем 2026-10-25"
+        }
+      ]
+    }
+  ],
+  "unmapped": {
+    "status": "PRESERVE_UNCHANGED",
+    "policy": "Do not infer mappings from similar names.",
+    "owner_decision": "G6 = PRESERVE_UNCHANGED (2026-10-22)",
+    "decided_at": "2026-10-22",
+    "regions": [
+      "gardarika",
+      "sintashta",
+      "mehenjo",
+      "sumer",
+      "gobekli",
+      "bolgar",
+      "lepeni_vir"
+    ],
+    "note": "Регионы остаются в MAP_DATA как внешний слой и не сопоставляются со сценами и сценарием. Соответствия не выводятся по сходству названий. Решение владельца G6 от 2026-10-22 — гейт закрыт."
+  }
+}
