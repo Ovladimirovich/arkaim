@@ -34,7 +34,14 @@ from narrative_engine.research.api_routes import router as research_engine_route
 from core.routes.world_engine import router as world_engine_api_router
 from core.routes.temporal import router as temporal_router
 from core.routes.temporal_updates import router as temporal_updates_router
-from core.routes.comfyui import router as comfyui_router
+
+# G-1: ComfyUI-маршрут исключён из основной публикации (реестр G-1, W-2/B).
+# Подключаем роутер только если модуль присутствует (режим доп. интеграции).
+try:
+    from core.routes.comfyui import router as comfyui_router
+except ImportError:  # pragma: no cover — comfyui.py отсутствует в чистой публикации
+    comfyui_router = None
+    log.warning("comfyui route disabled: core/routes/comfyui.py excluded from this snapshot")
 
 router.include_router(book_router)
 router.include_router(visual_router)
@@ -50,7 +57,8 @@ router.include_router(research_engine_router)
 router.include_router(world_engine_api_router)
 router.include_router(temporal_router)
 router.include_router(temporal_updates_router)
-router.include_router(comfyui_router)
+if comfyui_router is not None:
+    router.include_router(comfyui_router)
 
 # POST /book/research-engine/apply/{job_id} — RBAC (editor/admin) + gate odobreniya.
 # Вынесен из research_engine_router: core не знает про auth.rbac,

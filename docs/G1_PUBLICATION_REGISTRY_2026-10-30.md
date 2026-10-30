@@ -196,3 +196,28 @@ arkaim-book/                     # новая чистая история
 | Проверки | ✅ `python -m py_compile` (main/config/shared_config) exit 0; ✅ JSON-валидность 74 файла KNOWLEDGE/GENOME = 0 ошибок; ✅ `git fsck` чист |
 | Открытые (сохранены, не блокируют) | W-1 (live OAuth-сценарий), W-5 (mobile dev-login + tsc barrel), KNOWLEDGE-C (8 FAIL-ов) |
 | Публикация (push) | **НЕ выполнялась** — только по финальному OWNER-GO |
+
+---
+
+### 11.1 OWNER-GO A — локальная проверка воспроизводимости (`arkaim-book`, 2026-10-30)
+
+**Контекст:** `arkaim-book` создан из `arkaim` через `git archive HEAD | tar -x` на Windows (bsdtar). При распаковке **все имена файлов с кириллицей были искажены** (mojibake): каждый UTF-8 байт кириллического имени превратился в символ бокс-рамки (`═`, U+2568/U+2550). Содержимое файлов не пострадало. Это привело к массовым FAIL-ам (код искал `КНИГА.md`, `lang_предыстория_человечества.json` и т.п., а на диске и в git-индексе лежали `═К═Н═И═Г═А.md`-подобные имена).
+
+| Параметр | Результат |
+|---|---|
+| Окружение | свежий venv `runtime/.venv` Python 3.14.3, pip 26.2.2; `pip install -r requirements.txt` exit=0 |
+| `runtime/.env` | создан локально (не коммитится): `SESSION_SECRET`, `PUBLIC_BASE_URL`, `FRONTEND_URL`, `CORS_ORIGINS`, `HERMES_API_KEY`, `TELEGRAM_BOT_TOKEN` (тест-значения) |
+| **mojibake-имена** | **исправлены**: 453 файла переименованы по md5-совпадению содержимого с эталонным `arkaim` (0 без совпадения); в т.ч. `SOURCE_OF_TRUTH` (КНИГА.md, сценарий, 2 PDF) и 400+ карточек `entity_model/pilot/` |
+| **CHROMA_DB** | восстановлен полной копией из `Arkaim_Backup_2026-10-30` (11 МБ, 36 каталогов HNSW); в git не войдёт (`.gitignore`, как в старом репо) |
+| **backend-блокер** | устранён: `runtime/core/book_routes.py` — guarded-импорт исключённого `core/routes/comfyui.py` (без возврата модуля) |
+| `lint-backend` | ✅ `ruff check .` — **All checks passed** (exit 0) |
+| `test-backend` | ✅ **3091 passed, 31 skipped, 2 deselected**; ❌ **8 failed** — только известные KNOWLEDGE-C (`test_g1_archaeology_claims` 4, `test_milestone_b` 3, `test_provenance_registry_consistency` 1) |
+| `lint-frontend` | ✅ `npm run lint` exit 0; ✅ `npx tsc --noEmit` exit 0 |
+| `test-frontend` | ⚠️ vitest: **274 passed, 3 failed** (файл `auth-provider.test.tsx)` — это **pre-existing** W-5: тот же провал подтверждён в старом репо `arkaim` (3 failed, те же строки) → не ошибка воспроизводимости |
+| live-запуск | ✅ `uvicorn core.main:app --port 8642` — старт успешен (`pulse_initialized`, `Application startup complete`) |
+| live-маршруты | `/docs` 200 · `/openapi.json` 200 (322 КБ) · `/book/health` 200 `version 1.0.0` · `/health` 200 · `/book/genome|layers|chapters` 401 (нужна роль) · `/_ui/` 302 · **`/book/comfyui/status` 404 + отсутствует в openapi** (соответствует `test_no_comfyui_status`) |
+| live xray | ⚠️ `/xray/health|status|traces` → 500: отсутствует `XRAY_TRACE_STORE_PATH` в `.env` (локальный артефакт, не в git; в старом `.env` был `./runtime_data/trace_store`). Не блокер сборки |
+| Git-индекс | обновлён: **457 rename + 1 modify (`book_routes.py`)**; 0 файлов с mojibake в новых именах; рабочие лог-файлы не включены |
+| Публикация (push) | **НЕ выполнялась** — ждёт финального OWNER-GO |
+
+**Итог OWNER-GO A:** воспроизводимость новой сборки подтверждена — backend собирается, lint/тесты проходят (кроме 8 известных FAIL направления C и pre-existing W-5 во frontend), live-запуск работает, ComfyUI корректно исключён. Исправление mojibake-имён (453 файла) — критически важный шаг, без него сборка нежизнеспособна.
