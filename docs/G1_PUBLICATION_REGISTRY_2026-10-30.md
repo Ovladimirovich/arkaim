@@ -302,11 +302,11 @@ arkaim-book/                     # новая чистая история
 
 ## 14. Открытые для публикации (не закрыты)
 
-> Заполняется при OWNER-GO. На 2026-11-01:
+> Заполняется при OWNER-GO. На 2026-11-02:
 
 | # | Что | Владелец | Статус |
 |---|---|---|---|
-| O-1 | **Google OAuth — полный ручной вход (live)** | ** OWNER-GO A** (выполняется пользователем, не автоматизируется) | **AUTO-часть PASS** (`oauth_verify.py` 5/5), **MANUAL-часть** — пользователь делает Google-логин через кнопку на `/login` → `/profile` |
+| ~~O-1~~ | **Google OAuth — полный ручной вход (live)** | ~~OWNER-GO A~~ | ✅ **ЗАКРЫТ 2026-11-02** (`13bf112`): D-6 owner-bound invite + `POST /auth/dev/bootstrap-owner`. Роль владельца = `admin` в БД подтверждено (user `olegluh1969`, `provider_user_id=114744872080297548868`). Studio видна, Film Studio работает. Обычный reader не получает admin. 5 кода-дефектов закрыто: D-2 (at_hash), D-3 (await), D-5 (redirect 404), D-6 (bool subscriptable), D-7 (owner-bound invite bool). |
 | O-2 | W-5 (mobile dev-кнопка) | OWNER-GO E | не выполнен |
 | O-3 | W-9 (дедуп `EntityExtractor`) | OWNER-GO D / отложен | см. §5 W-9 |
 | O-4 | D-1 (placeholder) | — | — |
