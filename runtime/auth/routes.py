@@ -190,7 +190,7 @@ async def google_callback(request: Request, code: str | None = None):
         id_token = tokens.get("id_token")
         if not id_token:
             raise HTTPException(status_code=400, detail="Отсутствует id_token")
-        payload = verify_google_id_token(id_token)
+        payload = await verify_google_id_token(id_token)
         google_data = parse_google_user(payload)
         user = await user_store.upsert_user(
             provider=google_data["provider"],
