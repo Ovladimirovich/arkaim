@@ -216,8 +216,39 @@ arkaim-book/                     # новая чистая история
 | `test-frontend` | ⚠️ vitest: **274 passed, 3 failed** (файл `auth-provider.test.tsx)` — это **pre-existing** W-5: тот же провал подтверждён в старом репо `arkaim` (3 failed, те же строки) → не ошибка воспроизводимости |
 | live-запуск | ✅ `uvicorn core.main:app --port 8642` — старт успешен (`pulse_initialized`, `Application startup complete`) |
 | live-маршруты | `/docs` 200 · `/openapi.json` 200 (322 КБ) · `/book/health` 200 `version 1.0.0` · `/health` 200 · `/book/genome|layers|chapters` 401 (нужна роль) · `/_ui/` 302 · **`/book/comfyui/status` 404 + отсутствует в openapi** (соответствует `test_no_comfyui_status`) |
-| live xray | ⚠️ `/xray/health|status|traces` → 500: отсутствует `XRAY_TRACE_STORE_PATH` в `.env` (локальный артефакт, не в git; в старом `.env` был `./runtime_data/trace_store`). Не блокер сборки |
+| live xray | ⚠️ `/xray/traces` (защищённые) → 500 без авторизации. **Первопричина (уточнена 2026-11-01):** `protected_routes_middleware` (`runtime/core/middleware.py:66-76`) перебрасывает `HTTPException` (401/403) наружу из middleware — в Starlette он подхватывается только внешним `ServerErrorMiddleware`, поэтому 401 превращается в 500. Публичные `/xray/version`, `/xray/mode` → 200 (работают). Ранее диагностика «нет XRAY_TRACE_STORE_PATH» была **неверной** — это не блокер сборки; дефект pre-existing (код идентичен старому репо) |
 | Git-индекс | обновлён: **457 rename + 1 modify (`book_routes.py`)**; 0 файлов с mojibake в новых именах; рабочие лог-файлы не включены |
 | Публикация (push) | **НЕ выполнялась** — ждёт финального OWNER-GO |
 
 **Итог OWNER-GO A:** воспроизводимость новой сборки подтверждена — backend собирается, lint/тесты проходят (кроме 8 известных FAIL направления C и pre-existing W-5 во frontend), live-запуск работает, ComfyUI корректно исключён. Исправление mojibake-имён (453 файла) — критически важный шаг, без него сборка нежизнеспособна.
+
+---
+
+### 11.2 Переход на новую рабочую точку `arkaim-book` — live-проверка (2026-11-01)
+
+**Контекст:** `C:\proect_arkaim\arkaim-book` официально назначена единственной основной рабочей точкой; `C:\proect_arkaim\arkaim` — архив (только чтение). Проверена именно новая сборка. Публикация/переименование GitHub — НЕ выполнялись (нет OWNER-GO).
+
+| Проверка | Результат |
+|---|---|
+| Рабочая точка | ветка `master`, HEAD `bfcad4a`, история 3 коммитов сохранена, remote не настроен, git status — только untracked рабочие логи |
+| Границы проектов | старый `arkaim` не изменён (HEAD `3e252a2`, его локальный WIP не тронут); между проектами ничего не переносилось |
+| backend live | ✅ `uvicorn 127.0.0.1:8642`, чистый старт: `provider_registered (gigachat, openrouter)`, `database_manager_initialized`, `book_os_provider_initialized`, `xray_mode mode=live`, **`pulse_initialized`**, `presence_initialized`, `telegram_bot_started`, **`knowledge_expansion_scheduled`**, `Application startup complete`; 0 ошибок приложения в логе |
+| frontend live | ✅ Next.js 16.2.10 (Turbopack), `Ready in 1696ms`, `http://localhost:3000`; `/`, `/book`, `/login` → 200 с контентом и заголовком «Наследие Аркаима»; ошибок сборки нет |
+| frontend→backend | ✅ прокси rewrites: `/book/health` через frontend → 200 `{"status":"ok","version":"1.0.0"}`; `/auth/me` → 401; `/health` через frontend → 404 (не в rewrites — это прямой backend-роут, напрямую 200) |
+| health endpoints | ✅ `/health` 200 (`mode=live`, `trace_store=false`) · `/book/health` 200 · `/docs` 200 · `/openapi.json` 200 · `/book/genome\|layers\|chapters` 401 (роль) · `/book/comfyui/status` 404 + нет в openapi |
+| Google OAuth — воспроизведение | `/auth/google` → **501 «Google OAuth не настроен»**; `/auth/google/callback` без code → **400 «Отсутствует code»**; с фиктивным code → **400 «GOOGLE_CLIENT_ID или GOOGLE_CLIENT_SECRET не задан»**. Прокси `/api/auth/google` (frontend) и `/auth/google` → 501 от backend — цепочка доходит |
+| Google OAuth — первопричина | **отсутствуют `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`** в `runtime/.env` (читаются в `shared_config.py:136-137`, по умолчанию `""`). Поведение кода корректное (graceful 501/400). Это **конфигурация, не дефект кода** — восстановлена та же причина, что и в старой папке; ошибка НЕ перенесена, а воспроизведена заново |
+| Google OAuth — конфигурация | `PUBLIC_BASE_URL=http://localhost:8642` → callback URL = `http://localhost:8642/auth/google/callback` ✅; `SESSION_SECRET` задан (64 символа) ✅; `redirect_uri` в `get_google_auth_url`/`exchange_code` одинаков |
+| xray live | публичные `/xray/version`, `/xray/mode` → 200 ✅; защищённые `/xray/traces*` → 500 без auth — см. уточнённую диагностику в §11.1 (middleware re-raise; pre-existing, не блокер) |
+| Code-level блокеров | **не обнаружено** — все найденные проблемы являются конфигурацией (Google credentials) или pre-existing дефектами, идентичными старому репо |
+
+**Известные проблемы сохранены в учёте (НЕ объявлялись исправленными):**
+- 8 backend FAIL направления KNOWLEDGE-C (`test_g1_archaeology_claims` 4, `test_milestone_b` 3, `test_provenance_registry_consistency` 1);
+- 3 frontend FAIL `auth-provider.test.tsx` (pre-existing W-5, подтверждён в старом репо);
+- Google OAuth не настроен (нет credentials) — живой сценарий требует OWNER-GO;
+- `/xray/*` защищённые → 500 вместо 401 (pre-existing, `middleware.py:66-76`);
+- `state` в OAuth-флоу Google не генерируется и не проверяется (`get_google_auth_url` без `state`) — security-замечание;
+- кнопка «Войти через Google» на React-странице `/login` не скрывается при отсутствии OAuth-конфигурации (в `_ui`-HTML скрывается, в React — нет): клик даёт 501-JSON в браузере;
+- `XRAY_TRACE_STORE_PATH` не задан (`trace_store=false`) — локальный артефакт, не в git.
+
+**Git:** изменения этого шага — только документация реестра (§11.1 уточнение + §11.2). Код не менялся (code-level блокеров не найдено). Публикация (push) НЕ выполнялась.
