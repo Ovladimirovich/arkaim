@@ -404,6 +404,21 @@ KNOWLEDGE_CLASSIFICATION: list[KnowledgeFileClassification] = [
         description="Извлечения из сценария — производное",
         is_canon=False,
     ),
+    KnowledgeFileClassification(
+        filename="SCREENPLAY_DIALOGUES.json",
+        category=KnowledgeCategory.DERIVED,
+        description=(
+            "Ключевые диалоги сценария — производное от screenplay_extracts.json. "
+            "Хранится JSON-массивом (обёртка {items, item_count} запрещена guard'ом "
+            "test_top_level_arrays_stay_arrays), поэтому файл-уровневый "
+            "_provenance_metadata физически невозможен: контракт зафиксирован в "
+            "PLAIN_LIST_REGISTERS (test_milestone_b.py). Пустые записи — "
+            "confidence 0.0; не удалять, не повышать до канона (ориентир C). "
+            "KNOWLEDGE-C, OWNER-GO 2026-11-01"
+        ),
+        is_canon=False,
+        requires_author_review=True,
+    ),
     # ── ANCHOR ───────────────────────────────────────────────────────────
     KnowledgeFileClassification(
         filename="ANCHOR_QUOTES.json",

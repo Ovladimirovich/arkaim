@@ -96,7 +96,7 @@
     "graph_links": [],
     "source": "core\\KNOWLEDGE\\screenplay_extracts.json.key_dialogues[0]",
     "validation_score": 0.7,
-    "confidence": 1.0,
+    "confidence": 0.0,
     "metadata": {
       "layers": {},
       "cross_references": [],
@@ -124,7 +124,7 @@
     "graph_links": [],
     "source": "core\\KNOWLEDGE\\screenplay_extracts.json.key_dialogues[1]",
     "validation_score": 0.7,
-    "confidence": 1.0,
+    "confidence": 0.0,
     "metadata": {
       "layers": {},
       "cross_references": [],
@@ -189,7 +189,7 @@
     ],
     "source": "core\\KNOWLEDGE\\screenplay_extracts.json.key_dialogues[2]",
     "validation_score": 0.7,
-    "confidence": 1.0,
+    "confidence": 0.0,
     "metadata": {
       "layers": {},
       "cross_references": [],

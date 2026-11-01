@@ -2,7 +2,7 @@
   "_provenance_metadata": {
     "category": "EXTERNAL_SOURCE",
     "source_level": "HISTORICAL",
-    "notes": "Geographic data from external sources Записи с пустым content удалены 2026-10-22 (решение владельца G1.4): пустое утверждение с confidence 1.0 — ложная метка.",
+    "notes": "Geographic data from external sources Записи с пустым content удалены 2026-10-22 (решение владельца G1.4): пустое утверждение с confidence 1.0 — ложная метка. Удалено повторно 2026-11-01: 2 пустых зеркала (ARCHAEOLOGY.json.sites[3], sites[4]) вернулись регрессией dac1116; восстановлено решение G1.4 — было 19 записей, стало 17.",
     "enriched_at": "Milestone B"
   },
   "items": [
@@ -516,68 +516,6 @@
         ]
       },
       "added_at": "2026-07-16T02:04:49.755064+00:00"
-    },
-    {
-      "topic": "Мехенго",
-      "content": "",
-      "layers": {
-        "literal": "",
-        "metaphorical": "",
-        "cosmic": ""
-      },
-      "cross_references": [],
-      "patterns": [],
-      "connections": [],
-      "graph_links": [],
-      "source": "core\\KNOWLEDGE\\ARCHAEOLOGY.json.sites[3]",
-      "validation_score": 0.7,
-      "confidence": 1.0,
-      "metadata": {
-        "layers": {},
-        "cross_references": [],
-        "keys": [
-          "name",
-          "location",
-          "dating",
-          "facts",
-          "book_connection",
-          "hypothetical_claims",
-          "significance",
-          "unsolved"
-        ]
-      },
-      "added_at": "2026-10-29T01:39:36.388605+00:00"
-    },
-    {
-      "topic": "Болгарский государственный историко-архитектурный музей-заповедник",
-      "content": "",
-      "layers": {
-        "literal": "",
-        "metaphorical": "",
-        "cosmic": ""
-      },
-      "cross_references": [],
-      "patterns": [],
-      "connections": [],
-      "graph_links": [],
-      "source": "core\\KNOWLEDGE\\ARCHAEOLOGY.json.sites[4]",
-      "validation_score": 0.7,
-      "confidence": 1.0,
-      "metadata": {
-        "layers": {},
-        "cross_references": [],
-        "keys": [
-          "name",
-          "location",
-          "dating",
-          "facts",
-          "book_connection",
-          "hypothetical_claims",
-          "significance",
-          "unsolved"
-        ]
-      },
-      "added_at": "2026-10-29T01:39:36.389328+00:00"
     }
   ],
   "item_count": 17

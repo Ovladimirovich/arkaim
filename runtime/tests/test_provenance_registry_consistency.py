@@ -169,12 +169,19 @@ def test_validator_script_does_not_write() -> None:
     [
         "screenplay_links.json",
         "claim_temporal_links.json",
+        "SCREENPLAY_DIALOGUES.json",
         "enriched_catalog.json",
         "enriched_chunks.json",
     ],
 )
 def test_top_level_arrays_stay_arrays(name: str) -> None:
-    """Top-level массив остаётся массивом (обёртка {items, item_count} недопустима)."""
+    """Top-level массив остаётся массивом (обёртка {items, item_count} недопустима).
+
+    ``SCREENPLAY_DIALOGUES.json`` добавлен сюда вместе с регистрацией в
+    ``PLAIN_LIST_REGISTERS`` (KNOWLEDGE-C, OWNER-GO 2026-11-01): формат
+    массива — решение владельца, guard фиксирует его наравне с остальными
+    списками-реестрами.
+    """
     path = KNOWLEDGE_DIR / name
     assert path.exists(), f"{name} отсутствует"
     data = json.loads(path.read_text(encoding="utf-8-sig"))

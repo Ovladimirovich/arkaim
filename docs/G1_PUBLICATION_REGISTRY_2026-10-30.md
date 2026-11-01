@@ -25,6 +25,7 @@
 | S-2 | ✅ **ПРИНЯТА** (OWNER-GO от 2026-10-30, коммит `2af923f`); целевые проверки пройдены; **полный прогон тестов завершён (2026-10-30): 3096 passed, 8 failed, 26 skipped** (8 FAIL-ов — только KNOWLEDGE-данные, направление C); остатки `.env.example`/`docker-compose.yml` → закрыты блоком A (`d49466a`) + корневой `.env.example` (`3e252a2`) |
 | G-1 STOP GATE | **OPEN** — публикация запрещена до OWNER-GO |
 | Секреты запущенные в дереве | 1 (cookies admin-JWT, истёк 27.09.2026, не используется в коде) — риск `core/config.py:83` устранён (`41a2e1f`) и корневой `.env.example` (`3e252a2`), секретов-заглушек в конфиге не осталось |
+| KNOWLEDGE-C | ✅ **ЗАКРЫТ (2026-11-01, OWNER-GO: A1+B1)** — 8 backend-FAIL исправлены (см. §12); полный прогон 2026-11-01: **3103 passed, 2 failed (pre-existing `core/OS_DATA`, доказано на чистом HEAD), 26 skipped**; `ruff` — чисто; push не выполнялся |
 
 ---
 
@@ -33,7 +34,7 @@
 | # | Что | Где | Статус для G-1 |
 |---|---|---|---|
 | S-1 | Знания книги | `core/KNOWLEDGE/*.json` (56 файлов) | включить после тех. чистки путей (см. §4) |
-| S-2 | Диалоги сценария | `core/KNOWLEDGE/SCREENPLAY_DIALOGUES.json` (untracked) | включить после чистки путей + ревью (OWNER-GO C) |
+| S-2 | Диалоги сценария | `core/KNOWLEDGE/SCREENPLAY_DIALOGUES.json` (tracked; 7 записей: 4 с контентом, 3 пустых — `confidence 0.0` c 2026-11-01, KNOWLEDGE-C B1) | включить после чистки путей + ревью (OWNER-GO C) |
 | S-3 | Геном актуальный | `core/GENOME/CURRENT/*` (20) + `core/GENOME/GENOME_v1.0.0.json` | включить |
 | S-4 | Геном-история | `core/CORE/genome/history/` (46 файлов) | дедупликация → 6 уникальных (OWNER-GO D) |
 | S-5 | Первоисточник | `core/SOURCE_OF_TRUTH/**` (книга, синопсис, примечания) | включить |
@@ -88,7 +89,7 @@
 | P-2 | `core/KNOWLEDGE/COSMOLOGY.json` | 2 | ✅ **Замещено и закоммичено** (`dac1116`, то же замечание) |
 | P-3 | `core/KNOWLEDGE/GEOGRAPHY.json` | 2 | ✅ **Замещено и закоммичено** (`dac1116`, то же замечание) |
 | P-4 | `core/KNOWLEDGE/THEMES_EXPANDED.json` | 2 | ✅ **Замещено и закоммичено** (`dac1116`, то же замечание) |
-| P-5 | `core/KNOWLEDGE/SCREENPLAY_DIALOGUES.json` | 7 | ✅ **Замещено и закоммичено** (`dac1116`, то же замечание; пустой каркас включён в tracked) |
+| P-5 | `core/KNOWLEDGE/SCREENPLAY_DIALOGUES.json` | 7 | ✅ **Замещено и закоммичено** (`dac1116`, то же замечание; каркас включён в tracked) — *уточнено 2026-11-01: это был НЕ пустой каркас: 4 из 7 записей содержат контент из `screenplay_extracts.json`; 3 пустые — `confidence 0.0` (KNOWLEDGE-C B1)* |
 | P-6 | `.clinerules/project-map.md` | 1 | ✅ **Замещено при сборке** (`C:\proect_arkaim\arkaim` → `.`) |
 | P-7 | `docs/MEDIA_PRODUCTION_MASTERPLAN_APPROVAL_2026-10-22.md` | 1 | ✅ **Замещено при сборке** (арх. путь → `<repo-root>`, `arkaim-media` → `<adjacent-repo:arkaim-media>`) |
 | P-8 | `docs/archive/md-line/*` (4 файла) | по 1 | ✅ **Замещено при сборке** (MD4_M41, MD4_M42_2, FORENSIC_AUDIT_POST_MD5; MD4_PRE без абс. пути) |
@@ -194,7 +195,7 @@ arkaim-book/                     # новая чистая история
 | WORLD_MODEL backup (E-7) | ✅ не в репо (в бэкапе) |
 | `.env.example` (корень + runtime) | ✅ включены; `docker-compose.yml` SESSION_SECRET → fail-fast |
 | Проверки | ✅ `python -m py_compile` (main/config/shared_config) exit 0; ✅ JSON-валидность 74 файла KNOWLEDGE/GENOME = 0 ошибок; ✅ `git fsck` чист |
-| Открытые (сохранены, не блокируют) | W-1 (live OAuth-сценарий), W-5 (mobile dev-login + tsc barrel), KNOWLEDGE-C (8 FAIL-ов) |
+| Открытые (сохранены, не блокируют) | W-1 (live OAuth-сценарий), W-5 (mobile dev-login + tsc barrel); ~~KNOWLEDGE-C (8 FAIL-ов)~~ ✅ **закрыт 2026-11-01** (см. §12) |
 | Публикация (push) | **НЕ выполнялась** — только по финальному OWNER-GO |
 
 ---
@@ -252,3 +253,27 @@ arkaim-book/                     # новая чистая история
 - `XRAY_TRACE_STORE_PATH` не задан (`trace_store=false`) — локальный артефакт, не в git.
 
 **Git:** изменения этого шага — только документация реестра (§11.1 уточнение + §11.2). Код не менялся (code-level блокеров не найдено). Публикация (push) НЕ выполнялась.
+
+---
+
+## 12. KNOWLEDGE-C — закрытие 8 backend-FAIL (2026-11-01, OWNER-GO: A1 + B1)
+
+**Диагноз (read-only, подтверждён):** все 8 падений — о данных, не о коде; две причины, обе — регрессии ранее закрытых дефектов.
+
+| # | Причина | Затронутые тесты |
+|---|---|---|
+| 1 | **Возврат пустых зеркал** — регрессия `dac1116` (коммит «замена абсолютных путей» вернул старый WIP-контент: +7 пустых зеркал в `ARCHAEOLOGY_DEEP`, +2 в `GEOGRAPHY`), решение G1.4 (2026-10-22) было откатнуто | `test_g1_archaeology_claims` — 4 FAIL |
+| 2 | **`SCREENPLAY_DIALOGUES.json` нигде не зарегистрирован** — ни в механизме исключений JSON-массивов, ни в реестре классификации; файл-уровневый `_provenance_metadata` на массиве физически невозможен | `test_milestone_b` — 3 FAIL, `test_provenance_registry_consistency` — 1 FAIL |
+
+**Выполнено (OWNER-GO 2026-11-01):**
+
+1. **A1** — удалены 9 пустых зеркал (`ARCHAEOLOGY_DEEP` 8→1, `GEOGRAPHY` 19→17). Это **восстановление решения G1.4**, а не новое удаление данных: удалена именно пустота с `confidence: 1.0` (ложное утверждение). История удаления (регрессия `dac1116`, дата) дописана в `_provenance_metadata.notes` обоих файлов. Живые записи не ссылались на удаляемые — потеря данных отсутствует.
+2. **B1** — `SCREENPLAY_DIALOGUES.json`: формат JSON-массива **сохранён** (обёртка `{items, item_count}` запрещена — разрушительный `scripts/enrich_knowledge_provenance.py` удалён, guard `test_top_level_arrays_stay_arrays`); файл добавлен в `PLAIN_LIST_REGISTERS` (`test_milestone_b.py`) с документированным обоснованием; запись добавлена в `knowledge_classification.py`: **`DERIVED`, `is_canon=False`, `requires_author_review=True`** (ориентир C — не считать авторски утверждённым); у **3 пустых записей** `confidence` → `0.0` (записи **не удалялись** — выполнено предложение карты §11.1 «Вариант 1» / §14 «(б)» именно для этого файла); 4 записи с контентом не тронуты; файл **добавлен** в параметры `test_top_level_arrays_stay_arrays` (усиление guard'а формата).
+
+**Проверки:** целевые 3 файла тестов — 8/8 закрыты (**53 passed, 1 skipped**); полный backend-прогон (2026-11-01, 680 с) — **3103 passed, 2 failed, 26 skipped, 2 deselected**: исходных 8 FAIL не осталось. `ruff check` (runtime + изменённый core-файл) — **All checks passed**. Оставшиеся 2 FAIL — `test_knowledge_card_book_os.py::test_book_os_claims_in_card`, `::test_book_os_fact_store_by_entity` — **pre-existing, доказано прогоном на чистом HEAD** (мои 6 файлов временно откатывались — тот же результат): это локальный генерируемый корпус `core/OS_DATA/graph` (gitignored), где у сущности «Аркаим» нет фактов. К KNOWLEDGE-C отношения не имеет; исправление — отдельная задача (пересборка ingest-пайплайном Book OS), решение — владельцу.
+
+**Границы (соблюдены):** тесты не ослаблялись и не удалялись; формат массива не менялся; `DERIVED`/реконструкции не повышались до `CANON`; пустые записи `SCREENPLAY_DIALOGUES` не удалялись; `COSMOLOGY`/`PSYCHOLOGY`/`SYMBOLS_DEEP`/`THEMES_EXPANDED` не изменялись; push/GitHub не выполнялись; проект `C:\proect_arkaim\arkaim` не изменялся; посторонний WIP не правился.
+
+**Открытый вопрос, зафиксирован отдельно (не блокирует):** в `COSMOLOGY` (15), `PSYCHOLOGY` (25), `SYMBOLS_DEEP` (14), `THEMES_EXPANDED` (15) есть записи с пустым `content`, но у **всех** них заполнен `layers.literal` при `confidence > 0` — то есть это не пустые утверждения, а записи, чей контент живёт в слоях. Формальное предложение §14 «(б)» (обнулить `confidence`) для этих файлов **НЕ выполнялось** и требует решения владельца: обнуление здесь уберёт обоснованную уверенность, а не ложную.
+
+**Статус:** **DONE** по объёму A1+B1; итоговые PASS/PARTIAL — в отчёте этой сессии (по факту полного прогона).

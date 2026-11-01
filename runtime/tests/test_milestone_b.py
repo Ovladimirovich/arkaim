@@ -21,8 +21,21 @@ RAG_ARTIFACTS = frozenset({"enriched_catalog.json", "enriched_chunks.json"})
 #  - claim_temporal_links.json: M17 — плоские записи (4 поля: claim_id,
 #    temporal_node_id, event_id, notes), OWNER-обоснование хранится в notes;
 #    на уровне списка провенанс освобождён, как у RAG-артефактов.
+#  - SCREENPLAY_DIALOGUES.json: KNOWLEDGE-C (OWNER-GO, 2026-11-01) —
+#    продуктовый файл-список (7 записей, 4 с контентом). Формат — JSON-массив:
+#    обёртка {items, item_count} запрещена guard'ом
+#    test_top_level_arrays_stay_arrays (разрушительный
+#    scripts/enrich_knowledge_provenance.py удалён из репозитория), а у массива
+#    нет именованных ключей — значит файл-уровневый _provenance_metadata
+#    физически невозможен. Контракт вынесен в реестр
+#    knowledge_classification.py: DERIVED, is_canon=False,
+#    requires_author_review=True (ориентир C: не считать авторски
+#    утверждённым); пустые записи обнулены (confidence 0.0), не удалены.
+#    Это РЕГИСТРАЦИЯ ограничения формата готовым механизмом исключений
+#    (как у claim_temporal_links.json), а не ослабление проверки:
+#    форма файла проверяется в test_top_level_arrays_stay_arrays.
 PER_RECORD_PROVENANCE = frozenset({"screenplay_links.json"})
-PLAIN_LIST_REGISTERS = frozenset({"claim_temporal_links.json"})
+PLAIN_LIST_REGISTERS = frozenset({"claim_temporal_links.json", "SCREENPLAY_DIALOGUES.json"})
 LIST_FILES = RAG_ARTIFACTS | PER_RECORD_PROVENANCE | PLAIN_LIST_REGISTERS
 
 
@@ -58,7 +71,7 @@ class TestKnowledgeProvenanceMetadata:
                     missing.append(f"{f.name} (record-level)")
                 continue
             if f.name in PLAIN_LIST_REGISTERS:
-                continue  # M17-контракт: плоские записи, обоснование в notes
+                continue  # M17/KNOWLEDGE-C-контракт: плоский список, файл-уровневый провенанс невозможен
             if not isinstance(data, dict) or "_provenance_metadata" not in data:
                 missing.append(f.name)
 
@@ -81,7 +94,7 @@ class TestKnowledgeProvenanceMetadata:
             if f.name in RAG_ARTIFACTS:
                 continue
             if f.name in PLAIN_LIST_REGISTERS:
-                continue  # M17: плоские записи; контракт — валидатор реестра M17
+                continue  # M17/KNOWLEDGE-C: плоский список; контракт — реестр knowledge_classification.py
             data = json.loads(f.read_text(encoding="utf-8-sig"))
             if f.name in PER_RECORD_PROVENANCE:
                 # M16.3: record-level поля (notes у записей реестра — собственное поле,
@@ -148,7 +161,7 @@ class TestKnowledgeProvenanceMetadata:
             if f.name in RAG_ARTIFACTS:
                 continue
             if f.name in PLAIN_LIST_REGISTERS:
-                continue  # M17: плоские записи; контракт — валидатор реестра M17
+                continue  # M17/KNOWLEDGE-C: плоский список; контракт — реестр knowledge_classification.py
             data = json.loads(f.read_text(encoding="utf-8-sig"))
             if f.name in PER_RECORD_PROVENANCE:
                 # M16.3: дубли ключей проверяются на уровне записей реестра

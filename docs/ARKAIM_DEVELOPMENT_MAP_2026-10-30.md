@@ -28,28 +28,32 @@
 | Файл | Статус |
 |---|---|
 | `core/KNOWLEDGE/BOOK_DOCUMENT.json` | 0 items — пустой каркас (корневая книга) |
-| `core/KNOWLEDGE/ARCHAEOLOGY_DEEP.json` | 8 items: 1 содержательный, **7 пустых с confidence=1.0** (нарушение контракта) |
-| `core/KNOWLEDGE/COSMOLOGY.json` | 27 items: **26 пустых** (вероятно, не заполнены) |
-| `core/KNOWLEDGE/GEOGRAPHY.json` | 19 items: 2 пустых с confidence=1.0 |
-| `core/KNOWLEDGE/THEMES_EXPANDED.json` | 16 items: **15 пустых** |
-| `core/KNOWLEDGE/SYMBOLS_DEEP.json` | 15 items: **14 пустых** |
+| `core/KNOWLEDGE/ARCHAEOLOGY_DEEP.json` | ✅ **2026-11-01 (KNOWLEDGE-C, A1): 1 запись** — удалены повторно 7 пустых зеркал (регрессия `dac1116`), решение G1.4 восстановлено. *Было (2026-10-30): 8 items, 7 пустых с confidence=1.0 — нарушение контракта* |
+| `core/KNOWLEDGE/COSMOLOGY.json` | 27 items: 26 без `content`; у **15** из них confidence > 0, но `layers.literal` заполнен — контент живёт в слоях (см. §11.1, Вариант 1); на этот файл проверка G1 не распространяется |
+| `core/KNOWLEDGE/GEOGRAPHY.json` | ✅ **2026-11-01 (KNOWLEDGE-C, A1): 17 записей, пустых нет** — удалены 2 пустых зеркала (`ARCHAEOLOGY.json.sites[3]`, `sites[4]`, регрессия `dac1116`). *Было (2026-10-30): 19 items, 2 пустых с confidence=1.0* |
+| `core/KNOWLEDGE/THEMES_EXPANDED.json` | 16 items: 15 без `content` (у всех 15 заполнен `layers.literal`, confidence > 0 — см. COSMOLOGY) |
+| `core/KNOWLEDGE/SYMBOLS_DEEP.json` | 15 items: 14 без `content` (у всех 14 заполнен `layers.literal`, confidence > 0 — см. COSMOLOGY) |
 | `core/KNOWLEDGE/PHILOSOPHY_DEEP.json` | 134 items: 0 пустых (есть контент) |
-| `core/KNOWLEDGE/SCREENPLAY_DIALOGUES.json` (untracked) | **7 items ВСЕ ПУСТЫЕ** — только что добавлен без контента |
+| `core/KNOWLEDGE/SCREENPLAY_DIALOGUES.json` (tracked) | ✅ **2026-11-01 (KNOWLEDGE-C, B1): 7 items — 4 с контентом, 3 пустых с confidence 0.0** (не удалены — по §11.1/§14 «(б)»); файл-список, классифицирован `DERIVED`, `is_canon=False`, `requires_author_review=True`. *Было (2026-10-30): 7 items ВСЕ ПУСТЫЕ, без контента* |
 | `core/CHROMA_DB` | 20.3 МБ — **реальная** база знаний (enriched_chunks + Chroma), работает |
 | `core/CORE/**` (Pulse, Narrative, Media, World) | 🟢 Работает, задокументировано |
 
 ### 1.2 Фактический сбой
 
-Тест `runtime/tests/test_g1_archaeology_claims.py` падает: `TestEmptyMirrorsFixed.test_no_empty_content_with_confident_metadata[ARCHAEOLOGY_DEEP.json]`:
+> ✅ **ИСПРАВЛЕНО 2026-11-01 (KNOWLEDGE-C, OWNER-GO A1+B1).** Ниже — описание сбоя на 2026-10-30, сохранено как история.
+
+Тест `runtime/tests/test_g1_archaeology_claims.py` падал: `TestEmptyMirrorsFixed.test_no_empty_content_with_confident_metadata[ARCHAEOLOGY_DEEP.json]`:
 ```
 assert content, f"{name}: запись с пустым content осталась"
 ```
-Причина: в `ARCHAEOLOGY_DEEP.json` **7 из 8 записей** имеют пустой `content` и `confidence=1.0` — это **нарушает собственный контракт G1** (пустой контент не может иметь `confidence > 0`).
+Причина: в `ARCHAEOLOGY_DEEP.json` **7 из 8 записей** имели пустой `content` и `confidence=1.0` — это **нарушает собственный контракт G1** (пустой контент не может иметь `confidence > 0`). Источник — регрессия `dac1116` (возврат старого WIP-контента при замене абсолютных путей).
+
+**Что сделано 2026-11-01:** удалены 9 пустых зеркал (7 в `ARCHAEOLOGY_DEEP`, 2 в `GEOGRAPHY`), история удаления записана в `_provenance_metadata.notes` обоих файлов; `SCREENPLAY_DIALOGUES.json` зарегистрирован в `PLAIN_LIST_REGISTERS` + реестре классификации (`DERIVED`, не канон), у 3 его пустых записей `confidence` обнулён. Тесты не ослаблялись.
 
 ### 1.3 Что НЕ работает
 
-- Пытание данных: 7 из 8 KNOWLEDGE-файлов содержат **пустые записи с «высокой» уверенностью** — нарушается контракту и не должно попадать в публикацию.
-- `SCREENPLAY_DIALOGUES.json` — пустой каркас, 0 записей с контентом. Включать в публикацию нельзя (направление C: «не считать авторски утверждёнными»).
+- Пытание данных: **частично закрыто 2026-11-01** — зеркала `ARCHAEOLOGY_DEEP`/`GEOGRAPHY` очищены (G1.4). Остаток: в `COSMOLOGY`, `PSYCHOLOGY`, `SYMBOLS_DEEP`, `THEMES_EXPANDED` есть записи без `content` (но с заполненным `layers.literal`) — они НЕ являются ложными утверждениями (контент есть в слоях) и не ловятся тестами G1; решение «(б) обнулить пустые» по ним — **открытый пункт владельца** (§14), в KNOWLEDGE-C не входило.
+- `SCREENPLAY_DIALOGUES.json` — **обновлено 2026-11-01**: 4 из 7 записей содержат контент, 3 пустые — `confidence 0.0`. Классификация `DERIVED`/`requires_author_review=True` (направление C: «не считать авторски утверждёнными») — в публикацию только с авторским ревью (OWNER-GO C).
 - `TECHNOLOGY.json` — существует (MIRRORS), его содержимое не проверял (тест пропускает, если нет `items`).
 
 ### 1.4 Что реализовано частично (W-3)
@@ -63,7 +67,7 @@ assert content, f"{name}: запись с пустым content осталась"
 
 ### 1.6 Как можно безопасно разрешить
 
-**Пункт решения:** не трогать KNOWLEDGE-данные до отдельного этапа C (достоверность данных). Для публикации (G-1) — либо исключить пустые файлы, либо заполнить `confidence=0.0` (законно, но нужно согласовать).
+**Пункт решения:** ~~не трогать KNOWLEDGE-данные до отдельного этапа C~~ → **этап C начат 2026-11-01 (KNOWLEDGE-C):** зеркала A1 и регистрация B1 выполнены по явному OWNER-GO, тесты зелёные. Осталось решение владельца: «(б) обнулить пустые» для `COSMOLOGY`/`PSYCHOLOGY`/`SYMBOLS_DEEP`/`THEMES_EXPANDED` (§14) и авторское ревью содержимого (OWNER-GO C) — **не выполняется автоматически**. Для публикации (G-1) пустые/производные файлы — по реестру `docs/G1_PUBLICATION_REGISTRY_2026-10-30.md`.
 
 ---
 
@@ -82,6 +86,7 @@ assert content, f"{name}: запись с пустым content осталась"
 - **W-4 (относительные импорты `orchestrator`, `provider_registry`) ЗАКРЫТ**: импорт-проверка в пакетном режиме `cd runtime && python -c "import core.orchestrator, core.provider_registry"` → OK; `test_provider_registry` (6/6), `test_provider_fallback` (4/4) и все изоляционные тесты PASSED; ни один из 8 FAIL не относится к импортам. **Записывать W-4 как проверенный — теперь корректно.**
 - **8 FAIL-ов — только KNOWLEDGE-данные (направление C/N-1)**: `test_g1_archaeology_claims` (4: пустые записи `ARCHAEOLOGY_DEEP`/`GEOGRAPHY`), `test_milestone_b` (3: provenance-метаданные), `test_provenance_registry_consistency` (1).
 - **Green baseline = «8 fallback-ошибок данных C»**; остальные тесты зелёные.
+- ✅ **Обновлено 2026-11-01 (KNOWLEDGE-C):** 8 FAIL-ов закрыты (A1 + B1), см. §15.
 
 ### 2.3 Почему это важно
 
@@ -312,7 +317,7 @@ SESSION_SECRET: str = os.getenv("SESSION_SECRET", "")
 
 ### 10.2 Что можно сместить
 
-- **`SCREENPLAY_DIALOGUES.json`** (пустой) — если заполнен данными, создаёт ложное впечатление «скрипт → видео».
+- **`SCREENPLAY_DIALOGUES.json`** — *обновлено 2026-11-01:* файл не пуст (4 из 7 записей с контентом), но классифицирован `DERIVED`/`is_canon=False`/`requires_author_review=True`, поэтому «ложного впечатления канона» не создаёт: он объявлен производным от сценария, авторское ревью обязательно (OWNER-GO C).
 - **ComfyUI (B)** — если подключить к `/book/comfyui/*` без Media-планов, создаёт «видео-ориентацию».
 - **`core/CORE/media/`** — `MediaPlanBuilder` — это нормально (медиа-слой), но не заменяет основные функции.
 
@@ -320,7 +325,7 @@ SESSION_SECRET: str = os.getenv("SESSION_SECRET", "")
 
 - ✅ Основная реализация: **Pulse, World Engine, RAG, Knowledge Core** — работает.
 - ⚠️ **Видео/ComfyUI** — НЕ подключён, не смещает фокус.
-- ⚠️ **SCREENPLAY** — пустой, пока не содержит смещения.
+- ⚠️ **SCREENPLAY** — *обновлено 2026-11-01:* содержит данные (4/7 записей), но не канон (`DERIVED`, `requires_author_review=True`) — смещения фокуса «скрипт → видео» не создаёт.
 
 ---
 
@@ -340,6 +345,8 @@ SESSION_SECRET: str = os.getenv("SESSION_SECRET", "")
 - **Шаг 2:** Зафиксировать карту: какие тесты падают, почему (KNOWLEDGE, integration, drift).
 - **Шаг 3:** Решение по KNOWLEDGE:
   - Вариант 1 (быстрый): В **пустых** KNOWLEDGE-записях (`COSMOLOGY`, `THEMES_EXPANDED`, `SYMBOLS_DEEP`, `SCREENPLAY_DIALOGUES`) — **обнулить `confidence` до 0.0** (нормально, не содержит контента). Это **малый объём**, не «повышает до канона», не «удаляет».
+    - ✅ **`SCREENPLAY_DIALOGUES.json` — ВЫПОЛНЕНО (2026-11-01, KNOWLEDGE-C B1):** 3 пустые записи → `confidence 0.0`, записи сохранены (не удалены).
+    - ⏳ **`COSMOLOGY`, `THEMES_EXPANDED`, `SYMBOLS_DEEP` (+ обнаружен `PSYCHOLOGY`) — НЕ выполнялось:** у этих записей пуст только `content`, а `layers.literal` заполнен у всех записей с `confidence > 0` → ложной уверенности нет (контент есть в слоях). Формальное решение «обнулить или нет» остаётся за владельцем (§14 «(б)») и в KNOWLEDGE-C не входило.
   - Вариант 2 (полный): Заполнить данные KNOWLEDGE — отдельный трек C (не сейчас).
 
 **Результат:** Green baseline, можно переходить к N-3.
@@ -440,12 +447,34 @@ SESSION_SECRET: str = os.getenv("SESSION_SECRET", "")
 
 ## 14. Единый следующий шаг — P0: Завершить полный прогон + Обнулить пустые confidence
 
+> ✅ **Статус 2026-11-01 (KNOWLEDGE-C):** (а) полный прогон повторён после исправления; (б) **выполнено для `SCREENPLAY_DIALOGUES.json`** (3 пустые записи → `confidence 0.0`); для `COSMOLOGY`/`THEMES_EXPANDED`/`SYMBOLS_DEEP`/`PSYCHOLOGY` решение НЕ принималось — у них `layers.literal` заполнен (см. §11.1 Вариант 1), вопрос оставлен владельцу; (в) `test_g1_archaeology_claims.py` — проходит. Подробности — §15.
+
 **Решение владельца требуется для:**
 
 - **(а) Green baseline** — запустить полный прогон и зафиксировать карту.
-- **(б) Обнулить пустые KNOWLEDGE** — в пустых записях (`COSMOLOGY`, `THEMES_EXPANDED`, `SYMBOLS_DEEP`, `SCREENPLAY_DIALOGUES`) — `confidence: 0.0` (не удалять, не повышать до канона, не менять контент). Это **малый объём**, согласуется с ориентиром C («не считать авторски утверждёнными»).
+- **(б) Обнулить пустые KNOWLEDGE** — в пустых записях (`COSMOLOGY`, `THEMES_EXPANDED`, `SYMBOLS_DEEP`, `SCREENPLAY_DIALOGUES`) — `confidence: 0.0` (не удалять, не повышать до канона, не менять контент). Это **малый объём**, согласуется с ориентиром C («не считать авторски утверждёнными»). *(`SCREENPLAY_DIALOGUES` ✅ выполнен 2026-11-01; для остальных трёх + `PSYCHOLOGY` уточнено: контент в `layers` — решение за владельцем.)*
 - **(в) Green baseline** — подтвердить, что `test_g1_archaeology_claims.py` проходит.
 
 **Результат:** Backend-тесты **100% проходят** → можно двигаться к P2 (A: OAuth).
 
 **После:** P2 (A) → P3 (E) → P4 (B, SEC-6, параллельно) → P5 (D) → P6 (G-1).
+
+---
+
+## 15. KNOWLEDGE-C — исправление 8 падающих тестов (2026-11-01, OWNER-GO: A1 + B1)
+
+**Решения владельца:** A1 — удалить пустые зеркала (точное восстановление G1.4); B1 — зарегистрировать `SCREENPLAY_DIALOGUES.json` в `PLAIN_LIST_REGISTERS` + реестре классификации, обнулить `confidence` у 3 пустых записей. Тесты не ослаблялись, формат JSON-массива сохранён (не оборачивался в `{items, item_count}`).
+
+| Что | Сделано |
+|---|---|
+| `ARCHAEOLOGY_DEEP.json` (A1) | 8 → **1 запись**: удалены 7 пустых зеркал (`ARCHAEOLOGY.json.sites[0..6]`, `content: ""`, `confidence: 1.0`); в `_provenance_metadata.notes` дописана история удаления (регрессия `dac1116`, восстановлено G1.4) |
+| `GEOGRAPHY.json` (A1) | 19 → **17 записей**: удалены 2 пустых зеркала (`sites[3]`, `sites[4]`); история удаления — в `notes` |
+| `SCREENPLAY_DIALOGUES.json` (B1) | формат **не изменён** (JSON-массив, 7 записей сохранены); у 3 пустых записей `confidence` → `0.0` (записи НЕ удалялись — по §11.1/§14 «(б)»); 4 записи с контентом не тронуты |
+| `test_milestone_b.py` (B1) | `SCREENPLAY_DIALOGUES.json` добавлен в `PLAIN_LIST_REGISTERS` с документированным обоснованием: массив не может нести файл-уровневый `_provenance_metadata`, обёртка запрещена guard'ом — это **регистрация ограничения формата готовым механизмом**, не ослабление проверки |
+| `test_provenance_registry_consistency.py` | `SCREENPLAY_DIALOGUES.json` **добавлен** в параметры `test_top_level_arrays_stay_arrays` — усиление guard'а: массив защищён от будущей обёртки |
+| `knowledge_classification.py` (реестр) | новая запись: `DERIVED`, `is_canon=False`, `requires_author_review=True` (ориентир C — не считать авторски утверждённым), описание контракта хранения |
+| Целевые тесты | 3 файла (`test_g1_archaeology_claims`, `test_milestone_b`, `test_provenance_registry_consistency`): **8/8 падений закрыты** (53 passed, 1 skipped) |
+| Полный backend-прогон | **3103 passed, 2 failed, 26 skipped, 2 deselected** (680 с, 2026-11-01). Исходные 8 FAIL → **0**. **2 оставшихся FAIL — pre-existing и НЕ относятся к KNOWLEDGE-C**: `test_knowledge_card_book_os.py::test_book_os_claims_in_card` и `::test_book_os_fact_store_by_entity` — проверено эмпирически: на чистом HEAD (мои 6 файлов временно откатены) эти же 2 теста падают. Причина — локальный корпус `core/OS_DATA/graph` (gitignored, наполняется ingest-пайплайном): сущность «Аркаим» есть, фактов для неё нет. Вероятно, на прогонах 2026-10-30 эти тесты пропускались (корпус отсутствовал) — точный пересчёт старых skipped-чисел в документах неоднозначен |
+| `ruff check` | ✅ `cd runtime && ruff check .` → **All checks passed**; отдельно `core/CORE/narrative_engine/provenance/knowledge_classification.py` → **All checks passed** |
+
+**Что НЕ делалось (границы):** тесты не ослаблялись и не удалялись; DERIVED/реконструкции не повышались до CANON; пустые записи `SCREENPLAY_DIALOGUES` не удалялись; `COSMOLOGY`/`PSYCHOLOGY`/`SYMBOLS_DEEP`/`THEMES_EXPANDED` не трогались (контент у них в `layers`, решение «(б)» — за владельцем, §14); push/GitHub не выполнялись; старый проект `C:\proect_arkaim\arkaim` не изменялся.
