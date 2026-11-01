@@ -296,6 +296,7 @@ arkaim-book/                     # новая чистая история
 | D-2 | **`python-jose` 3.5.0 `at_hash`-проверка требует access_token** | `runtime/auth/oauth/google.py:91-97` | **Закрыто 2026-11-01** (`74ee80c`): `options={"verify_at_hash": False}` в `jwt.decode` — стандарт для prompt=none flows без access_token. Тесты auth 83/83, 3 skipped. |
 | D-3 | **`verify_google_id_token` — async без `await`** | `runtime/auth/routes.py:193` | **Закрыто 2026-11-01** (`2060e4d`): `payload = await verify_google_id_token(id_token)`. Тесты auth 83/83. |
 | D-4 | **W-9: `EntityExtractor` дубликаты имён при повторном ingest** | `runtime/CORE/book_os/pipeline/extractors.py` | **ОТКЛАДЕНО** (OWNER-GO 2026-11-01): вернуться при устойчивости повторных сборок Book OS. Детали в §5 W-9. |
+| D-5 | **Google-логин redirect на backend `/profile` (404)** | `runtime/auth/routes.py:209` | **Закрыто 2026-11-02** (`5d63199`): redirect на `f"{settings.FRONTEND_URL}/profile"` (по умолчанию `http://localhost:3000/profile`). Cookie `arkaim_session` остаётся в браузере на backend-домене `localhost:8642` и читается через API-прокси фронтенда. Тесты auth 83/83. |
 
 ---
 
