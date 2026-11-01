@@ -88,12 +88,15 @@ async def verify_google_id_token(id_token: str) -> dict[str, Any]:
             raise GoogleOAuthError("Ключ подписи Google не найден в JWKS")
 
         # Верифицируем подпись + audience + issuer
+        # options: verify_at_hash=False — Google отдаёт at_hash в ID-токене, но без access_token
+        # в code-flow, поэтому at_hash-проверку отключаем (стандарт для prompt=none flows).
         payload = jwt.decode(
             id_token,
             signing_key,
             algorithms=["RS256"],
             audience=client_id,
             issuer=("https://accounts.google.com", "accounts.google.com"),
+            options={"verify_at_hash": False},
         )
         return payload
     except JWTError as e:
