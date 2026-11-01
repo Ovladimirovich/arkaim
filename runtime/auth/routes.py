@@ -171,6 +171,53 @@ async def dev_generate_token(request: Request):
     return {"token": token, "login_url": f"/login?token={token}", "role": role}
 
 
+@router.post("/dev/bootstrap-owner")
+async def dev_bootstrap_owner(request: Request):
+    """ТОЛЬКО для локального bootstrapping владельца: назначить admin роль
+    конкретному Google-UID через owner-bound invite.
+
+    Маршрут активен ТОЛЬКО при явном флаге ``DEV_AUTH_ENABLED=true``.
+    В production (флаг выключен) — 404, секретов не раскрывает.
+
+    Body: {"provider": "google", "provider_user_id": "...", "role": "admin"}
+    Создаёт owner-bound invite (bind_provider + bind_provider_user_id),
+    который автоматически применяется в google_callback без use_count.
+
+    Это НЕ выдаёт admin всем Google — только конкретному UID, который
+    владелец фиксирует вручную. Обычный upsert (reader) не затронут.
+    """
+    if not settings.DEV_AUTH_ENABLED:
+        raise HTTPException(status_code=404, detail="Not Found")
+
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    if not isinstance(body, dict):
+        body = {}
+
+    provider = body.get("provider", "google")
+    provider_user_id = str(body.get("provider_user_id", "")).strip()
+    role = body.get("role", "admin")
+
+    if role not in ("reader", "editor", "admin"):
+        raise HTTPException(status_code=400, detail="Недопустимая роль")
+    if not provider_user_id:
+        raise HTTPException(status_code=400, detail="provider_user_id обязателен")
+
+    invite = await user_store.create_owner_bound_invite(
+        bind_provider=provider,
+        bind_provider_user_id=provider_user_id,
+        role=role,
+        note=body.get("note", "owner bootstrap"),
+    )
+    log.info(
+        "owner_bootstrap invite_id=%s provider=%s puid=%s role=%s",
+        invite["id"], provider, provider_user_id, role,
+    )
+    return {"ok": True, "invite": invite}
+
+
 @router.get("/google")
 async def google_login():
     redirect_uri = f"{settings.PUBLIC_BASE_URL}/auth/google/callback"
@@ -199,6 +246,14 @@ async def google_callback(request: Request, code: str | None = None):
             display_name=google_data.get("display_name"),
             role="reader",
         )
+        # D-6: owner-bound invite — если владелец создал привязанный admin-инвайт
+        # для своего Google-UID, роль пересматривается без изменения use_count.
+        bound = await user_store.find_bound_invite(
+            google_data["provider"], google_data["provider_user_id"]
+        )
+        if bound:
+            await user_store.set_role(user["id"], bound["role"])
+            user = await user_store.get_user(user["id"]) or user
         token = create_access_token(
             subject=user["id"],
             role=user["role"],

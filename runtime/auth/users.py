@@ -56,7 +56,9 @@ class UserStore:
                     expires_at TEXT,
                     is_active BOOLEAN NOT NULL DEFAULT 1,
                     created_at TEXT NOT NULL,
-                    note TEXT DEFAULT ''
+                    note TEXT DEFAULT '',
+                    bind_provider TEXT,
+                    bind_provider_user_id TEXT
                 );
                 CREATE INDEX IF NOT EXISTS idx_invites_token ON invites(token);
                 CREATE INDEX IF NOT EXISTS idx_invites_active ON invites(is_active);
@@ -353,3 +355,56 @@ class UserStore:
         )
         await self._conn.commit()
         return cursor.rowcount > 0
+
+    # ── Owner-bound invites (D-6) ──────────────────────────
+
+    async def create_owner_bound_invite(
+        self,
+        bind_provider: str,
+        bind_provider_user_id: str,
+        role: str = "admin",
+        created_by: str = "owner-bootstrap",
+        note: str = "",
+    ) -> dict:
+        """Создать привязанный owner-инвайт для конкретного Google-UID.
+
+        max_uses=0 означает "без ограничения" (не деактивируется по use_count,
+        см. find_bound_invite). Не влияет на обычных invites.
+        """
+        import secrets
+
+        await self._ensure_db()
+        invite_id = uuid.uuid4().hex
+        token = secrets.token_urlsafe(32)
+        now = datetime.now(tz=timezone.utc).isoformat()
+        await self._conn.execute(
+            "INSERT INTO invites "
+            "(id, token, created_by, role, max_uses, expires_at, created_at, note, bind_provider, bind_provider_user_id) "
+            "VALUES (?, ?, ?, ?, 0, NULL, ?, ?, ?, ?)",
+            (invite_id, token, created_by, role, now, note, bind_provider, bind_provider_user_id),
+        )
+        await self._conn.commit()
+        return {
+            "id": invite_id,
+            "token": token,
+            "role": role,
+            "bind_provider": bind_provider,
+            "bind_provider_user_id": bind_provider_user_id,
+            "created_at": now,
+            "note": note,
+        }
+
+    async def find_bound_invite(self, provider: str, provider_user_id: str) -> dict | None:
+        """Найти активный привязанный инвайт для provider+provider_user_id.
+
+        Возвращает роль. Если инвайт привязан и активен (is_active=1) —
+        его роль применяется при Google-входе, без изменения use_count.
+        Обычные (непривязанные) инвайты в этом методе не участвуют.
+        """
+        await self._ensure_db()
+        cursor = await self._conn.execute(
+            "SELECT role FROM invites WHERE bind_provider = ? AND bind_provider_user_id = ? AND is_active = 1 LIMIT 1",
+            (provider, provider_user_id),
+        )
+        row = await cursor.fetchone()
+        return dict(row) if row else None
