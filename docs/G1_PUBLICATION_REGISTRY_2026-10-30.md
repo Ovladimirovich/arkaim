@@ -283,3 +283,29 @@ arkaim-book/                     # новая чистая история
 **Дополнение (2026-11-01, OWNER-GO «локальная пересборка Book OS»):** оставшиеся 2 pre-existing FAIL устранены **не кодом, а восстановлением локального генерируемого корпуса**: выполнен бэкап `core/OS_DATA/graph` (`core/OS_DATA/_backup/graph_20261101_231109/` + копия во внешнем temp), затем штатный ingest `core/SOURCE_OF_TRUTH/BOOK/КНИГА.md` через `BookOSProvider.ingest_document` (тот же код, что CLI `book_os.cli ingest`): **+192 сущности, +157 фактов, +300 связей, 1 чанк**; существующие 166 сущностей `knowledge_*` **сохранены** (аддитивный режим, дубликаты имён — известный квирк `EntityExtractor`, не устранялся). У сущности «Аркаим» появились факты (`Тема 'Аркаим' раскрывается в главе КНИГА` — извлечённые пайплайном, не искусственные). Целевые тесты — **6 passed**, полный прогон — **3105 passed, 0 failed, 26 skipped, 2 deselected** (646 с). В git-commits попала только эта документация: `OS_DATA`/`CHROMA_DB` gitignored, содержимое корпуса — локальные генерируемые данные.
 
 **Статус дополнения:** **DONE**; весь backend — **0 failed**.
+
+---
+
+## 13. Known-defects — реестр известных дефектов (зафиксировано, не блокирует)
+
+> Записи D-1…D-4 — OWNER-GO «дедупликация отложена» (W-9) + 2 закрытых дефекта в Google OAuth (D-2, D-3). Не начинать отдельной задачей W-9 (см. §5).
+
+| # | Дефект | Где | Детали |
+|---|---|---|---|
+| D-1 | (placeholder) | — | — |
+| D-2 | **`python-jose` 3.5.0 `at_hash`-проверка требует access_token** | `runtime/auth/oauth/google.py:91-97` | **Закрыто 2026-11-01** (`74ee80c`): `options={"verify_at_hash": False}` в `jwt.decode` — стандарт для prompt=none flows без access_token. Тесты auth 83/83, 3 skipped. |
+| D-3 | **`verify_google_id_token` — async без `await`** | `runtime/auth/routes.py:193` | **Закрыто 2026-11-01** (`2060e4d`): `payload = await verify_google_id_token(id_token)`. Тесты auth 83/83. |
+| D-4 | **W-9: `EntityExtractor` дубликаты имён при повторном ingest** | `runtime/CORE/book_os/pipeline/extractors.py` | **ОТКЛАДЕНО** (OWNER-GO 2026-11-01): вернуться при устойчивости повторных сборок Book OS. Детали в §5 W-9. |
+
+---
+
+## 14. Открытые для публикации (не закрыты)
+
+> Заполняется при OWNER-GO. На 2026-11-01:
+
+| # | Что | Владелец | Статус |
+|---|---|---|---|
+| O-1 | **Google OAuth — полный ручной вход (live)** | ** OWNER-GO A** (выполняется пользователем, не автоматизируется) | **AUTO-часть PASS** (`oauth_verify.py` 5/5), **MANUAL-часть** — пользователь делает Google-логин через кнопку на `/login` → `/profile` |
+| O-2 | W-5 (mobile dev-кнопка) | OWNER-GO E | не выполнен |
+| O-3 | W-9 (дедуп `EntityExtractor`) | OWNER-GO D / отложен | см. §5 W-9 |
+| O-4 | D-1 (placeholder) | — | — |
