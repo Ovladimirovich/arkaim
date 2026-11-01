@@ -206,7 +206,11 @@ async def google_callback(request: Request, code: str | None = None):
             expires_delta=timedelta(hours=12),
         )
         is_secure = bool(settings.PUBLIC_BASE_URL.startswith("https://"))
-        resp = RedirectResponse(url="/profile")
+        # REDIReCT на frontend (FRONTEND_URL / profile), а не на backend /profile (404).
+        # Cookie "arkaim_session" (path=/, domain=localhost:8642) остаётся в браузере
+        # и читается через API-прокси фронтенда.
+        frontend_base = settings.FRONTEND_URL.rstrip("/")
+        resp = RedirectResponse(url=f"{frontend_base}/profile")
         resp.set_cookie(
             "arkaim_session",
             token,
