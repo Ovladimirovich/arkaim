@@ -368,4 +368,11 @@ arkaim-book/                     # новая чистая история
 2. Перед пушем: собрать контрольный скрипт проверки секретов (grep по индексу на токены/ключи; SEC-6 уже закрыт, но повторить перед публикацией).
 3. Локальная копия остаётся master; прежние артефакты (`arkaim` старый, `Arkaim_Backup_2026-10-30`) не трогать.
 4. Метка/преддверие: создать `tag pretrained-publication` (опционально) для фиксации точки.
-5. Push только при OWNER-GO на публикацию.
+**5. Push только при OWNER-GO на публикацию.**
+
+**Статус 2026-11-02**: предпубликационная подготовка завершена (OWNER-GO без push):
+- 6 временных логов удалены (`arkaim-web/{install_web_log,lint_log,vitest_log}.txt`, `runtime/{g1_ruff,g1_test_output,install_log}.txt`); 7 CRLF-артефактов `core/KNOWLEDGE/*.json` не тронуты.
+- Secret-scan: **0 реальных секретов** в закоммиченном коде; `.env`/`.env.*` (кроме `.env.example`), `core/OS_DATA/`, `core/CHROMA_DB/`, `node_modules/`, `.venv/` — gitignored.
+- Состав репо: 1914 tracked-файла (core 526, runtime 393, arkaim-web 217, docs 212, arkaim-mobile 32, scripts 33, tests 10, .github 6).
+- Контрольная пересборка в clean-клоне: **клон создан** в `C:\Users\1\AppData\Local\Temp\opencode\arkaim-clean-clone` (0 локальных данных); **сама пересборка не выполнена** — требует `.env` с реальными секретами (вне скоупа предпубликационной подготовки).
+- Полное описание, риски и открытые вопросы — `docs/PRE_PUBLICATION_CHECKLIST.md`.
