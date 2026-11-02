@@ -295,7 +295,7 @@ arkaim-book/                     # новая чистая история
 | D-1 | (placeholder) | — | — |
 | D-2 | **`python-jose` 3.5.0 `at_hash`-проверка требует access_token** | `runtime/auth/oauth/google.py:91-97` | **Закрыто 2026-11-01** (`74ee80c`): `options={"verify_at_hash": False}` в `jwt.decode` — стандарт для prompt=none flows без access_token. Тесты auth 83/83, 3 skipped. |
 | D-3 | **`verify_google_id_token` — async без `await`** | `runtime/auth/routes.py:193` | **Закрыто 2026-11-01** (`2060e4d`): `payload = await verify_google_id_token(id_token)`. Тесты auth 83/83. |
-| D-4 | **W-9: `EntityExtractor` дубликаты имён при повторном ingest** | `core/CORE/book_os/pipeline/extractors.py` | **Закрыто 2026-11-02** (`extract` использует `existing_entities`, возвращает существующую сущность с прежним `id`; регрессионные тесты `test_book_os_entity_dedup.py` 6 passed, ruff чист). Детали в §5 W-9. |
+| D-4 | **W-9: `EntityExtractor` дубликаты имён при повторном ingest** | `core/CORE/book_os/pipeline/extractors.py` | **Закрыто 2026-11-02** (`e699531`: `extract` использует `existing_entities`, возвращает существующую сущность с прежним `id`; регрессионные тесты `test_book_os_entity_dedup.py` 6 passed, ruff чист). Детали в §5 W-9. |
 | D-5 | **Google-логин redirect на backend `/profile` (404)** | `runtime/auth/routes.py:209` | **Закрыто 2026-11-02** (`5d63199`): redirect на `f"{settings.FRONTEND_URL}/profile"` (по умолчанию `http://localhost:3000/profile`). Cookie `arkaim_session` остаётся в браузере на backend-домене `localhost:8642` и читается через API-прокси фронтенда. Тесты auth 83/83. |
 
 ---
@@ -310,3 +310,61 @@ arkaim-book/                     # новая чистая история
 | O-2 | W-5 (mobile dev-кнопка) | OWNER-GO E | не выполнен |
 | ~~O-3~~ | ~~W-9 (дедуп `EntityExtractor`)~~ | ~~OWNER-GO D / отложен~~ | ✅ **ЗАКРЫТ 2026-11-02** — см. §5 W-9 / §13 D-4 (код + 6 регрессионных тестов) |
 | O-4 | D-1 (placeholder) | — | — |
+
+---
+
+## 15. Подготовка к новому GitHub-проекту (2026-11-02, OWNER-GO «подготовка картины»)
+
+> Задача: достоверная и полная картина состояния перед созданием нового репозитория.
+> **Ничего не исправлялось автоматически; репозиторий не создавался; push/история не менялись.**
+
+### 15.1 Завершённые работы (внесены, коммиты + тестирование)
+
+| Этап | Коммиты | Результат тестирования |
+|---|---|---|
+| **Google OAuth 501→рабочий вход, owner-admin** | `2060e4d`, `74ee80c`, `5d63199`, `13bf112` (+docs `25bb53c`, `955dc20`, `9d2a9e0`) | auth-тесты **83 passed / 3 skipped**; D-2…D-7 закрыты; `POST /auth/dev/bootstrap-owner` (только при `DEV_AUTH_ENABLED=true`); owner-bound invite привязан к Google-UID; подтверждено владельцем: вход прошёл, Studio видна (O-1 ✅) |
+| **KNOWLEDGE-C 8/8 FAIL** | `9b3c4c4` (+Book OS пересборка `9e7aed8`) | полный прогон 2026-11-01: **3105 passed, 0 failed**, 26 skipped; целевые 3 файла — 53 passed/1 skipped; повторно подтверждено 2026-11-02 (33 passed точечно) |
+| **W-9 / D-4 дедуп `EntityExtractor`** | `e699531` | 6 новых регрессионных тестов (`test_book_os_entity_dedup.py`), 105 смежных зелёных (карточки/граф/PDF-ингест/discovery/llm-provenance); ruff чист |
+| Crylllic-filenames (mojibake) восстановление, guard ComfyUI | `bfcad4a` | полный прогон S-2 |
+| Чистый снимок arkaim-book (G-1) | `81069d0` | SEC-6 аудит секретов закрыт (`41a2e1f` в истории аркаим; в снимке секретов нет) |
+
+### 15.2 Открытые вопросы (зарегистрировать; НЕ исправлять автоматически)
+
+| # | Что | Where | Статус/решение |
+|---|---|---|---|
+| **R-1 (новое, важно)** | **Живой механизм регрессии «пустых зеркал»**: scheduled `knowledge_expansion_check` (интервал 3600s) пересоздаёт пустые зеркала `content:""` c `confidence:1.0` из `ARCHAEOLOGY.json.sites[N]`. Установлено по `added_at` в незакоммиченном diff: 00:38:40–41. В рабочей копии **незакоммичено**: `ARCHAEOLOGY_DEEP.json` +7 зеркал (+217 строк), `GEOGRAPHY.json` +2 зеркала (+62 строки). Это объясняет первопричину регрессий (dac1116 и нынешнюю). НЕ удалять/не править — фиксация; зеркало-регрессия вернётся до устранения механизма | `core/KNOWLEDGE/{ARCHAEOLOGY_DEEP,GEOGRAPHY}.json`; scheduled-задача в `runtime` (knowledge_expansion, каждый час; см. логи 00:38/01:38/02:38/03:38) | **требует решения владельца** (устранить источник регенерации — отдельным этапом; в текущей сессии зна­ние-задача только реестр) |
+| R-2 | **128 исторических дубликатов** имён в локальном корпусе `OS_DATA/graph/entities.json` (358 записей, 230 уникальных имён) — данные прошлых сборок до W-9 фикса; gitignored, генерируемые | `core/OS_DATA/graph/entities.json` | W-9 закрыл создание новых; исторические — чистая пересборка корпуса (решение владельца) |
+| R-3 | **Неидемпотентность `populate_from_genome`** (`knowledge_graph/populate.py`): свежие UUID при каждом запуске → повторы; другой путь создания сущностей, вне скоупа W-9 | `core/CORE/knowledge_graph/populate.py` | кандидат при ревизии устойчивости сборок |
+| O-2 | W-5 (mobile dev-login + `shared/api` tsc-баррел) | arkaim-mobile | OWNER-GO E |
+| — | Called records `content:""` + `layers.literal` заполнен у 69 записей в 4 файлах (COSMOLOGY/PSYCHOLOGY/SYMBOLS_DEEP/THEMES_EXPANDED) — вопрос trusting data; обнулять ли `confidence` | §12 открытый вопрос | требует решения владельца |
+| — | OAuth `state` (CSRF) не генерируется/не проверяется | §11.2 | не блокер; до публикации желательно закрыть |
+
+### 15.3 Синхронизация проекта (аудит, ничего не изменено)
+
+| Позиция | Факт |
+|---|---|
+| Основная рабочая копия | `C:\proect_arkaim\arkaim-book` — единственная рабочая точка (2,7 GB) |
+| Git-история | **15 коммитов**, ветка `master`, remote не настроен; HEAD = `e699531`; `.git` = 7,6 MB (история лёгкая, перенос тривиален) |
+| Tracked files | 1909 |
+| Незакоммиченные изменения | 7 файлов `core/KNOWLEDGE/*.json` со статусом `M`: 5 — CRLF-артефакт (diff пуст: COSMOLOGY, CROSS_REFERENCES_DEEP, PHILOSOPHY_DEEP, SYMBOLS_DEEP, THEMES_EXPANDED); **2 — реальные** (R-1: зеркала от шедулера, не трогать) |
+| Untracked (мусор E-2 стиль) | 6 лог-файлов: `arkaim-web/{install_web_log,lint_log,vitest_log}.txt`, `runtime/{install_log,g1_ruff,g1_test_output}.txt` — в репозиторий не включать |
+| Ignored, но ценные локальные данные | `runtime/.env` (OAuth-секреты, gitignored, **не переносить**); `core/OS_DATA/` 0,4 MB + `core/CHROMA_DB/` 20,4 MB (генерируемый корпус); `runtime/memory/data/` 3,4 MB (`auth.db` с owner-invite — персональные данные, локально); `runtime/logs/`, `runtime/.venv` 1,3 GB |
+| Резервные копии | `C:\proect_arkaim\Arkaim_Backup_2026-10-30` (5,8 GB, вне git, НЕ трогать); `C:\proect_arkaim\arkaim` (5,7 GB — архив, только чтение); `C:\proect_arkaim\arkaim-legacy` (по решению владельца не трогать) |
+| Документация | `docs/` — 69 файлов + реестр G1 (главный статус-документ); `AGENTS.md`, `CHANGELOG.md`, `CONTRIBUTING.md`, `LICENSE`, `README*.md` |
+
+### 15.4 План нового GitHub-репозитория (предложение, без выполнения)
+
+**Структура нового репо**: = текущая структура `arkaim-book` (1909 файла, .gitignore С-14 уже готов): `runtime/` (backend), `arkaim-web/`, `arkaim-mobile/`, `core/` (Pulse+ knowledge), `SCHEMAS/`, `docs/`, `scripts/`, `notebooks/`, `.github/workflows`, Makefile, Docker-файлы — ничего перекомпоновать не требуется (решение S-14 о перемещении корневых отчётов в `docs/` — опционально при сборке).
+
+**Перечень исходных файлов**: по реестру §2 S-1…S-14 (книга-знания, геном, backend, web, mobile, CI, доки) — уже согласованы ранее; исключения E-1…E-10 структурированы.
+
+**Обязательно исключаемые** (проверка при сборке): `runtime/.env` (+ любые `*.env` кроме `.env.example`), `core/OS_DATA/`, `core/CHROMA_DB/`, `runtime/memory/data/*.db`, `node_modules/`, `.venv/`, логи (`*.txt`-отчёты, `*.log`), `runtime/test_reports/`,`.pytest_cache`/`.ruff_cache`/`__pycache__`, W-8: геном-история 46→6 (дедуп. вариант по OWNER-GO D).
+
+**Обязательная документация при публикации**: `README.md`, `AGENTS.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `LICENSE`, `docs/G1_PUBLICATION_REGISTRY_2026-10-30.md` (реестр). Опционально: сжатый отчёт REPORT.md / README_BRIEF.
+
+**План переноса истории и сохранения локальной копии**:
+1. Ничего не менять локально: рабочая копия остаётся; новый remote добавить и `git push` (история 15 коммитов перенесётся полностью, ~7,6 MB).
+2. Перед пушем: собрать контрольный скрипт проверки секретов (grep по индексу на токены/ключи; SEC-6 уже закрыт, но повторить перед публикацией).
+3. Локальная копия остаётся master; прежние артефакты (`arkaim` старый, `Arkaim_Backup_2026-10-30`) не трогать.
+4. Метка/преддверие: создать `tag pretrained-publication` (опционально) для фиксации точки.
+5. Push только при OWNER-GO на публикацию.
