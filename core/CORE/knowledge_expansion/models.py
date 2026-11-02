@@ -2,7 +2,6 @@
 Models — 데이터 모델ы для Knowledge Expansion Pipeline.
 """
 from dataclasses import dataclass, field
-from typing import Any, Optional
 from pathlib import Path
 
 
@@ -13,7 +12,8 @@ class RawKnowledge:
     topic: str                       # Тема
     content: str                     # Содержание
     metadata: dict = field(default_factory=dict)  # Доп. данные
-    confidence: float = 1.0          # Уверенность (0-1)
+    confidence: float = 0.0          # Уверенность (0-1); 0.0 = сведений нет
+                                     # (автоподстановка 1.0 запрещена: R-1/G1.4)
 
 
 @dataclass
@@ -27,7 +27,9 @@ class EnrichedKnowledge:
     patterns: list[str] = field(default_factory=list)  # Обнаруженные паттерны
     connections: list[dict] = field(default_factory=list)  # Связи с другими знаниями
     metadata: dict = field(default_factory=dict)
-    confidence: float = 1.0
+    # Default: 0.0. Автоматически присваивать 1.0 запрещено:
+    # наличие записи в источнике — не подтверждение знания (R-1).
+    confidence: float = 0.0
 
 
 @dataclass
@@ -42,7 +44,9 @@ class LinkedKnowledge:
     connections: list[dict] = field(default_factory=list)
     graph_links: list[dict] = field(default_factory=list)  # Связи с KG
     metadata: dict = field(default_factory=dict)
-    confidence: float = 1.0
+    # Default: 0.0. Автоматически присваивать 1.0 запрещено:
+    # наличие записи в источнике — не подтверждение знания (R-1).
+    confidence: float = 0.0
 
 
 @dataclass
@@ -59,7 +63,9 @@ class ValidatedKnowledge:
     validation_score: float = 1.0   # Оценка качества (0-1)
     duplicates_found: list[str] = field(default_factory=list)  # Найденные дубли
     metadata: dict = field(default_factory=dict)
-    confidence: float = 1.0
+    # Default: 0.0. Автоматически присваивать 1.0 запрещено:
+    # наличие записи в источнике — не подтверждение знания (R-1).
+    confidence: float = 0.0
 
 
 @dataclass

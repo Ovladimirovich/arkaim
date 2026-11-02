@@ -18,7 +18,7 @@ class JSONExtractor(BaseExtractor):
     async def extract(self, source: Any) -> list[RawKnowledge]:
         """
         Извлечь знания из JSON-файла.
-        
+
         Args:
             source: Path к JSON-файлу или dict с данными
         """
@@ -59,7 +59,31 @@ class JSONExtractor(BaseExtractor):
         layers = data.get("layers", {})
         cross_refs = data.get("cross_references", data.get("related", []))
 
-        if topic or content:
+        # R-1: «пустое зеркало» — dict с именем (name), но без содержимого.
+        # Наличие записи в источнике — НЕ подтверждение знания, поэтому такая
+        # запись экстрактором не создаётся (зеркала в ARCHAEOLOGY_DEEP /
+        # GEOGRAPHY появлялись именно из-за отсутствия этого условия).
+        layer_literal = layers.get("literal", "") if isinstance(layers, dict) else ""
+        has_content = bool(str(content or "").strip() or str(layer_literal or "").strip())
+
+        # R-1: confidence берём ТОЛЬКО из источника, если тот её объявил.
+        # Подставлять 1.0 автоматически запрещено; при отсутствии сведений
+        # действует честный default модели (0.0).
+        src_confidence = data.get("confidence")
+        try:
+            src_confidence = float(src_confidence) if src_confidence is not None else None
+        except (TypeError, ValueError):
+            src_confidence = None
+        if src_confidence is not None and not (0.0 <= src_confidence <= 1.0):
+            log.warning(
+                "invalid_source_confidence source=%s value=%s", source, src_confidence
+            )
+            src_confidence = None
+
+        if (topic or content) and has_content:
+            kwargs: dict[str, Any] = {}
+            if src_confidence is not None:
+                kwargs["confidence"] = src_confidence
             results.append(RawKnowledge(
                 source=source,
                 topic=str(topic),
@@ -69,7 +93,10 @@ class JSONExtractor(BaseExtractor):
                     "cross_references": cross_refs,
                     "keys": list(data.keys()),
                 },
+                **kwargs,
             ))
+        elif topic and not has_content:
+            log.info("empty_mirror_skipped source=%s topic=%s", source, topic)
 
         # Рекурсивно обработать вложенные объекты
         for key, value in data.items():

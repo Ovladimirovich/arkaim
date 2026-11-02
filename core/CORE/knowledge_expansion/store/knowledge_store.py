@@ -60,6 +60,18 @@ class KnowledgeStore(BaseStore):
 
         # Добавить новые знания
         for item in validated:
+            # R-1: единственная точка записи в KNOWLEDGE-файлы. Запись без
+            # содержания не сохраняется независимо от extractor'а — защита
+            # от «пустых зеркал» из любого пути записи (extractor, future paths).
+            # provenance записи в источнике ≠ знание.
+            if not str(item.content or "").strip():
+                items_skipped += 1
+                log.warning(
+                    "empty_content_skipped topic=%s source=%s",
+                    item.topic,
+                    item.source,
+                )
+                continue
             entry = {
                 "topic": item.topic,
                 "content": item.content,
