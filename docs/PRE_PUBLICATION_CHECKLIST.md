@@ -140,36 +140,70 @@ python -m book_os.cli index chunks.json  # (или build_bm25_index через p
 ### Статус выполнения
 
 - **Клон создан и изолирован** (проверено выше).
-- **Саму пересборку НЕ выполнять** — по заданию: «Саму контрольную пересборку выполнить только в изолированном клоне» — клон готов, но запуск требует `pip install` + `.env` (реальные секреты), что выходит за рамки предпубликационной подготовки без отдельного OWNER-GO.
-- **Причина не выполнять сейчас**: (1) `requirements.txt` устанавливает ~300 пакетов (время + ресурсы); (2) `.env` требует заполнения реальных секретов (`SESSION_SECRET`, `GIGACHAT_CLIENT_SECRET` и др.), которые **не должны** входить в public-репо; (3) ингест + ChromaDB — полный цикл, который должен быть финальной pre-publication smoke-проверкой **после** публикации, не в ходе подготовки.
+- **НЕ копировались реальные production-секреты из `.env`** — вместо локального `.env` (с `DEV_AUTH_ENABLED=true`, `HERMES_API_KEY`, `TELEGRAM_BOT_TOKEN`, `GOOGLE_CLIENT_ID/SECRET`) в clone помещён **безопасный тестовый** `runtime/.env.rebuild-test` (копирован как `runtime/.env`): `SESSION_SECRET` — случайный 52-символьный тестовый, `DEV_AUTH_ENABLED=false`, остальные LLM/TG/Google-ключи — **пустые заглушки** (внешние credentials для независимой части не нужны).
+- **Независимая часть пересборки ВЫПОЛНЕНА в clean-клоне** (без обращения к живой базе):
+
+| Шаг | Результат |
+|---|---|
+| `IngestionOrchestrator.ingest(КНИГА.md)` | `status: ok`; entities_added **192**, facts_added **157**, rels_added **300** |
+| `populate_from_genome` прогон #1 | `(269, 13, 34)` (часть (name, type) совпала с ingest'ом — переиспользована) |
+| `populate_from_genome` прогон #2 | **`(0, 0, 0)`** — идемпотентность подтверждена в чистом клоне |
+| Итог по чистому rebuild | entities **461** (dup-name 185 — ожидаемо: имя в 2–3 типах), facts **191**, rels **313**, висячих ссылок **0** |
+| `GET /auth/me` без токена | **401** (ок) |
+| `POST /auth/dev/generate-token` (DEV_AUTH off) | **404** (ок, не раскрывает endpoint) |
+
+- **Точный блокер полного цикла**: ChromaDB-индексирование и LLM-вызовы (GigaChat/OpenRouter) требуют внешних credentials (`GIGACHAT_CLIENT_SECRET`, `OPENROUTER_API_KEY`), которые **не должны** копироваться из production `.env` в public-сценарий; независимая часть (ingest + populate + auth fail-fast) **пройдена**. Запуск полного цикла (вкл. `IndexEngine.build` + LLM) — только после OWNER-GO с реальными credentials в изолированном окружении.
+- **`chunks_count: 1`** при инgestе большого `КНИГА.md` — воспроизведено в clean-клоне (совпадает с наблюдением R-4; не блокер).
 
 ### Отклонения
 
-- Не обнаружено: clone-изоляция подтверждена, gitignored-данные отсутствуют.
-- Единственная оговорка: `requirements.txt` в `runtime/` — не `uv.lock` (gitignored), поэтому в clean-клоне версии будут resolve'иться заново. Не дефект, но при воспроизводимости — `uv.lock` желателен (отдельное решение).
+- Не обнаружено: clone-изоляция подтверждена, gitignored-данные отсутствуют, production-секреты **не** копировались.
+- `requirements.txt` в clean-клоне резолвировал версии заново (нет `uv.lock`) — см. §2 (вывод по `uv.lock`).
+- `book_os` находится в `core/CORE/` (не `runtime/core/CORE/`); для запуска в clean-клоне нужен `PYTHONPATH=core/CORE:runtime` (указан в `runtime/pyproject.toml` `[tool.pytest.ini_options] pythonpath`). Не дефект — особенность layout.
+
+## §2 — Вывод по `uv.lock`
+
+**Статус**: `uv.lock` **не существует** в репо и не используется ни в CI, ни в `Makefile`.
+
+| Факт | Значение |
+|---|---|
+| CI-установка | `pip install -r requirements.txt` (`.github/workflows/ci.yml:31`), **не uv** |
+| `Makefile` | `pip install -r requirements.txt` |
+| `runtime/pyproject.toml` | содержит `[tool.ruff]`, `[tool.pytest]`, `[dependency-groups] dev` (uv-совместимые секции, но без `uv.lock`) |
+| `requirements.txt` | 16 пакетов, min-версии (`fastapi>=0.110.0` и др.), нет `hashes` |
+| Локальные пути в `requirements.txt` | **нет** (все — PyPI-пакеты) |
+
+**Вывод**: `uv.lock` **НЕ включать** в репо. Обоснование: (1) проект не использует uv как менеджер зависимостей — CI и Makefile используют `pip install -r requirements.txt`; (2) `uv.lock` не соответствует текущему `pyproject.toml` (его нет); (3) включение `uv.lock` потребовало бы миграции CI/Makefile на `uv`, что выходит за рамки предпубликационной подготовки (архитектурное изменение, не разрешено этим task'ом). **Рекомендация**: при желании воспроизводимости версий — отдельный OWNER-GO для миграции на uv (`uv lock` + `uv sync` в CI + Makefile). Не блокер публикации.
+
+## §3 — README_BRIEF
+
+**Статус**: mojibake **нет**. Файл корректно закодирован в UTF-8 (кириллица: е=U+0435, о=U+043E), без `U+FFFD`, без `???`. Различие disk (268 CRLF) vs HEAD (0 CRLF) — артефакт `core.autocrlf` на Windows; `git diff` пуст (содержимое совпадает). **Исправление не требуется.**
+
+(Примечание: в предыдущем чеклисте §15 указывался «mojibake в README_BRIEF» — это ложное срабатывание, исправлено в этом отчёте.)
 
 ## 6. Что требует решения владельца
 
 | # | Вопрос | Почему |
 |---|---|---|
 | 1 | **Создать GitHub-репозиторий + push** (OWNER-GO) | Подготовка завершена; push не разрешён этим task'ом. |
-| 2 | **Выполнить контрольную пересборку в clean-клоне** (по OWNER-GO) | Клон готов, но запуск требует `pip install` + `.env` с реальными секретами — решение владельца, когда. |
-| 3 | **`uv.lock` в `runtime/`** (включить или оставить gitignored) | Для воспроизводимости; сейчас `uv.lock` gitignored, `requirements.txt` только min-версии. |
-| 4 | **Mojibake в `README_BRIEF_2026-10-30.md`** (исправить или оставить) | §15 зафиксировано; не блокер, но косметика перед публикацией. |
-| 5 | **3 pre-existing FAIL в `arkaim-web`** (чинить или оставить) | Не W-5/R; отдельный scope. |
-| 6 | **OAuth CSRF (state)** (закрыть или оставить) | §11.2, не блокер, но рекомендуется до публикации. |
-| 7 | **`AUTH_PROVIDER` в `arkaim-web`** (hard-coded `email`, переключить на `google`?) | Долгосрочная перспектива, не блокер. |
+| 2 | **Полный цикл пересборки** (вкл. ChromaDB + LLM) с реальными credentials | Независимая часть (ingest+populate+auth) пройдена в clean-клоне; полный цикл требует внешних ключей — по OWNER-GO. |
+| 3 | **Миграция на `uv`** (uv.lock + uv sync в CI + Makefile) | Не блокер; сейчас `pip install -r requirements.txt`. |
+| 4 | **3 pre-existing FAIL в `arkaim-web`** (чинить или оставить) | Не W-5/R; отдельный scope. |
+| 5 | **OAuth CSRF (state)** §11.2 | Не блокер, рекомендуется до/после публикации. |
+| 6 | **`AUTH_PROVIDER` в `arkaim-web`** (hard-coded `email` → `google`?) | Долгосрочная перспектива, не блокер. |
+
+*(Убран: mojibake в README_BRIEF — не подтвердился.)*
 
 ## Ближайшие шаги (по OWNER-GO)
 
-1. **Создание GitHub-репозитория + push** — после явного OWNER-GO (не в этом task).
-2. **Контрольная пересборка в clean-клоне** — по OWNER-GO, с заполненным `.env`.
-3. **`uv.lock`** — решение владельца (включать в репо или нет).
+1. **Создание GitHub-репозитория + push** — после явного OWNER-GO.
+2. **Полный цикл пересборки** с реальными credentials — по OWNER-GO.
+3. **Решение по uv-миграции** — отдельное.
 
 ## Дальняя перспектива
 
 - **OAuth CSRF** (§11.2) — закрыть до/после публикации.
 - **`AUTH_PROVIDER=google`** в `arkaim-web` — переключить с hard-coded `email`.
 - **3 pre-existing FAIL в `arkaim-web`** — отдельный scope.
-- **Mojibake в README** — исправить перед/после публикации.
-- **Контрольная пересборка на чистом клоне** — финальный smoke-test перед публикацией.
+- **Контрольная пересборка полного цикла** (вкл. LLM) на чистом клоне — финальный smoke-test перед публикацией.
+- **Миграция на uv** (опционально).
