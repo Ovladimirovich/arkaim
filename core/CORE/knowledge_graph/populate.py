@@ -4,7 +4,7 @@ Populate — заполнение Knowledge Graph из генома и BOOK OS �
 import json
 import uuid
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 from book_os.entity_store import EntityStore
 from book_os.relationship_store import RelationshipStore
@@ -32,6 +32,20 @@ def populate_from_genome(
     Сущности: персонажи, локации, концепции, символы.
     Связи: персонаж ↔ ценности, конфликты, символы.
     Факты: описания и атрибуты.
+
+    R-3 (идемпотентность повторного запуска):
+    Существующие сущности переиспользуются по устойчивому ключу
+    (name, type) — точное совпадение, без нормализации регистра,
+    чтобы не объединять разные сущности из-за похожих названий.
+    Уже существующие записи не перезаписываются: их id, description,
+    aliases и остальные данные сохраняются как есть.
+
+    Связи и факты создаются заново (id — свежий UUID), но
+    RelationshipStore.add / FactStore.add дедуплицируют по ключам
+    (source_id, target_id, type) и
+    (entity_id, doc_id, normalized_statement) соответственно (R-4),
+    поэтому повторный запуск не увеличивает их количество.
+    Счётчики учитывают только реально созданные записи.
     """
     path = genome_path or GENOME_PATH
     if not path.exists():
@@ -44,57 +58,64 @@ def populate_from_genome(
     rels_added = 0
     facts_added = 0
 
-    entity_map = {}
+    # Существующие сущности: (name, type) -> id (reuse, без перезаписи).
+    existing: dict = {}
+    for e in entity_store.list():
+        existing[(e.name, e.type)] = e.id
+
+    entity_map: dict = {}
+
+    def ensure_entity(
+        prefix: str, etype: str, make: Callable[[str], Entity]
+    ) -> str:
+        """Вернуть id сущности по (название, тип): существующей —
+        reuse id без изменения записи; отсутствующей — создать.
+        entity_map[name] обновляется в обоих случаях, как и раньше.
+        """
+        entity = make(_new_id(prefix))
+        key = (entity.name, etype)
+        eid = existing.get(key)
+        if eid is None:
+            entity_store.add(entity)
+            eid = entity.id
+            existing[key] = eid
+            nonlocal entities_added
+            entities_added += 1
+        entity_map[entity.name] = eid
+        return eid
 
     # 1. Characters → entities
     for ch in modules.get("characters", []):
-        eid = _new_id("char")
-        entity = Entity(id=eid, name=ch["name"], type="character", aliases=ch.get("aliases", []),
-                        archetype=ch.get("archetype", ""), description=ch.get("description", ""), values=ch.get("values", []))
-        entity_store.add(entity)
-        entity_map[ch["name"]] = eid
-        entities_added += 1
+        ensure_entity("char", "character", lambda eid, c=ch: Entity(
+            id=eid, name=c["name"], type="character",
+            aliases=c.get("aliases", []), description=c.get("description", "")))
 
     # 2. Themes → entities
     for th in modules.get("themes", []):
-        eid = _new_id("theme")
-        entity = Entity(id=eid, name=th["name"], type="theme", description=th.get("description", ""))
-        entity_store.add(entity)
-        entity_map[th["name"]] = eid
-        entities_added += 1
+        ensure_entity("theme", "theme", lambda eid, t=th: Entity(
+            id=eid, name=t["name"], type="theme", description=t.get("description", "")))
 
     # 3. Symbols → entities
     for sym in modules.get("symbols", []):
-        eid = _new_id("sym")
-        entity = Entity(id=eid, name=sym["name"], type="symbol", description=sym.get("meaning", ""))
-        entity_store.add(entity)
-        entity_map[sym["name"]] = eid
-        entities_added += 1
+        ensure_entity("sym", "symbol", lambda eid, s=sym: Entity(
+            id=eid, name=s["name"], type="symbol", description=s.get("meaning", "")))
 
     # 4. Conflicts → entities
     for conf in modules.get("conflicts", []):
-        eid = _new_id("conf")
-        entity = Entity(id=eid, name=conf["name"], type="conflict", description=conf.get("type", ""))
-        entity_store.add(entity)
-        entity_map[conf["name"]] = eid
-        entities_added += 1
+        ensure_entity("conf", "conflict", lambda eid, c=conf: Entity(
+            id=eid, name=c["name"], type="conflict", description=c.get("type", "")))
 
     # 5. Values → entities
     for val in modules.get("values", []):
-        eid = _new_id("val")
-        entity = Entity(id=eid, name=val["name"], type="value", description=val.get("description", ""))
-        entity_store.add(entity)
-        entity_map[val["name"]] = eid
-        entities_added += 1
+        ensure_entity("val", "value", lambda eid, v=val: Entity(
+            id=eid, name=v["name"], type="value", description=v.get("description", "")))
 
     # 6. World entities
     for we in world:
-        eid = _new_id("we")
-        entity = Entity(id=eid, name=we["name"], type=we.get("type", "concept"), description=we.get("description", ""),
-                        values=we.get("values", []), related_to=we.get("related_to", []), conflict_with=we.get("conflict_with", []))
-        entity_store.add(entity)
-        entity_map[we["name"]] = eid
-        entities_added += 1
+        ensure_entity("we", we.get("type", "concept"), lambda eid, w=we: Entity(
+            id=eid, name=w["name"], type=w.get("type", "concept"),
+            description=w.get("description", ""), values=w.get("values", []),
+            related_to=w.get("related_to", []), conflict_with=w.get("conflict_with", [])))
 
     # 7. Relationships from genome
     for ch in modules.get("characters", []):
@@ -104,10 +125,10 @@ def populate_from_genome(
         for vname in ch.get("values", []):
             tgt = entity_map.get(vname)
             if tgt:
-                rid = _new_id("rel")
-                rel = Relationship(id=rid, source_id=src, target_id=tgt, type="embodies")
-                rel_store.add(rel)
-                rels_added += 1
+                rel = Relationship(source_id=src, target_id=tgt, type="embodies")
+                result = rel_store.add(rel)
+                if result.id == rel.id:
+                    rels_added += 1
 
     for we in world:
         src = entity_map.get(we["name"])
@@ -116,33 +137,35 @@ def populate_from_genome(
         for rel_name in we.get("related_to", []):
             tgt = entity_map.get(rel_name)
             if tgt:
-                rid = _new_id("rel")
-                rel = Relationship(id=rid, source_id=src, target_id=tgt, type="related_to")
-                rel_store.add(rel)
-                rels_added += 1
+                rel = Relationship(source_id=src, target_id=tgt, type="related_to")
+                result = rel_store.add(rel)
+                if result.id == rel.id:
+                    rels_added += 1
         for conf_name in we.get("conflict_with", []):
             tgt = entity_map.get(conf_name)
             if tgt:
-                rid = _new_id("rel")
-                rel = Relationship(id=rid, source_id=src, target_id=tgt, type="conflicts_with")
-                rel_store.add(rel)
-                rels_added += 1
+                rel = Relationship(source_id=src, target_id=tgt, type="conflicts_with")
+                result = rel_store.add(rel)
+                if result.id == rel.id:
+                    rels_added += 1
 
     # 8. Facts from genome
     for ch in modules.get("characters", []):
         eid = entity_map.get(ch["name"])
         if eid and ch.get("description"):
-            fid = _new_id("fact")
-            fact = Fact(id=fid, statement=f"Персонаж {ch['name']}: {ch['description']}", entity_id=eid, doc_id="genome", provenance="genome", confidence=0.9)
-            fact_store.add(fact)
-            facts_added += 1
+            fact = Fact(statement=f"Персонаж {ch['name']}: {ch['description']}",
+                        entity_id=eid, doc_id="genome", provenance="genome", confidence=0.9)
+            result = fact_store.add(fact)
+            if result.id == fact.id:
+                facts_added += 1
     for we in world:
         eid = entity_map.get(we["name"])
         if eid and we.get("description"):
-            fid = _new_id("fact")
-            fact = Fact(id=fid, statement=f"{we['name']}: {we['description']}", entity_id=eid, doc_id="genome", provenance="genome", confidence=0.9)
-            fact_store.add(fact)
-            facts_added += 1
+            fact = Fact(statement=f"{we['name']}: {we['description']}",
+                        entity_id=eid, doc_id="genome", provenance="genome", confidence=0.9)
+            result = fact_store.add(fact)
+            if result.id == fact.id:
+                facts_added += 1
 
     return entities_added, rels_added, facts_added
 
