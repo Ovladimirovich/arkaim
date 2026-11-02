@@ -21,8 +21,18 @@ class EntityExtractor:
 
         Собирает уникальные сущности по именам из enriched_characters,
         enriched_themes, enriched_symbols chunks.
+
+        W-9 (дедупликация при повторном/аддитивном ingest): если имя уже
+        существует в ``existing_entities`` (карта ``имя.lower() -> Entity``,
+        которую оркестратор строит из ``EntityStore.list()``), возвращается
+        существующая сущность с её прежним id, а не создаётся новый экземпляр
+        со свежим ``uuid4()``. Это сохраняет привязку существующих фактов и
+        связей и предотвращает появление дубликатов имён при повторном ingest
+        одного и того же документа.
         """
+        existing = existing_entities or {}
         seen: Set[str] = set()
+        existing_seen: Set[str] = set()
         entities = []
 
         type_map = {
@@ -38,14 +48,24 @@ class EntityExtractor:
                 items = chunk.get(f"enriched_{field}", [])
                 for item in items:
                     name = item if isinstance(item, str) else item.get("name", str(item))
-                    if name.lower() not in seen:
-                        seen.add(name.lower())
-                        entities.append(Entity(
-                            name=name,
-                            type=etype,
-                            aliases=[name],
-                            description="Извлечено из документа",
-                        ))
+                    key = name.lower()
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    existing_entity = existing.get(key)
+                    if existing_entity is not None:
+                        # Повторное извлечение уже известной сущности:
+                        # не создаём дубликат, возвращаем существующий id.
+                        if key not in existing_seen:
+                            existing_seen.add(key)
+                            entities.append(existing_entity)
+                        continue
+                    entities.append(Entity(
+                        name=name,
+                        type=etype,
+                        aliases=[name],
+                        description="Извлечено из документа",
+                    ))
 
         return entities
 

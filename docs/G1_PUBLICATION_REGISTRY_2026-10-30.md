@@ -114,7 +114,7 @@
 | W-6 | **SESSION_SECRET-политика (S-2)** | ✅ **ПРИНЯТА (OWNER-GO 2026-10-30, вариант A)** — коммит `2af923f`; fail-fast при старте `core.main`; откл. `None`/пусто/заглушки/<32 симв.; целевые проверки пройдены | ✅ **Остаток ЗАКРЫТ ПОЛНОСТЬЮ (2026-10-30)**: (1) placeholder `.env.example` (runtime) + дефолт `docker-compose` + Google OAuth-цепь — **коммит `d49466a`** (блок A); (2) **корневой `.env.example` (legacy Hermes-секции, дефолт `SESSION_SECRET=change-me-in-production`) — ✅ закрыт отдельным коммитом `3e252a2`**. Единственный остаток: live-проверка полного OAuth-сценария (W-1, требует Google-credentials); полный прогон тестов завершён (см. §6) | OWNER-GO-1 (выполнен, вариант A) |
 | W-7 | **WIP-группы ledger (A–H)** | сохраняются, не удаляются | сходятся в G-1 подшаге 15.3.1 | — |
 | W-8 | **Геном-история дубли** | 46 файлов → 6 уникальных | **ориентир D**: подготовить дедуплицированный вариант для публикации; оригиналы — в резервной копии | OWNER-GO D |
-| W-9 | **`EntityExtractor` дубликаты имён при повторном ingest** (известный дефект) | **Известный дефект, зафиксирован (2026-11-01):** `EntityExtractor.extract` игнорирует параметр `existing_entities` → повторный/аддитивный ingest добавляет сущности с теми же именами (после пересборки 2026-11-01 в `entities.json` две «Аркаим»: `knowledge_аркаим` без фактов + новая из ingest с фактом). На тесты не влияет (fallback в `_book_os_claims`), на публикацию — нет (корпус gitignored) | **НЕ начинать отдельной задачей** (решение владельца 2026-11-01): вернуться, когда будет заниматься **устойчивостью повторных сборок Book OS**; не отклоняться от основной цели публикации | отложен (вернуться при устойчивости сборок) |
+| W-9 | **`EntityExtractor` дубликаты имён при повторном ingest** (известный дефект) | **ЗАКРЫТ (2026-11-02, OWNER-GO «W-9 / D-4»):** `EntityExtractor.extract` теперь использует `existing_entities` — при совпадении имени (lower-case) возвращается существующая сущность с её прежним `id`, дубликат не создаётся (`core/CORE/book_os/pipeline/extractors.py`). Регрессионные тесты `runtime/tests/test_book_os_entity_dedup.py` (6 passed): повторное извлечение, разные главы одного персонажа, регистр имён, сохранение id и привязки фактов. Исторические дубликаты в локальном `OS_DATA` не удалялись (gitignored, генерируемые данные) — при следующей пересборке новые не появятся | — | закрыт |
 
 ---
 
@@ -197,7 +197,7 @@ arkaim-book/                     # новая чистая история
 | WORLD_MODEL backup (E-7) | ✅ не в репо (в бэкапе) |
 | `.env.example` (корень + runtime) | ✅ включены; `docker-compose.yml` SESSION_SECRET → fail-fast |
 | Проверки | ✅ `python -m py_compile` (main/config/shared_config) exit 0; ✅ JSON-валидность 74 файла KNOWLEDGE/GENOME = 0 ошибок; ✅ `git fsck` чист |
-| Открытые (сохранены, не блокируют) | **следующий блок: W-1 Google OAuth (OWNER-GO A)** — единственная оставшаяся конфигурационная позиция; ~~KNOWLEDGE-C (8 FAIL-ов)~~ ✅ **закрыт 2026-11-01** (см. §12); ~~Book OS (2 pre-existing FAIL)~~ ✅ **закрыт 2026-11-01 локальной пересборкой корпуса** (см. §12, доп.); W-5 (mobile dev-login + tsc barrel); W-9 (дубликаты `EntityExtractor` — известный дефект, отложен) |
+| Открытые (сохранены, не блокируют) | **следующий блок: W-1 Google OAuth (OWNER-GO A)** — единственная оставшаяся конфигурационная позиция; ~~KNOWLEDGE-C (8 FAIL-ов)~~ ✅ **закрыт 2026-11-01** (см. §12); ~~Book OS (2 pre-existing FAIL)~~ ✅ **закрыт 2026-11-01 локальной пересборкой корпуса** (см. §12, доп.); W-5 (mobile dev-login + tsc barrel); ~~W-9 (дубликаты `EntityExtractor`)~~ ✅ **закрыт 2026-11-02** (см. §5) |
 | Публикация (push) | **НЕ выполнялась** — только по финальному OWNER-GO |
 
 ---
@@ -295,7 +295,7 @@ arkaim-book/                     # новая чистая история
 | D-1 | (placeholder) | — | — |
 | D-2 | **`python-jose` 3.5.0 `at_hash`-проверка требует access_token** | `runtime/auth/oauth/google.py:91-97` | **Закрыто 2026-11-01** (`74ee80c`): `options={"verify_at_hash": False}` в `jwt.decode` — стандарт для prompt=none flows без access_token. Тесты auth 83/83, 3 skipped. |
 | D-3 | **`verify_google_id_token` — async без `await`** | `runtime/auth/routes.py:193` | **Закрыто 2026-11-01** (`2060e4d`): `payload = await verify_google_id_token(id_token)`. Тесты auth 83/83. |
-| D-4 | **W-9: `EntityExtractor` дубликаты имён при повторном ingest** | `runtime/CORE/book_os/pipeline/extractors.py` | **ОТКЛАДЕНО** (OWNER-GO 2026-11-01): вернуться при устойчивости повторных сборок Book OS. Детали в §5 W-9. |
+| D-4 | **W-9: `EntityExtractor` дубликаты имён при повторном ingest** | `core/CORE/book_os/pipeline/extractors.py` | **Закрыто 2026-11-02** (`extract` использует `existing_entities`, возвращает существующую сущность с прежним `id`; регрессионные тесты `test_book_os_entity_dedup.py` 6 passed, ruff чист). Детали в §5 W-9. |
 | D-5 | **Google-логин redirect на backend `/profile` (404)** | `runtime/auth/routes.py:209` | **Закрыто 2026-11-02** (`5d63199`): redirect на `f"{settings.FRONTEND_URL}/profile"` (по умолчанию `http://localhost:3000/profile`). Cookie `arkaim_session` остаётся в браузере на backend-домене `localhost:8642` и читается через API-прокси фронтенда. Тесты auth 83/83. |
 
 ---
@@ -308,5 +308,5 @@ arkaim-book/                     # новая чистая история
 |---|---|---|---|
 | ~~O-1~~ | **Google OAuth — полный ручной вход (live)** | ~~OWNER-GO A~~ | ✅ **ЗАКРЫТ 2026-11-02** (`13bf112`): D-6 owner-bound invite + `POST /auth/dev/bootstrap-owner`. Роль владельца = `admin` в БД подтверждено (user `olegluh1969`, `provider_user_id=114744872080297548868`). Studio видна, Film Studio работает. Обычный reader не получает admin. 5 кода-дефектов закрыто: D-2 (at_hash), D-3 (await), D-5 (redirect 404), D-6 (bool subscriptable), D-7 (owner-bound invite bool). |
 | O-2 | W-5 (mobile dev-кнопка) | OWNER-GO E | не выполнен |
-| O-3 | W-9 (дедуп `EntityExtractor`) | OWNER-GO D / отложен | см. §5 W-9 |
+| ~~O-3~~ | ~~W-9 (дедуп `EntityExtractor`)~~ | ~~OWNER-GO D / отложен~~ | ✅ **ЗАКРЫТ 2026-11-02** — см. §5 W-9 / §13 D-4 (код + 6 регрессионных тестов) |
 | O-4 | D-1 (placeholder) | — | — |
