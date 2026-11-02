@@ -26,7 +26,7 @@ export function NotificationsScreen() {
 
   const loadNotifications = async () => {
     try {
-      const data = await api.get('/notifications?limit=50');
+      const data = await api.get<{ notifications: Notification[] }>('/notifications?limit=50');
       setNotifications(data?.notifications || []);
     } catch (error) {
       console.error('Failed to load notifications:', error);

@@ -14,16 +14,31 @@ export function LoginScreen() {
   const handleDevLogin = async () => {
     setLoading(true);
     try {
-      const response = await api.post('/api/auth/dev-login');
-      if (response.ok) {
-        const data = await response.json();
-        if (data.ok && data.user) {
-          // Store user data and navigate to main app
-          Alert.alert('Успех', `Добро пожаловать, ${data.user.display_name || 'Разработчик'}!`);
-        }
+      // W-5 / S-1: dev-вход ходит на реальный backend-эндпоинт
+      // POST /auth/dev/generate-token (см. registry §S-1, runtime/auth/routes.py:134).
+      // Маршрут существует ТОЛЬКО при DEV_AUTH_ENABLED=true (по умолчанию off).
+      // Ответ: { token, login_url, role }. Старый /api/auth/dev-login
+      // не существовал на сервере — кнопка была «мёртвой».
+      const data = await api.post<{ ok?: boolean; token?: string; role?: string }>(
+        '/auth/dev/generate-token',
+      );
+      if (data?.token) {
+        // Токен — одноразовый login-token (не JWT). Его нельзя хранить в
+        // SecureStore как сессию (AuthProvider) напрямую; для dev-проверки
+        // достаточно подтвердить, что сервер отдал токен и роль.
+        Alert.alert(
+          'Dev-вход (тестовый)',
+          `Сервер выдал dev-токен (роль: ${data.role ?? 'reader'}). Для полного входа по токену используйте поле ниже.`,
+        );
+      } else {
+        Alert.alert('Dev-вход', 'Сервер не вернул токен');
       }
     } catch (error) {
-      Alert.alert('Ошибка', 'Не удалось выполнить вход');
+      // 404 = DEV_AUTH_ENABLED выключен на сервере (production-режим).
+      Alert.alert(
+        'Dev-вход недоступен',
+        'Сервер не включил dev-auth (DEV_AUTH_ENABLED=false) либо недоступен. Используйте вход по токену.',
+      );
     } finally {
       setLoading(false);
     }
@@ -36,15 +51,21 @@ export function LoginScreen() {
     }
     setLoading(true);
     try {
-      const response = await api.post('/api/auth/login', { token });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.ok && data.user) {
-          Alert.alert('Успех', `Добро пожаловать, ${data.user.display_name || 'Пользователь'}!`);
-        }
+      // W-5: реальный backend-эндпоинт «вход по токену» — POST /auth/telegram/login
+      // (runtime/auth/routes.py:80). Ответ: { ok, user }. JWT уходит в cookie
+      // (httpOnly), не в тело — mobile-сессия (SecureStore) не обновляется;
+      // dev-проверка фиксирует, что сервер принял токен.
+      const data = await api.post<{ ok?: boolean; user?: { display_name?: string } }>(
+        '/auth/telegram/login',
+        { token },
+      );
+      if (data?.ok && data.user) {
+        Alert.alert('Успех', `Добро пожаловать, ${data.user.display_name || 'Пользователь'}!`);
+      } else {
+        Alert.alert('Ошибка', 'Токен не принят сервером');
       }
     } catch (error) {
-      Alert.alert('Ошибка', 'Неверный токен');
+      Alert.alert('Ошибка', 'Неверный токен или сервер недоступен');
     } finally {
       setLoading(false);
     }

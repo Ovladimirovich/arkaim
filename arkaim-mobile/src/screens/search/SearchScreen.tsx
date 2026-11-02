@@ -23,7 +23,7 @@ export function SearchScreen() {
     if (!query.trim()) return;
     setLoading(true);
     try {
-      const data = await api.get(`/book/search?q=${encodeURIComponent(query)}&limit=20`);
+      const data = await api.get<{ results: SearchResult[] }>(`/book/search?q=${encodeURIComponent(query)}&limit=20`);
       setResults(data?.results || []);
     } catch (error) {
       console.error('Search error:', error);

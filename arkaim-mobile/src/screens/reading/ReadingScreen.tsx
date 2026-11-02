@@ -25,7 +25,7 @@ export function ReadingScreen() {
 
   const loadChapters = async () => {
     try {
-      const data = await api.get('/book/chapters');
+      const data = await api.get<{ chapters: Chapter[] }>('/book/chapters');
       setChapters(data?.chapters || []);
     } catch (error) {
       console.error('Failed to load chapters:', error);
