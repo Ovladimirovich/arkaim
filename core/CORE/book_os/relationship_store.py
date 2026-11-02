@@ -25,7 +25,22 @@ class RelationshipStore:
         self._load()
 
     def add(self, rel: Relationship) -> Relationship:
-        """Добавить связь. Если ID существует — перезаписать."""
+        """Добавить связь. Если ID существует — перезаписать.
+
+        R-4 (идемпотентность повторного ingest): связь с тем же ключом
+        (source_id, target_id, type) НЕ создаёт новой записи с новым
+        UUID — возвращается существующая связь с её прежним id/doc_id/
+        weight. Связи с другим типом между теми же сущностями
+        сохраняются как отдельные записи.
+        """
+        if rel.id not in self._relationships:
+            for existing in self._relationships.values():
+                if (
+                    existing.source_id == rel.source_id
+                    and existing.target_id == rel.target_id
+                    and existing.type == rel.type
+                ):
+                    return existing
         self._relationships[rel.id] = rel
         self._save()
         return rel

@@ -24,8 +24,49 @@ class FactStore:
         self._facts: dict = {}
         self._load()
 
+    def _statement_key(self, statement: str) -> str:
+        """Нормализация для dedup-ключа: только пробельные символы.
+
+        Содержательные различия (регистр, пунктуация, синонимы) при
+        нормализации НЕ стираются — разные утверждения не должны
+        сливаться (требование R-4).
+        """
+        return " ".join(str(statement or "").split())
+
     def add(self, fact: Fact) -> Fact:
-        """Добавить факт. Если ID существует — перезаписать."""
+        """Добавить факт. Если ID существует — перезаписать.
+
+        R-4 (идемпотентность повторного ingest): факт с тем же ключом
+        (entity_id, doc_id, normalized_statement) НЕ создаёт новой записи
+        с новым UUID — возвращается существующая запись с её прежним
+        id/provenance/confidence. Повторная обработка того же документа
+        не увеличивает фактов.
+        """
+        if fact.id not in self._facts:
+            stmt_key = self._statement_key(fact.statement)
+            for existing in self._facts.values():
+                if (
+                    existing.entity_id == fact.entity_id
+                    and existing.doc_id == fact.doc_id
+                    and self._statement_key(existing.statement) == stmt_key
+                ):
+                    if (
+                        existing.provenance != fact.provenance
+                        or existing.confidence != fact.confidence
+                    ):
+                        # Конфликт происхождения внутри одного ключа не
+                        # заглушается: существующая запись сохраняется
+                        # без изменений, новая не добавляется.
+                        import logging
+
+                        logging.getLogger("book_os.fact_store").warning(
+                            "duplicate_fact_key_conflict fact_id=%s "
+                            "existing_prov=%s new_prov=%s",
+                            existing.id,
+                            existing.provenance,
+                            fact.provenance,
+                        )
+                    return existing
         self._facts[fact.id] = fact
         self._save()
         return fact
