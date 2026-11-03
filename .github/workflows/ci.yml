@@ -61,7 +61,7 @@ jobs:
           cd runtime
           python -m pytest tests/ -v --tb=short
         env:
-          SESSION_SECRET: test-secret-key
+          SESSION_SECRET: "ci-only-test-session-secret-2026-arkaim"
           AUTH_DB_PATH: ":memory:"
           TELEGRAM_BOT_TOKEN: "test-telegram-bot-token"
           HERMES_API_KEY: "test-service-key"
