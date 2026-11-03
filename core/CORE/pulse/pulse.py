@@ -201,16 +201,21 @@ class BookPulse:
             if not self.load():
                 return None
 
-        # Порядок: знание → смысл → идентичность → миссия
+        # Порядок: знание → структура → смысл → идентичность → миссия,
+        # затем catch-all слои (расширенные знания, мир). Смысловые слои
+        # стоят ДО catch-all, иначе «о чём книга», «кто ты», «зачем» перехватывают
+        # расширенные/мировые фолбэки и смысл никогда не достигается.
         for layer_name in (
             "knowledge",
             "screenplay",
-            "expansion",
-            "world_engine",
-            "world_engine_v2",
             "meaning",
             "identity",
             "mission",
+            "expansion",
+            "narrative_arc",
+            "scene",
+            "world_engine",
+            "world_engine_v2",
         ):
             layer = self.layers.get(layer_name)
             if not layer:

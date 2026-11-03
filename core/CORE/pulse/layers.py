@@ -487,6 +487,20 @@ class KnowledgeLayer(BaseLayer):
     def respond_to(self, query: str) -> Optional[PulseResponse]:
         q = query.lower()
 
+        # Смысловая маршрутизация: формулировки про замысел/смысл/миссию
+        # (зачем, для чего, в чём смысл, о чём книга) НЕ обслуживаются
+        # случайными фрагментами книги (catalog/RAG). Такие вопросы должны
+        # достигать смысловых слоёв (meaning, mission) — здесь возвращаем None,
+        # чтобы маршрутизация перешла к ним.
+        _MEANING_GUARD_PATTERNS = (
+            "для чего", "зачем", "в чём смысл", "в чем смысл",
+            "в чём цель", "в чем цель", "главная мысль", "главный смысл",
+            "миссия", "о чём книга", "о чем книга", "о чём эта книга",
+            "о чем эта книга", "про что", "о чем эта", "о чём эта",
+        )
+        if any(p in q for p in _MEANING_GUARD_PATTERNS):
+            return None
+
         # Общие вопросы — вернуть сводку из генома
         general_theme_patterns = ['какие темы', 'темы книги', 'о чем книга', 'содержание', 'о чем идет речь', 'раскрывает тем', 'тематик']
         general_char_patterns = ['какие персонаж', 'персонажи книги', 'герои книги', 'кто в книге']
@@ -496,8 +510,14 @@ class KnowledgeLayer(BaseLayer):
         if any(p in q for p in general_theme_patterns):
             themes = self._genome.get("modules", {}).get("themes", [])
             if themes:
-                parts = [f"• {th['name']}" + (f" — {th['description']}" if th.get('description') else "") for th in themes]
+                # Не вываливать все 138 тем одним сообщением (~20 000 знаков):
+                # показываем выборку и честно упоминаем остаток.
+                shown = themes[:12]
+                parts = [f"• {th['name']}" + (f" — {th['description']}" if th.get('description') else "") for th in shown]
                 text = f"Основные темы книги «Наследие Аркаима»:\n\n" + "\n".join(parts)
+                rest = len(themes) - len(shown)
+                if rest > 0:
+                    text += f"\n\n… и ещё {rest} тем (полный список — в разделе «Книга»)."
                 return PulseResponse(
                     text=text,
                     source="knowledge:themes_summary",
@@ -698,17 +718,20 @@ class KnowledgeLayer(BaseLayer):
         # Сущности мира
         for we in self._genome.get("world_entities", []):
             name_lower = we["name"].lower()
-            # Улучшенный матчинг: проверяем точное вхождение + начало слова
+            # Матчинг: точное вхождение полного имени, либо слово запроса
+            # является началом имени сущности («велик» → «Великий»).
+            # Обратный префикс длиной 4 символа НЕ используется: слово запроса
+            # «настроить» не должно срабатывать на имени «Наставники» (общий
+            # корень «наст»). Ложное срабатывание выдаёт уверенный ответ на
+            # вопрос вне книги («как настроить wi-fi роутер?»).
             name_found = False
             if name_lower in q:
                 name_found = True
-            else:
-                # Проверяем слова в запросе на совпадение с началом имени
-                for word in q.split():
-                    word_clean = word.strip(".,!?;:")
-                    if len(word_clean) >= 4 and (name_lower.startswith(word_clean) or word_clean.startswith(name_lower[:4])):
-                        name_found = True
-                        break
+            elif any(
+                len(word.strip(".,!?;:")) >= 4 and name_lower.startswith(word.strip(".,!?;:"))
+                for word in q.split()
+            ):
+                name_found = True
             if name_found:
                 desc = we.get("description", "")
                 values = we.get("values", [])
@@ -760,7 +783,9 @@ class KnowledgeLayer(BaseLayer):
                 text_lower = text.lower()
                 hits = sum(1 for w in query_words if w in text_lower)
                 score = hits / len(query_words) if query_words else 0.0
-                if score >= 0.3:
+                # Порог половины слов запроса: единичное лексическое совпадение
+                # («и», «о») не должно выдавать случайный фрагмент книги за ответ.
+                if score >= 0.5:
                     scored.append((score, entry))
 
             scored.sort(key=lambda x: x[0], reverse=True)
@@ -773,7 +798,7 @@ class KnowledgeLayer(BaseLayer):
                     chapter = entry.get("chapter", "")
                     themes = entry.get("themes", [])
                     meta = f" (глава: {chapter})" if chapter else ""
-                    part = f"[{meta.strip('()')}]\n{excerpt}"
+                    part = f"{meta.strip()}\n{excerpt}" if meta else excerpt
                     if themes:
                         part += f"\nТемы: {', '.join(themes[:3])}"
                     parts.append(part)
@@ -783,7 +808,7 @@ class KnowledgeLayer(BaseLayer):
                 return PulseResponse(
                     text=f"Из книги:\n\n{combined}",
                     source="knowledge:catalog_text",
-                    confidence=min(best_score + 0.3, 0.95),
+                    confidence=min(best_score, 0.95),
                     provenance=[_canon_tag("catalog", f"book text: {scored[0][1].get('source', 'book')}")],
                     uncertainty=_build_uncertainty_for_unknown("книжный каталог — частичные данные"),
                 )
@@ -818,11 +843,23 @@ class KnowledgeLayer(BaseLayer):
                     combined = "\n\n---\n\n".join(parts)
                     best_score = rag_results[0].get("score", 0.5)
 
+                    # Честная метка происхождения: «chromadb» — только когда
+                    # векторная коллекция реально доступна. Без коллекции
+                    # search() попадает в _enriched_fallback (лексический
+                    # резерв), и метка должна отражать фактический путь.
+                    vector_path = False
+                    try:
+                        stats = self._retriever.get_collection_stats()
+                        vector_path = stats.get("status") == "ok" and stats.get("count", 0) > 0
+                    except Exception:
+                        vector_path = False
+                    rag_path = "chromadb" if vector_path else "lexical_fallback"
+
                     return PulseResponse(
                         text=f"Из книги:\n\n{combined}",
-                        source=f"knowledge:rag:chromadb",
-                        confidence=min(best_score + 0.2, 0.95),
-                        provenance=[_canon_tag("rag", f"RAG retrieval from book: {len(rag_results)} chunks")],
+                        source=f"knowledge:rag:{rag_path}",
+                        confidence=min(best_score, 0.95),
+                        provenance=[_canon_tag("rag", f"RAG retrieval from book ({rag_path}): {len(rag_results)} chunks")],
                         uncertainty=UncertaintyFlag(
                             has_unknowns=best_score < 0.5,
                             unknown_aspects=[] if best_score >= 0.5 else ["релевантность найденных фрагментов"],
@@ -1034,7 +1071,15 @@ class MeaningLayer(BaseLayer):
         ai = self._genome.get("author_intent", {})
 
         # Главное послание
-        if any(w in q for w in ["главн", "основн", "послание", "идея", "смысл", "чему учит"]):
+        if any(
+            w in q
+            for w in [
+                "главн", "основн", "послание", "идея", "смысл", "чему учит",
+                "замысел", "замысел книги", "о чём книга", "о чем книга",
+                "о чем эта книга", "о чём эта книга", "про что", "что хотел",
+                "для чего написана", "зачем написана", "главная мысль",
+            ]
+        ):
             msg = ai.get("main_message", "")
             if msg:
                 return PulseResponse(
@@ -1559,8 +1604,14 @@ class ExpansionLayer(BaseLayer):
         best_match = None
         best_score = 0
         for topic, knowledge in self._knowledge.items():
-            score = self._score(query, topic.split())
-            if score > best_score and score > 0.3:
+            # Скоринг по значимым словам темы: служебные/короткие слова
+            # («и», «о», «в», «на») не должны давать лексическое совпадение
+            # на произвольном запросе («напиши код на python» → «и» = 0.33).
+            topic_words = [w for w in topic.split() if len(w.strip(".,!?;:")) >= 3]
+            if not topic_words:
+                continue
+            score = self._score(query, topic_words)
+            if score > best_score and score > 0.5:
                 best_score = score
                 best_match = knowledge
         if best_match:
