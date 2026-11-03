@@ -15,6 +15,15 @@ jobs:
       matrix:
         python-version: ['3.14']
 
+    # Тестовые (НЕ боевые) значения для всех шагов backend job:
+    # SESSION_SECRET required by SharedSettings.validate() — каждый шаг, что
+    # импортирует core.main (pytest/conftest), нуждается в валидном значении.
+    env:
+      SESSION_SECRET: "ci-only-test-session-secret-2026-arkaim"
+      AUTH_DB_PATH: ":memory:"
+      TELEGRAM_BOT_TOKEN: "test-telegram-bot-token"
+      HERMES_API_KEY: "test-service-key"
+
     steps:
       - uses: actions/checkout@v4
 
@@ -60,11 +69,6 @@ jobs:
         run: |
           cd runtime
           python -m pytest tests/ -v --tb=short
-        env:
-          SESSION_SECRET: "ci-only-test-session-secret-2026-arkaim"
-          AUTH_DB_PATH: ":memory:"
-          TELEGRAM_BOT_TOKEN: "test-telegram-bot-token"
-          HERMES_API_KEY: "test-service-key"
 
       - name: Run narrative engine tests
         run: |
