@@ -59,10 +59,9 @@ describe('AuthProvider', () => {
     expect(JSON.parse(localStorage.getItem('arkaim_user') || '{}').id).toBe('u-real');
   });
 
-  it('falls back to dev-login when /auth/me returns 401 and establishes the session', async () => {
+  it('reports unauthenticated when /auth/me returns 401 (P2: no dev-login fallback)', async () => {
     const fetchMock = mockFetch(url => {
       if (url === '/auth/me') return jsonResponse({ detail: 'Не авторизован' }, false, 401);
-      if (url === '/api/auth/dev-login') return jsonResponse({ ok: true, user: VALID_USER });
       throw new Error(`unexpected fetch: ${url}`);
     });
 
@@ -73,17 +72,19 @@ describe('AuthProvider', () => {
     );
 
     await waitFor(() => expect(readState().loading).toBe(false));
-    expect(readState().user).toEqual({ id: 'u-real', role: 'admin' });
-    expect(fetchMock.mock.calls.map(c => String(c[0]))).toEqual(['/auth/me', '/api/auth/dev-login']);
+    expect(readState().user).toBeNull();
+    // P2: dev-login не вызывается при 401 — только /auth/me
+    expect(fetchMock.mock.calls.map(c => String(c[0]))).toEqual(['/auth/me']);
+    expect(localStorage.getItem('arkaim_user')).toBeNull();
   });
 
-  it('never trusts a stale localStorage cache: session is re-verified against backend', async () => {
+  it('never trusts a stale localStorage cache: session is re-verified against backend (P2)', async () => {
     // Симулируем «вчерашний» кэш при истёкшей HttpOnly-cookie — источник 401-шторма.
+    // P2: stale localStorage НЕ восстанавливает сессию; backend 401 → user=null.
     localStorage.setItem('arkaim_user', JSON.stringify({ id: 'stale', role: 'admin', provider: 'dev' }));
 
     const fetchMock = mockFetch(url => {
       if (url === '/auth/me') return jsonResponse({ detail: 'Не авторизован' }, false, 401);
-      if (url === '/api/auth/dev-login') return jsonResponse({ ok: true, user: VALID_USER });
       throw new Error(`unexpected fetch: ${url}`);
     });
 
@@ -95,8 +96,9 @@ describe('AuthProvider', () => {
 
     await waitFor(() => expect(readState().loading).toBe(false));
     expect(fetchMock).toHaveBeenCalled();
-    expect(readState().user?.id).toBe('u-real');
-    expect(localStorage.getItem('arkaim_user')).not.toContain('stale');
+    expect(readState().user).toBeNull();
+    // Старый кэш очищен — user=null, не stale
+    expect(localStorage.getItem('arkaim_user')).toBeNull();
   });
 
   it('reports unauthenticated (user=null) when backend answers but session cannot be established', async () => {
@@ -117,7 +119,7 @@ describe('AuthProvider', () => {
     expect(localStorage.getItem('arkaim_user')).toBeNull();
   });
 
-  it('keeps the dev fallback only when backend is unreachable', async () => {
+  it('reports unauthenticated (user=null) when backend is unreachable (P2: no dev fallback)', async () => {
     mockFetch(() => {
       throw new TypeError('Failed to fetch');
     });
@@ -129,6 +131,9 @@ describe('AuthProvider', () => {
     );
 
     await waitFor(() => expect(readState().loading).toBe(false));
-    expect(readState().user).toEqual({ id: 'dev-user-001', role: 'admin' });
+    // P2: network-error → backendReachable=false → clearSession() + setLoading(false)
+    // user=null, нет ложного dev-авторизованного состояния
+    expect(readState().user).toBeNull();
+    expect(localStorage.getItem('arkaim_user')).toBeNull();
   });
 });

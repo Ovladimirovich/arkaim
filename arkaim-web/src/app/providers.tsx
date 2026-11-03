@@ -176,6 +176,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      // 4. Backend недоступен (network-error) — честно «не авторизован»,
+      //    без dev-fallback (P2). Не даём UI зависнуть на спиннере.
+      clearSession();
+      setLoading(false);
+
     })();
 
     return () => { cancelled = true; };
