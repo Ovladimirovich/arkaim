@@ -376,3 +376,5 @@ arkaim-book/                     # новая чистая история
 - Состав репо: 1914 tracked-файла (core 526, runtime 393, arkaim-web 217, docs 212, arkaim-mobile 32, scripts 33, tests 10, .github 6).
 - Контрольная пересборка в clean-клоне: **клон создан** в `C:\Users\1\AppData\Local\Temp\opencode\arkaim-clean-clone` (0 локальных данных); **сама пересборка не выполнена** — требует `.env` с реальными секретами (вне скоупа предпубликационной подготовки).
 - Полное описание, риски и открытые вопросы — `docs/PRE_PUBLICATION_CHECKLIST.md`.
+
+**Статус 2026-11-03**: первый push выполнен — `Ovladimirovich/arkaim` (ветка `master`, HEAD `7de0ca6`). CI-бейдж в `README.md` и имённые ссылки обновлены на `arkaim`; локальная рабочая копия и архивные упоминания `arkaim-book` в реестре/CHANGELOG/AGENTS/ARKAIM_CONCEPT/README_BRIEF сохранены как исторические (не переписываются).

@@ -173,14 +173,22 @@ def test_manually_added_fact_and_rel_survive_rerun(tmp_path):
     from schemas.fact import Fact
     from schemas.relationship import Relationship
 
-    own_fact = facts.add(Fact(
-        statement="Велик родился в конце апреля",
-        entity_id=velik_id, doc_id="genome", provenance="genome",
-    ))
-    own_rel = rels.add(Relationship(
-        source_id=arkaim_id, target_id=velik_id, type="related_to",
-        doc_id="genome",
-    ))
+    own_fact = facts.add(
+        Fact(
+            statement="Велик родился в конце апреля",
+            entity_id=velik_id,
+            doc_id="genome",
+            provenance="genome",
+        )
+    )
+    own_rel = rels.add(
+        Relationship(
+            source_id=arkaim_id,
+            target_id=velik_id,
+            type="related_to",
+            doc_id="genome",
+        )
+    )
 
     populate_from_genome(*stores, genome_path=genome_path)
 
@@ -197,10 +205,8 @@ def test_distinct_facts_of_same_entity_all_kept(tmp_path):
     stores = _make_stores(tmp_path)
     entities, _, facts = stores
     gid = entities.add(Entity(id="v1", name="Велик", type="character")).id
-    facts.add(Fact(statement="Велик — юноша", entity_id=gid, doc_id="genome",
-                   provenance="genome"))
-    facts.add(Fact(statement="Велик — наставник", entity_id=gid, doc_id="genome",
-                   provenance="genome"))
+    facts.add(Fact(statement="Велик — юноша", entity_id=gid, doc_id="genome", provenance="genome"))
+    facts.add(Fact(statement="Велик — наставник", entity_id=gid, doc_id="genome", provenance="genome"))
     assert len(facts.list()) == 2
 
 
@@ -214,26 +220,26 @@ def test_existing_entity_reused_with_id_and_data(tmp_path):
     genome_path = _mini_genome_file(tmp_path)
     entities, rels, facts = stores
 
-    pre = entities.add(Entity(
-        id="custom_char_1", name="Велик", type="character",
-        description="собственное описание из книги",
-    ))
+    pre = entities.add(
+        Entity(
+            id="custom_char_1",
+            name="Велик",
+            type="character",
+            description="собственное описание из книги",
+        )
+    )
 
     e1, _, _ = populate_from_genome(*stores, genome_path=genome_path)
     assert e1 == 5, "существующая сущность не должна учитываться как новая"
 
     still = entities.get_by_id("custom_char_1")
     assert still is not None and still.id == pre.id
-    assert still.description == "собственное описание из книги", (
-        "данные существующей сущности перезаписаны геномом"
-    )
+    assert still.description == "собственное описание из книги", "данные существующей сущности перезаписаны геномом"
     assert len(entities.list()) == 6, "дубль (name,type) создан вопреки reuse"
 
     # Связь/факт от character осели на существующем id.
     fact_entity_ids = {f.entity_id for f in facts.list()}
-    assert "custom_char_1" in fact_entity_ids, (
-        "факт персонажа не привязан к переиспользованному id"
-    )
+    assert "custom_char_1" in fact_entity_ids, "факт персонажа не привязан к переиспользованному id"
 
 
 def test_existing_genome_fact_reused_not_duplicated(tmp_path):
@@ -245,10 +251,15 @@ def test_existing_genome_fact_reused_not_duplicated(tmp_path):
     genome_path = _mini_genome_file(tmp_path)
     entities, _, facts = stores
     gid = entities.add(Entity(id="v1", name="Велик", type="character")).id
-    pre_fact = facts.add(Fact(
-        statement="Персонаж Велик: юноша из степи",
-        entity_id=gid, doc_id="genome", provenance="genome", confidence=0.5,
-    ))
+    pre_fact = facts.add(
+        Fact(
+            statement="Персонаж Велик: юноша из степи",
+            entity_id=gid,
+            doc_id="genome",
+            provenance="genome",
+            confidence=0.5,
+        )
+    )
 
     populate_from_genome(*stores, genome_path=genome_path)
 

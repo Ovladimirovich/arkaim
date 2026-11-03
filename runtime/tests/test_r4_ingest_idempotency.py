@@ -41,17 +41,23 @@ from book_os.relationship_store import RelationshipStore  # noqa: E402
 def test_repeat_fact_add_keeps_count_and_existing_id(tmp_path):
     store = FactStore(data_dir=tmp_path)
 
-    first = store.add(Fact(
-        statement="Аркаим находится на Южном Урале",
-        entity_id="e1", doc_id="doc1",
-        provenance="source", confidence=0.9,
-    ))
+    first = store.add(
+        Fact(
+            statement="Аркаим находится на Южном Урале",
+            entity_id="e1",
+            doc_id="doc1",
+            provenance="source",
+            confidence=0.9,
+        )
+    )
 
     # Объект с НОВЫМ uuid, но идентичным содержанием — повторный ingest.
     second = Fact(
         statement="Аркаим находится на Южном Урале",
-        entity_id="e1", doc_id="doc1",
-        provenance="source", confidence=0.9,
+        entity_id="e1",
+        doc_id="doc1",
+        provenance="source",
+        confidence=0.9,
     )
     assert second.id != first.id, "предпосылка теста: id новый"
 
@@ -70,11 +76,19 @@ def test_repeat_fact_add_keeps_count_and_existing_id(tmp_path):
 def test_repeat_relationship_add_keeps_count_and_existing_id(tmp_path):
     store = RelationshipStore(data_dir=tmp_path)
 
-    first = store.add(Relationship(
-        source_id="e1", target_id="e2", type="related_to", doc_id="doc1",
-    ))
+    first = store.add(
+        Relationship(
+            source_id="e1",
+            target_id="e2",
+            type="related_to",
+            doc_id="doc1",
+        )
+    )
     second = Relationship(
-        source_id="e1", target_id="e2", type="related_to", doc_id="doc1",
+        source_id="e1",
+        target_id="e2",
+        type="related_to",
+        doc_id="doc1",
     )
     assert second.id != first.id
 
@@ -91,14 +105,22 @@ def test_different_statements_are_not_merged(tmp_path):
     """Разные факты (даже об одной сущности и одном документе) — обе
     записи остаются; похожего текста для слияния недостаточно."""
     store = FactStore(data_dir=tmp_path)
-    a = store.add(Fact(
-        statement="Велик родился в конце апреля",
-        entity_id="e1", doc_id="doc1", provenance="source",
-    ))
-    b = store.add(Fact(
-        statement="Велик вырос в степи за один сезон",
-        entity_id="e1", doc_id="doc1", provenance="source",
-    ))
+    a = store.add(
+        Fact(
+            statement="Велик родился в конце апреля",
+            entity_id="e1",
+            doc_id="doc1",
+            provenance="source",
+        )
+    )
+    b = store.add(
+        Fact(
+            statement="Велик вырос в степи за один сезон",
+            entity_id="e1",
+            doc_id="doc1",
+            provenance="source",
+        )
+    )
     assert a.id != b.id
     assert len(store.list()) == 2, "содержательно разные факты не должны сливаться"
 
@@ -107,37 +129,53 @@ def test_same_entity_name_fact_from_other_doc_kept(tmp_path):
     """Ключ содержит doc_id: тот же statement из другого документа —
     отдельное происхождение, не склеивается."""
     store = FactStore(data_dir=tmp_path)
-    store.add(Fact(
-        statement="Световит — учитель Великосвета",
-        entity_id="e1", doc_id="doc1", provenance="source",
-    ))
-    store.add(Fact(
-        statement="Световит — учитель Великосвета",
-        entity_id="e1", doc_id="doc2", provenance="source",
-    ))
+    store.add(
+        Fact(
+            statement="Световит — учитель Великосвета",
+            entity_id="e1",
+            doc_id="doc1",
+            provenance="source",
+        )
+    )
+    store.add(
+        Fact(
+            statement="Световит — учитель Великосвета",
+            entity_id="e1",
+            doc_id="doc2",
+            provenance="source",
+        )
+    )
     assert len(store.list()) == 2
 
 
 def test_relationship_pair_with_other_type_is_kept(tmp_path):
     """Связь между теми же сущностями с другим типом — отдельная запись."""
     store = RelationshipStore(data_dir=tmp_path)
-    store.add(Relationship(
-        source_id="e1", target_id="s", type="related_to", doc_id="doc1",
-    ))
-    store.add(Relationship(
-        source_id="e1", target_id="s", type="conflicts_with", doc_id="doc1",
-    ))
+    store.add(
+        Relationship(
+            source_id="e1",
+            target_id="s",
+            type="related_to",
+            doc_id="doc1",
+        )
+    )
+    store.add(
+        Relationship(
+            source_id="e1",
+            target_id="s",
+            type="conflicts_with",
+            doc_id="doc1",
+        )
+    )
     assert len(store.list()) == 2
 
 
 def test_fact_legacy_overwrite_by_id_unchanged(tmp_path):
     """Историческая семантика: add с существующим id перезаписывает."""
     store = FactStore(data_dir=tmp_path)
-    f1 = Fact(id="fixed-id", statement="Да", entity_id="e", doc_id="d",
-              provenance="source")
+    f1 = Fact(id="fixed-id", statement="Да", entity_id="e", doc_id="d", provenance="source")
     store.add(f1)
-    f2 = Fact(id="fixed-id", statement="Исправлено", entity_id="e",
-              doc_id="d", provenance="source")
+    f2 = Fact(id="fixed-id", statement="Исправлено", entity_id="e", doc_id="d", provenance="source")
     store.add(f2)
     [fact] = store.list()
     assert fact.statement == "Исправлено"
@@ -148,17 +186,13 @@ def test_whitespace_normalization_merges_only_whitespace_variants(tmp_path):
     """Тот же смысл отличается только пробелами → merge; содержательные
     различия (регистр/пунктуация) — не merge."""
     store = FactStore(data_dir=tmp_path)
-    store.add(Fact(statement="Аркаим  находится  на   Южном Урале",
-                   entity_id="e", doc_id="d", provenance="source"))
-    store.add(Fact(statement="Аркаим находится на Южном Урале",
-                   entity_id="e", doc_id="d", provenance="source"))
+    store.add(Fact(statement="Аркаим  находится  на   Южном Урале", entity_id="e", doc_id="d", provenance="source"))
+    store.add(Fact(statement="Аркаим находится на Южном Урале", entity_id="e", doc_id="d", provenance="source"))
     assert len(store.list()) == 1, "пробельные варианты — одна запись"
 
     store2 = FactStore(data_dir=tmp_path / "case")
-    store2.add(Fact(statement="аркaim найден", entity_id="e", doc_id="d",
-                    provenance="source"))
-    store2.add(Fact(statement="Аркаим найден", entity_id="e", doc_id="d",
-                    provenance="source"))
+    store2.add(Fact(statement="аркaim найден", entity_id="e", doc_id="d", provenance="source"))
+    store2.add(Fact(statement="Аркаим найден", entity_id="e", doc_id="d", provenance="source"))
     assert len(store2.list()) == 2, "регистр — содержательное различие"
 
 
@@ -193,10 +227,7 @@ def _make_orchestrator(tmp_path: Path):
 def _tiny_source(tmp_path: Path) -> Path:
     src = tmp_path / "tiny_book.md"
     src.write_text(
-        "## Глава 1 — Степь\n\n"
-        "Велик шёл через степь и думал о Судьбе.\n\n"
-        "## Глава 2 — Город\n\n"
-        "Световит наставлял Великосвета о Цикле времён.\n",
+        "## Глава 1 — Степь\n\nВелик шёл через степь и думал о Судьбе.\n\n## Глава 2 — Город\n\nСветовит наставлял Великосвета о Цикле времён.\n",
         encoding="utf-8",
     )
     return src
@@ -210,14 +241,10 @@ def test_repeat_ingest_does_not_grow_facts_or_rels(tmp_path):
 
     r1 = orch.ingest(src)
     assert r1["status"] == "ok", r1
-    facts_after_1 = len(json.loads(
-        (os_dir / "graph" / "facts.json").read_text(encoding="utf-8")))
-    rels_after_1 = len(json.loads(
-        (os_dir / "graph" / "relationships.json").read_text(encoding="utf-8")))
-    ents_after_1 = json.loads(
-        (os_dir / "graph" / "entities.json").read_text(encoding="utf-8"))
-    facts_1 = json.loads(
-        (os_dir / "graph" / "facts.json").read_text(encoding="utf-8"))
+    facts_after_1 = len(json.loads((os_dir / "graph" / "facts.json").read_text(encoding="utf-8")))
+    rels_after_1 = len(json.loads((os_dir / "graph" / "relationships.json").read_text(encoding="utf-8")))
+    ents_after_1 = json.loads((os_dir / "graph" / "entities.json").read_text(encoding="utf-8"))
+    facts_1 = json.loads((os_dir / "graph" / "facts.json").read_text(encoding="utf-8"))
     assert facts_after_1 > 0, "инжест должен создать факты"
 
     # Повторный ingest ×2 и ×3 — идемпотентно.
@@ -226,21 +253,13 @@ def test_repeat_ingest_does_not_grow_facts_or_rels(tmp_path):
     r3 = orch.ingest(src)
     assert r3["status"] == "ok"
 
-    facts_after_3 = len(json.loads(
-        (os_dir / "graph" / "facts.json").read_text(encoding="utf-8")))
-    rels_after_3 = len(json.loads(
-        (os_dir / "graph" / "relationships.json").read_text(encoding="utf-8")))
-    ents_after_3 = json.loads(
-        (os_dir / "graph" / "entities.json").read_text(encoding="utf-8"))
-    facts_3 = json.loads(
-        (os_dir / "graph" / "facts.json").read_text(encoding="utf-8"))
+    facts_after_3 = len(json.loads((os_dir / "graph" / "facts.json").read_text(encoding="utf-8")))
+    rels_after_3 = len(json.loads((os_dir / "graph" / "relationships.json").read_text(encoding="utf-8")))
+    ents_after_3 = json.loads((os_dir / "graph" / "entities.json").read_text(encoding="utf-8"))
+    facts_3 = json.loads((os_dir / "graph" / "facts.json").read_text(encoding="utf-8"))
 
-    assert facts_after_3 == facts_after_1, (
-        f"повторный ingest дублирует факты: {facts_after_1} → {facts_after_3}"
-    )
-    assert rels_after_3 == rels_after_1, (
-        f"повторный ingest дублирует связи: {rels_after_1} → {rels_after_3}"
-    )
+    assert facts_after_3 == facts_after_1, f"повторный ingest дублирует факты: {facts_after_1} → {facts_after_3}"
+    assert rels_after_3 == rels_after_1, f"повторный ingest дублирует связи: {rels_after_1} → {rels_after_3}"
     assert ents_after_3 == ents_after_1, "сущности не должны удваиваться"
     assert facts_3 == facts_1, "id/содержание фактов должны остаться те же"
     docs = list((os_dir / "documents").glob("*.json"))

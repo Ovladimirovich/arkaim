@@ -35,9 +35,7 @@ def _chunk(*, chars=(), themes=(), symbols=()):
 
 def test_no_duplicate_when_name_already_exists():
     """Повторное извлечение существующего имени не создаёт дубликат и сохраняет id."""
-    existing = {
-        "аркаим": Entity(id="e-ark", name="Аркаим", type="concept", aliases=["Аркаим"])
-    }
+    existing = {"аркаим": Entity(id="e-ark", name="Аркаим", type="concept", aliases=["Аркаим"])}
     chunks = [
         _chunk(chars=["Аркаим", "Велик"]),
         _chunk(chars=["Аркаим"], themes=["Судьба"], symbols=["Камень"]),
@@ -80,9 +78,7 @@ def test_none_existing_behaves_as_empty():
 
 def test_existing_keyed_case_insensitive():
     """Ключ existing_entities — имя в нижнем регистре, совпадение без учёта регистра."""
-    existing = {
-        "аркаим": Entity(id="e-ark", name="Аркаим", type="concept", aliases=["Аркаим"])
-    }
+    existing = {"аркаим": Entity(id="e-ark", name="Аркаим", type="concept", aliases=["Аркаим"])}
     result = EntityExtractor.extract([_chunk(chars=["АРКАИМ"])], existing)
     ark = [e for e in result if e.name.lower() == "аркаим"]
     assert len(ark) == 1

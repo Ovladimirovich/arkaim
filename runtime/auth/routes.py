@@ -213,7 +213,10 @@ async def dev_bootstrap_owner(request: Request):
     )
     log.info(
         "owner_bootstrap invite_id=%s provider=%s puid=%s role=%s",
-        invite["id"], provider, provider_user_id, role,
+        invite["id"],
+        provider,
+        provider_user_id,
+        role,
     )
     return {"ok": True, "invite": invite}
 
@@ -248,9 +251,7 @@ async def google_callback(request: Request, code: str | None = None):
         )
         # D-6: owner-bound invite — если владелец создал привязанный admin-инвайт
         # для своего Google-UID, роль пересматривается без изменения use_count.
-        bound = await user_store.find_bound_invite(
-            google_data["provider"], google_data["provider_user_id"]
-        )
+        bound = await user_store.find_bound_invite(google_data["provider"], google_data["provider_user_id"])
         if bound:
             await user_store.set_role(user["id"], bound["role"])
             user = await user_store.get_user(user["id"]) or user

@@ -91,11 +91,14 @@ def make_pipeline(tmp_path: Path, source: Path, monkeypatch):
     pipeline = KnowledgeExpansionPipeline(llm_client=None)
     pipeline.store = KnowledgeStore(knowledge_dir=tmp_path)
     output = tmp_path / ("SOURCE_DEEP.json")
-    pipeline.register_module("r1_regression_module", {
-        "description": "R-1 regression",
-        "source_files": [source],
-        "output_file": output,
-    })
+    pipeline.register_module(
+        "r1_regression_module",
+        {
+            "description": "R-1 regression",
+            "source_files": [source],
+            "output_file": output,
+        },
+    )
     return pipeline, output
 
 
@@ -190,9 +193,7 @@ async def test_scheduler_restartup_run_writes_no_mirrors(tmp_path, monkeypatch):
     # Второй check без изменений источника — не запускает модуль.
     runs_after_first = len(scheduler.get_status()["last_run"].keys())
     await scheduler.check_and_run()
-    assert len(scheduler.get_status()["last_run"].keys()) == runs_after_first, (
-        "второй check не должен перезапускать модуль (идемпотентность)"
-    )
+    assert len(scheduler.get_status()["last_run"].keys()) == runs_after_first, "второй check не должен перезапускать модуль (идемпотентность)"
     assert len(read_items(output)) == 1, "файл не должен расти без изменений источника"
 
 
