@@ -361,7 +361,7 @@ arkaim-book/                     # новая чистая история
 
 **Обязательно исключаемые** (проверка при сборке): `runtime/.env` (+ любые `*.env` кроме `.env.example`), `core/OS_DATA/`, `core/CHROMA_DB/`, `runtime/memory/data/*.db`, `node_modules/`, `.venv/`, логи (`*.txt`-отчёты, `*.log`), `runtime/test_reports/`,`.pytest_cache`/`.ruff_cache`/`__pycache__`, W-8: геном-история 46→6 (дедуп. вариант по OWNER-GO D).
 
-**Обязательная документация при публикации**: `README.md`, `AGENTS.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `LICENSE`, `docs/G1_PUBLICATION_REGISTRY_2026-10-30.md` (реестр). Опционально: сжатый отчёт REPORT.md / README_BRIEF.
+**Обязательная документация при публикации**: `README.md`, `AGENTS.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `LICENSE`, `docs/G1_PUBLICATION_REGISTRY_2026-10-30.md` (реестр). Опционально: `README_BRIEF_2026-10-30.md` (задание на пересборку README; `REPORT.md` удалён как устаревший P-отчёт).
 
 **План переноса истории и сохранения локальной копии**:
 1. Ничего не менять локально: рабочая копия остаётся; новый remote добавить и `git push` (история 15 коммитов перенесётся полностью, ~7,6 MB).

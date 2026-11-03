@@ -28,7 +28,7 @@
 | `runtime/core/routes/comfyui.py` | ComfyUI config/status заглушки; НЕ подключены в `main.py` (спят); судьба = OWNER-GO-2 |
 | `core/KNOWLEDGE/SCREENPLAY_DIALOGUES.json` | данные знаний |
 | `core/CORE/narrative_engine/data/WORLD_MODEL.json.backup_20261029_141101` | резервная копия World Model |
-| `ARKAIM_CONCEPT.md`, `REPORT.md`, `docs/archive/completed/ARKAIM_CONCEPT_RESEARCH_2026-10-29.md` | отчётные артефакты |
+| `ARKAIM_CONCEPT.md`, `docs/archive/completed/ARKAIM_CONCEPT_RESEARCH_2026-10-29.md` | отчётные артефакты (`REPORT.md` удалён 2026-11-03 как устаревший P-отчёт) |
 | `scan_refs.py`, `scan_terms.py`, `scan_terms.ps1`, `runtime/fix_routes.py`, `runtime/fix_tests2.py`…`fix_tests4.py`, `runtime/test_output.txt` | scratch-скрипты (гигиена = этап E-3) |
 | `план синхронизации локальной разработки и GitHub.md` | отчёт (исходный документ задачи) |
 

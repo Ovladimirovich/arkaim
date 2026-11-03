@@ -1,323 +1,163 @@
-# 🏛️ Наследие Аркаима — Цифровое сознание книги
+# Наследие Аркаима: цифровое представительство книги
 
-> **Цифровое представительство книги «Наследие Аркаима» (ОВладимирович).**
-> Живое ядро (Pulse) знает книгу без LLM, использует AI только как голос.
->
-> **Репозиторий `arkaim-book`** — осознанный чистый снимок проекта (G-1, 2026-10-30):
-> самодостаточная, воспроизводимая, свободная от секретов кодовая база.
-> Подробности о составе и исключениях — `docs/G1_PUBLICATION_REGISTRY_2026-10-30.md`.
+## Что это
 
-[![Python](https://img.shields.io/badge/Python-3.14+-3776AB?logo=python&logoColor=white)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.136+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=next.js&logoColor=white)](https://nextjs.org)
-[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev)
-[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![CI/CD](https://github.com/Ovladimirovich/arkaim-book/actions/workflows/ci.yml/badge.svg)](https://github.com/Ovladimirovich/arkaim-book/actions/workflows/ci.yml)
+**Arkaim — цифровое представительство книги «Наследие Аркаима».**
 
----
+Книга перестаёт быть файлом и становится местом, куда приходят с вопросом,
+с исследованием и с желанием сделать из неё производные материалы — при том,
+что каждое утверждение системы прослеживается до авторского текста либо
+честно помечено как гипотеза, внешний источник или реконструкция.
 
-## 📋 Содержание
+Автор пишет книгу один раз. Система помогает ей жить дальше.
 
-- [О проекте](#о-проекте)
-- [Архитектура](#архитектура)
-- [Стек технологий](#стек-технологий)
-- [Быстрый старт](#быстрый-старт)
-- [Структура проекта](#структура-проекта)
-- [API](#api)
-- [Тестирование](#тестирование)
-- [Развёртывание](#развёртывание)
-- [Вклад в проект](#вклад-в-проект)
-- [Лицензия](#лицензия)
+## Для кого
 
----
+| Кто | Что получает |
+|---|---|
+| Читатель | ответ на вопрос по книге с указанием, откуда он взят |
+| Исследователь | мир и время книги как отдельные навигаторы, сценарии «что если» |
+| Автор | производные материалы из книги — сценарий, задания на кадры, письма читателям |
 
-## О проекте
+## Чем не является
 
-**«Наследие Аркаима»** — это цифровое сознание одноимённой книги. Система построена вокруг **Аватара Книги** — живого ядра (Pulse), которое:
+Arkaim — не чат-бот «по книге», не CRM, не автопостер, не система массовых
+рассылок и не замена автору. Любое действие с внешним эффектом требует
+подтверждения человека.
 
-- ✅ **Знает книгу без LLM** — отвечает на фактические вопросы напрямую
-- ✅ **Использует LLM только как микрофон** — формулирует то, что уже знает
-- ✅ **Помнит каждого читателя** — адаптирует ответы под уровень и интересы
-- ✅ **Наблюдает и предлагает** — видит, что обсуждают читатели, и предлагает автору
-- ✅ **Растёт без потери себя** — версионирование генома, иммутабельные слои
+## Что работает сегодня
 
-### Ключевые метрики
+Каждое число пересчитывается на текущем коммите или на запущенном инстансе.
+Доказательство — в последней колонке.
 
-| Метрика | Значение |
-|---------|----------|
-| Сущностей мира | **547** |
-| Связей между сущностями | **287** |
-| Форм визуализации | **55** |
-| Страниц интерфейса | **34** |
-| Слоёв Pulse | **10** (+ ExpansionLayer) |
-| API эндпоинтов | **219** |
-| Тестов | **349+** (backend) + **30** (frontend) |
-| Модулей обогащения знаний | **11** |
-| Тем расширенных знаний | **168** |
+| Величина | Значение | Доказательство |
+|---|---|---|
+| API: путей / операций | **346 / 370** | на запущенном бэкенде: `curl -s localhost:8642/openapi.json \| python3 -c "import json,sys;d=json.load(sys.stdin);p=d['paths'];print(len(p), sum(len([m for m in v if m in ('get','post','put','patch','delete')]) for v in p.values()))"` |
+| Страниц интерфейса | **39** | `git ls-tree -r --name-only HEAD \| grep -c 'arkaim-web/src/app/.*page\.tsx'` |
+| Тестов бэкенда | **3134 passed**, 1 failed (`test_dev_routes_disabled::test_default_config_is_off` — локальный `.env` содержит `DEV_AUTH_ENABLED=true`; на чистом инстансе с default конфигур — пройдёт), 26 skipped, 2 deselected (live) | `cd runtime && pytest tests -q -m "not live"` |
+| Тестов narrative_engine | **57 passed** | `pytest core/CORE/narrative_engine/tests -q` |
+| Тестов фронтенда | **274 passed / 3 failed** (pre-existing в `auth-provider.test.tsx`), 38 файлов | `cd arkaim-web && npx vitest run` |
+| Сборка фронтенда | проходит (✓ Compiled successfully, 47 страниц) | `cd arkaim-web && npm run build` |
+| Сущностей мира | **503** в 13 категориях | `curl -s localhost:8642/book/world/summary` (нужна сессия). Авторским каноном помечены **3 из 503** (`AUTHOR_CANON`), **411** — `DERIVED` (≈82%), 57 — `SYSTEM_INTERPRETATION`, 25 — `EXTERNAL_SOURCE`, 6 — `UNKNOWN`, 1 — `RECONSTRUCTION` |
+| Записей провенанса | **503**, нарушений **0** | `python scripts/check_provenance_integrity.py --strict` |
+| Форм визуализации | **55** = 11 категорий × 5 | `core/CORE/FORM/*.json` (11 файлов) |
+| Слоёв Pulse | **11** (10 + ExpansionLayer) | `core/CORE/pulse/pulse.py:112-124` |
+| Тем в геноме | **138** | `core/GENOME/CURRENT/themes.json` |
+| Чанков каталога | **824** | `core/KNOWLEDGE/enriched_catalog.json` |
+| Эпох / канонических событий | **12 / 8** | `core/CORE/narrative_engine/data/WORLD_MODEL.json` |
+| Сцен сценария | **119 глав, 642 абзаца**, 149 323 знака | `core/KNOWLEDGE/SYNOPSIS_DOCUMENT.json` |
+| JSON в `core/KNOWLEDGE` | **54** | `git ls-tree -r --name-only HEAD \| grep -c '^core/KNOWLEDGE/.*\.json$'` |
+| Экранов мобильного | **30 файлов**, сборка не проверялась | `arkaim-mobile/` |
+| Python | **3.14** | `Dockerfile.backend:2`, матрица CI |
 
----
+Оговорки (обязательны при цитировании чисел):
 
-## Архитектура
+- **Связи между сущностями** — 102 генерируются кодом; в графовом
+  хранилище (Book OS) на момент снимка **0 узлов / 0 рёбер**: граф и
+  Book OS существуют как код, данных в клоне нет.
+- **Модули обогащения знаний** — 11 в документах, 28 `.py`-файлов в
+  `core/CORE/knowledge_expansion/`; считаем по смыслу, не по файлам.
+- **Темы расширенных знаний** — 23 доступны слою, 217 записей на диске.
+  Формулировку «168 тем» не использовать: она не была верна ни в одной
+  ревизии.
+
+## Чего пока нет
+
+| Заявлять нельзя | Потому что | Что корректно |
+|---|---|---|
+| «547 сущностей, 287 связей» | устаревшие числа релиза 2.0.0 (июль) | 503 сущности; связи — только с оговоркой выше |
+| «219 эндпоинтов», «34 страницы», «349 тестов» | устарело | 346/370, 39, 3134 + 57 + 274 |
+| «Генерация изображений (ComfyUI)» | роуты `/comfyui/*` депубликованы; остался только `MediaPlan` | готовит задания на кадры; исполнение — за пределами проекта |
+| «ChromaDB заполнена» | данные gitignored, в клоне пусто | векторный индекс вне репозитория; конфигурируется на инстансе |
+| «Книга молчит, если ответа нет» | 40/40 вопросов вне книги получили ответ | границы ответа — в разработке |
+| «Граф знаний работает» | 0 узлов, 0 рёбер в хранилище | код есть, данных нет |
+| «Сообщество читателей» | 0 интерпретаций, 0 артефактов | API и модель есть, записей нет |
+| «Медиапроизводство / фильм» | только план и EDL | планирование есть, исполнения нет |
+| «Понимает книгу как человек» | система понимает структуру и связи, не рассуждает | не формулировать |
+
+## Как устроено
 
 ```
-Читатель → Web UI (Next.js :3000) → API Proxy → Backend (FastAPI :8642)
+Читатель → Web UI (Next.js :3000) → API-прокси → Backend (FastAPI :8642)
                                                           │
-                                                 ┌───────┴────────┐
-                                                 │    BookPulse    │
-                                                 │  (живое ядро)   │
-                                                 │ ┌─────────────┐ │
-                                                 │ │KnowledgeLayer│ │
-                                                 │ │ MeaningLayer │ │
-                                                 │ │IdentityLayer │ │
-                                                 │ │ MissionLayer │ │
-                                                 │ └─────────────┘ │
-                                                 │    BookVoice     │
-                                                 │  (LLM-микрофон)  │
-                                                 │   ReaderMemory   │
-                                                 │   World Engine   │
-                                                 └─────────────────┘
+                                       ┌──────────────────┴───────────┐
+                                       │  Pulse — живое ядро (11 слоёв) │
+                                       │  Knowledge · Meaning · Identity │
+                                       │  Mission · World Engine · …      │
+                                       │  BookVoice (LLM-микрофон)       │
+                                       └────────────────────────────────┘
+   Подсистемы:
+   • World Engine (narrative_engine) — вычислимая модель мира книги
+   • Temporal / World Model — эпохи и канонические события (12 / 8)
+   • Studio (film_studio, media_plan) — сценарные и кадровые задания
+   • Book OS (core/CORE/book_os) — документная база: сущности, факты, связи
 ```
 
-### Слои Pulse
+Pulse отвечает на вопрос первым: слои знают книгу без LLM; LLM используется
+только как «микрофон» для формулировки. Финальная проверка —
+`IdentityLayer.validate()`.
 
-| Слой | Тип | Назначение |
-|------|-----|-----------|
-| KnowledgeLayer | Mutable | Факты, темы, O(1) индексы + RAG |
-| ExpansionLayer | Mutable | Расширенные знания (168 тем) |
-| MeaningLayer | Mutable | Замысел автора |
-| IdentityLayer | Immutable | Самопредставление, границы |
-| MissionLayer | Immutable | Миссия книги |
-| WorldEngineLayerV2 | Mutable | Вычислимая модель мира |
+## Производные материалы
 
-### Подсистемы
-
-- **World Engine** — вычислимая модель мира книги (547 сущностей, 287 связей)
-- **Knowledge Expansion Pipeline** — авто-обогащение знаний через LLM
-- **Knowledge Graph** — графовый движок с BFS, shortest path, контекстом для RAG
-- **ReaderProfile + Adaptive Responses** — адаптация под читателя
-- **Presence** — наблюдение + предложения автору
-- **Visualization Pipeline** — генерация изображений (ComfyUI)
-
----
-
-## Стек технологий
-
-### Бэкенд
-
-| Компонент | Технология |
-|-----------|-----------|
-| Язык | Python 3.14+ |
-| Фреймворк | FastAPI 0.136+ |
-| База данных | SQLite + ChromaDB (векторная) |
-| Аутентификация | JWT (HS256), OAuth Telegram/Google, API Keys |
-| LLM | GigaChat, OpenRouter |
-| Генерация изображений | ComfyUI, SVG, Mock |
-| WebSocket | Real-time уведомления |
-
-### Фронтенд
-
-| Компонент | Технология |
-|-----------|-----------|
-| Язык | TypeScript 5 |
-| Фреймворк | Next.js 16 |
-| UI | React 19 + Ant Design 6 |
-| Стейт-менеджмент | Zustand + TanStack React Query |
-| Тесты | Vitest + Playwright |
-| Стили | Tailwind CSS 4 |
-
-### Мобильное приложение
-
-| Компонент | Технология |
-|-----------|-----------|
-| Фреймворк | React Native + Expo |
-| Навигация | React Navigation |
-
-### Инфраструктура
-
-| Компонент | Технология |
-|-----------|-----------|
-| Контейнеризация | Docker + Docker Compose |
-| CI/CD | GitHub Actions |
-| HTTPS | Cloudflare Tunnel / Tailscale Funnel |
-| Мониторинг | X-Ray Observability |
-
----
+| Материал | Пометка | Основание |
+|---|---|---|
+| Сценарий | **данные есть** — 119 сцен | `SYNOPSIS_DOCUMENT.json` |
+| Кадр, видео | **только задание** — `MediaPlan` | `assets/generate` не запускает генерацию |
+| Фильм | **только план** — EDL для внешнего монтажа | `test_studio_sequence.py:17` |
+| Письма читателям | **работает** — черновик из Pulse → утверждение → отправка | `presence/email_api.py`, 12 роутов |
+| Статьи и посты | **не реализовано** | нулевые роуты |
 
 ## Быстрый старт
 
-### Локальный запуск
+### Бэкенд (порт 8642)
 
 ```bash
-# Клонировать репозиторий
-git clone https://github.com/Ovladimirovich/arkaim.git
-cd arkaim
-
-# Запустить всё сразу (backend + frontend + браузер)
-start_all.bat
-
-# Или по отдельности:
-
-# Бэкенд (порт 8642)
 cd runtime
 python -m venv .venv
 .venv\Scripts\pip install -r requirements.txt
+# заполнить .env из .env.example (SESSION_SECRET ≥ 32 символов, случайный)
 .venv\Scripts\python -m uvicorn core.main:app --port 8642
+```
 
-# Фронтенд (порт 3000)
+Проверка: `curl http://localhost:8642/health` → JSON со статусом.
+
+### Фронтенд (порт 3000)
+
+```bash
 cd arkaim-web
 npm install
 npm run dev
 ```
 
-### Docker
+Проверка: сборка — `npm run build`; страница — http://localhost:3000.
+
+### Всё сразу (Docker)
 
 ```bash
 docker compose up --build
 ```
 
-Откройте [http://localhost:3000](http://localhost:3000) в браузере.
+Frontend: http://localhost:3000 · Backend: http://localhost:8642 ·
+Swagger: http://localhost:8642/docs
 
----
+Примечание: локальные базы `core/OS_DATA/` и `core/CHROMA_DB/` gitignored —
+в чистом клоне их нет; наполняются штатным ingest-пайплайном
+(`python -m book_os.cli ingest …` + `populate_from_genome`), идемпотентно.
 
-## Структура проекта
+## Где правда
 
-```
-arkaim/
-├── arkaim-web/              # Фронтенд (Next.js + React + Ant Design)
-│   ├── src/
-│   │   ├── app/            # Страницы (34 шт.)
-│   │   ├── shared/         # UI-компоненты, хуки, типы
-│   │   ├── entities/       # Бизнес-сущности
-│   │   ├── features/       # Фичи
-│   │   └── widgets/        # Виджеты (Sidebar, AdminPanel и др.)
-│   └── tests/              # Frontend тесты
-│
-├── arkaim-mobile/           # Мобильное приложение (React Native + Expo)
-│   └── src/
-│       ├── screens/        # Экраны
-│       └── navigation/     # Навигация
-│
-├── runtime/                 # Бэкенд (FastAPI)
-│   ├── core/               # Основной код (роуты, провайдеры, сервисы)
-│   ├── auth/               # Аутентификация (OAuth, JWT, RBAC)
-│   ├── bot/                # Telegram / VK боты
-│   ├── memory/             # Память читателей (SQLite)
-│   ├── tests/              # Backend тесты
-│   └── prompts/            # Системные промпты
-│
-├── core/                    # Ядро знаний (Book Intelligence)
-│   ├── CORE/
-│   │   ├── pulse/          # BookPulse (слои, голос, эволюция)
-│   │   ├── narrative_engine/  # World Engine, сюжетный движок
-│   │   ├── knowledge_graph/  # Граф знаний
-│   │   ├── intelligence/   # Интеллект (RAG, chunker, retriever)
-│   │   ├── visualization/  # Визуализация (промпты, сцены)
-│   │   └── knowledge_expansion/  # Пайплайн расширения знаний
-│   ├── KNOWLEDGE/          # База знаний (40+ JSON-файлов)
-│   ├── GENOME/             # Геном книги
-│   └── CHROMA_DB/          # Векторная БД
-│
-├── docs/                    # Документация
-│   ├── PROJECT_STATUS.md   # Статус проекта
-│   ├── WORLD_EXPLORER.md   # World Explorer
-│   └── images/             # Изображения
-│
-├── scripts/                 # Скрипты (очистка, генерация)
-├── SCHEMAS/                 # JSON Schema
-├── ADR/                     # Architecture Decision Records
-│
-├── docker-compose.yml       # Docker Compose
-├── Dockerfile.backend       # Dockerfile для бэкенда
-├── Dockerfile.frontend      # Dockerfile для фронтенда
-├── .github/workflows/ci.yml # CI/CD Pipeline
-│
-├── README.md                # Этот файл
-├── CHANGELOG.md             # История изменений
-├── CONTRIBUTING.md          # Гайд для контрибьюторов
-├── LICENSE                  # MIT License
-├── docs/ARCHITECTURE.md     # Подробная архитектура
-├── docs/DEPLOY.md           # Инструкция по деплою
-```
-
----
-
-## API
-
-Бэкенд предоставляет **219 роутов** на следующих префиксах:
-
-| Префикс | Описание |
-|---------|----------|
-| `/book/*` | Основные эндпоинты книги (ask, genome, layers, world) |
-| `/auth/*` | Аутентификация (login, register, admin) |
-| `/api/*` | API ключи |
-| `/xray/*` | X-Ray observability |
-| `/_ui/*` | Web UI (Jinja2 + HTMX) |
-
-Swagger-документация доступна по адресу: [http://localhost:8642/docs](http://localhost:8642/docs)
-
----
-
-## Тестирование
-
-### Бэкенд
-
-```bash
-cd runtime
-pytest tests/ -q                          # Все тесты
-pytest tests/test_world_engine.py -v      # World Engine тесты
-pytest tests/ -k "auth" -v                # Auth тесты
-```
-
-### Фронтенд
-
-```bash
-cd arkaim-web
-npx vitest run              # Unit-тесты
-npx playwright test         # E2E-тесты
-```
-
----
-
-## Развёртывание
-
-Подробная инструкция — в [docs/DEPLOY.md](docs/DEPLOY.md).
-
-### Варианты:
-1. **Cloudflare Tunnel** (бесплатно, рекомендую) — HTTPS за 5 минут
-2. **Docker Compose** — для продакшена
-3. **Render.com** — автоматический деплой из GitHub
-
----
-
-## 🤖 AI Engineer Guide
-
-Для ИИ-инженеров, работающих с проектом из IDE.
-
-**Самое главное:**
-1. **Voice-протокол** — Pulse ищет ответ → BookVoice формулирует → Pulse проверяет → IdentityLayer.validate()
-2. **Книга — первичный источник истины** — никогда не опирайтесь на возможности LLM
-3. **DI-контейнер** — через `runtime/core/adc_deps.py` (ServiceRegistry)
-
-| Быстрый старт | |
+| Документ | Что |
 |---|---|
-| Frontend | http://localhost:3000 | `cd arkaim-web && npm run dev` |
-| Backend | http://localhost:8642 | `cd runtime && uvicorn core.main:app --port 8642` |
-| Swagger UI | http://localhost:8642/docs | Interactive API docs |
-| Все сразу | — | `docker compose up --build` |
+| [CURRENT_DEVELOPMENT_STATE](docs/CURRENT_DEVELOPMENT_STATE.md) | Текущее состояние разработки |
+| [DEPLOY](docs/DEPLOY.md) | Развёртывание и HTTPS |
+| [CONTRIBUTING](CONTRIBUTING.md) | Как участвовать |
+| [G1_PUBLICATION_REGISTRY](docs/G1_PUBLICATION_REGISTRY_2026-10-30.md) | Состав публикации, исключения, открытые вопросы |
+| [AGENTS.md](AGENTS.md) | Руководство для ИИ-инженеров (команды, тесты, принципы) |
 
-**Команды:** `make dev`, `make test`, `make lint`
+[![Python](https://img.shields.io/badge/Python-3.14-3776AB?logo=python&logoColor=white)](https://python.org)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+[![CI/CD](https://github.com/Ovladimirovich/arkaim-book/actions/workflows/ci.yml/badge.svg)](https://github.com/Ovladimirovich/arkaim-book/actions/workflows/ci.yml)
 
-Подробнее — в [AI Engineer Guide](docs/AI_ENGINEER_GUIDE.md) и [AGENTS.md](AGENTS.md).
-
----
-
-## 📚 Вклад в проект
-
-См. [CONTRIBUTING.md](CONTRIBUTING.md).
-
----
-
-## 🪪 Лицензия
+## Лицензия
 
 Проект распространяется под лицензией **MIT**. См. [LICENSE](LICENSE).
-
