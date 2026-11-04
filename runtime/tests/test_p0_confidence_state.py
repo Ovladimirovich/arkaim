@@ -57,12 +57,8 @@ class TestDeriveConfidenceState:
         # доказывает, что состояние не выводится из числа 0..1.
         from agents.keeper import KeeperAgent
 
-        a = KeeperAgent._derive_confidence_state(
-            "knowledge:character", {"has_unknowns": False}
-        )
-        b = KeeperAgent._derive_confidence_state(
-            "knowledge:character", {"has_unknowns": True}
-        )
+        a = KeeperAgent._derive_confidence_state("knowledge:character", {"has_unknowns": False})
+        b = KeeperAgent._derive_confidence_state("knowledge:character", {"has_unknowns": True})
         assert a == "confirmed"
         assert b == "partial"
         assert a != b
@@ -144,9 +140,7 @@ class TestCatalogTextPartial:
             assert pulse.load()
             voice = BookVoice(pulse) if with_voice else None
             keeper = KeeperAgent(pulse=pulse, voice=voice)
-            r = await keeper.act(
-                {"question": "мириад звездных систем окраине"}
-            )
+            r = await keeper.act({"question": "мириад звездных систем окраине"})
             assert r["source"].startswith("knowledge:catalog_text"), r["source"]
             assert r["confidence_state"] == "partial", (r["source"], r["confidence_state"])
             assert r["uncertainty"]["has_unknowns"] is True
