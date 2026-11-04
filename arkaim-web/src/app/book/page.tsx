@@ -10,6 +10,7 @@ import { ProtectedRoute } from '@/shared/lib/guards';
 import { useIsMobile } from '@/shared/lib/hooks';
 import { SourceBadge } from '@/shared/ui/SourceBadge';
 import { EntityCard } from '@/shared/ui/EntityCard';
+import { consumeChatStream } from '@/shared/realtime/chatStream';
 import Link from 'next/link';
 import type { AskAnswer, RelatedEntity } from '@/shared/api/contracts/book';
 import { clearReaderSession } from '@/shared/api/contracts/reader';
@@ -30,6 +31,8 @@ type Message = {
   mood?: 'joy' | 'curiosity' | 'sadness' | 'doubt' | 'deep' | 'neutral';
   suggestion?: string;
   relatedEntities?: RelatedEntity[];
+  /** Сессия, в которой получен ответ (для глубоких ссылок EntityCard). */
+  sessionId?: string;
 };
 type HistoryItem = { id: number; content: string; created_at: string };
 type HistoryFullItem = { role: 'user' | 'assistant'; content: string; created_at: string };
@@ -152,6 +155,31 @@ function ChatContent() {
       role: m.role,
       content: m.content,
     }));
+    // Текущий вопрос — в исходящие сообщения: backend скорит related_entities
+    // по messages[-1] (orchestrator._related_entities_event), без него связи
+    // считались бы по предыдущему вопросу диалога.
+    const outgoingMessages = [...dialogueHistory, { role: 'user' as const, content: q }];
+
+    // Фолбэк на JSON-контракт /book/ask — путь, который даёт полный ответ
+    // (knowledge_core, canonical_events, provenance, confidence_state).
+    const askFallback = async () => {
+      const result = await api.post<{ data: AskAnswer }>('/book/ask', { question: q, session_id: sessionId, messages: dialogueHistory });
+      const data = result.data;
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: data.answer,
+        source: data.source,
+        pulseConfidence: data.pulse_confidence,
+        llmUsed: data.llm_used,
+        confidenceState: data.confidence_state,
+        uncertainty: data.uncertainty,
+        mood: data.mood as Message['mood'],
+        suggestion: data.suggestion,
+        relatedEntities: data.related_entities,
+        time: now(),
+        sessionId,
+      }]);
+    };
 
     try {
       // arkaim_session — httponly cookie, приходит автоматически (credentials: 'same-origin').
@@ -161,43 +189,31 @@ function ChatContent() {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: q, messages: dialogueHistory }),
+        body: JSON.stringify({ question: q, messages: outgoingMessages }),
       });
 
       if (resp.ok && resp.headers.get('content-type')?.includes('text/event-stream')) {
-        const reader = resp.body?.getReader();
-        const decoder = new TextDecoder();
-        let fullText = '';
-        if (reader) {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            for (const line of decoder.decode(value, { stream: true }).split('\n')) {
-              if (line.startsWith('data: ')) {
-                try { const d = JSON.parse(line.slice(6)); if (d.text) { fullText += d.text; setStreamingText(fullText); } } catch {}
-              }
-            }
-          }
+        const stream = await consumeChatStream(resp, { onText: t => setStreamingText(t) });
+        if (stream.text && !stream.error) {
+          setMessages(prev => [...prev, {
+            role: 'assistant',
+            content: stream.text,
+            source: stream.source,
+            pulseConfidence: stream.pulseConfidence,
+            llmUsed: stream.llmUsed,
+            confidenceState: stream.confidenceState,
+            uncertainty: stream.uncertainty,
+            relatedEntities: stream.relatedEntities,
+            time: now(),
+            sessionId,
+          }]);
+        } else {
+          // Стрим пуст или пришёл кадр ошибки: не показываем выдумку
+          // («Получен пустой ответ.»), а честно берём ответ из /book/ask.
+          await askFallback();
         }
-        // SSE /v1/stream отдаёт только text — поля source нет, бейдж не показываем.
-        setMessages(prev => [...prev, { role: 'assistant', content: fullText || 'Получен пустой ответ.', time: now() }]);
       } else {
-        const result = await api.post<{ data: AskAnswer }>('/book/ask', { question: q, session_id: sessionId, messages: dialogueHistory });
-        const data = result.data;
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: data.answer,
-          source: data.source,
-          pulseConfidence: data.pulse_confidence,
-          llmUsed: data.llm_used,
-          confidenceState: data.confidence_state,
-          uncertainty: data.uncertainty,
-          mood: data.mood as Message['mood'],
-          suggestion: data.suggestion,
-          relatedEntities: data.related_entities,
-          time: now(),
-          sessionId,
-        }]);
+        await askFallback();
       }
     } catch (err) {
       setPageError(err instanceof Error ? err.message : 'Не удалось получить ответ от книги. Попробуйте ещё раз.');

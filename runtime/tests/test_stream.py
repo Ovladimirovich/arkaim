@@ -247,7 +247,7 @@ async def test_stream_llm_assisted_emits_real_provenance():
     tokens = [chunk async for chunk in orch.stream(req, {"sub": "u1"})]
     frames = _provenance_frames(tokens)
     assert len(frames) == 1
-    assert frames[0] == {"source": "pulse", "pulse_confidence": 0.4, "llm_used": True}
+    assert frames[0] == {"source": "pulse", "pulse_confidence": 0.4, "llm_used": True, "confidence_state": "confirmed"}
     done_index = next(i for i, t in enumerate(tokens) if "[DONE]" in t)
     prov_index = next(i for i, t in enumerate(tokens) if '"pulse_confidence"' in t)
     assert prov_index < done_index
@@ -290,3 +290,142 @@ async def test_stream_skill_metadata_partially_omits_missing_fields():
 
     tokens = [chunk async for chunk in orch.stream(req, {"sub": "u1"})]
     assert _provenance_frames(tokens) == []
+
+
+# ═══════════════════════════════════════════════════════════════
+# Пустой messages: первый вопрос читателя (разрыв «Получен пустой ответ.»)
+# ═══════════════════════════════════════════════════════════════
+
+
+@pytest.mark.asyncio
+async def test_stream_empty_messages_falls_back_to_question():
+    """messages: [] + question — стрим обязан ответить, а не упасть с IndexError.
+
+    Регрессия: раньше req["messages"][-1] падал внутри генератора после
+    отдачи заголовков 200 + text/event-stream — тело оставалось пустым,
+    и читатель в /book видел «Получен пустой ответ.».
+    """
+    from core.provider_registry import ProviderRegistry
+    from core.providers.base import BaseProvider
+
+    seen: list[list[dict]] = []
+
+    class RecordingProvider(BaseProvider):
+        async def chat(self, messages, context=None, trace_id=""):
+            return "ok"
+
+        async def stream(self, messages, trace_id=""):
+            seen.append(list(messages))
+            yield "Ответ книги"
+
+        async def health(self):
+            return {"status": "ok"}
+
+    ProviderRegistry._providers = {}
+    ProviderRegistry._frozen = False
+    ProviderRegistry.register("recorder", RecordingProvider)
+    ProviderRegistry.freeze()
+
+    from core.orchestrator import Orchestrator
+
+    orch = Orchestrator()
+    orch.skills = []
+    req = {"messages": [], "question": "Что такое Гиперборея?", "provider": "recorder", "metadata": {"session_id": "s1"}}
+
+    tokens = [chunk async for chunk in orch.stream(req, {"sub": "u1"})]
+    # Текст в SSE приходит как JSON с \uXXXX-escape — собираем кадры, а не сырую строку
+    texts = []
+    for token in tokens:
+        if not token.startswith("data: ") or "[DONE]" in token:
+            continue
+        try:
+            frame = json.loads(token.removeprefix("data: ").strip())
+        except json.JSONDecodeError:
+            continue
+        if isinstance(frame, dict) and isinstance(frame.get("text"), str):
+            texts.append(frame["text"])
+    assert "".join(texts) == "Ответ книги"
+    assert any("[DONE]" in t for t in tokens)
+    # Вопрос дошёл до провайдера как последнее user-сообщение
+    assert seen and seen[0][-1] == {"role": "user", "content": "Что такое Гиперборея?"}
+
+
+@pytest.mark.asyncio
+async def test_stream_without_messages_and_question_emits_error_frame():
+    """Нет ни messages, ни question — честный кадр ошибки, а не пустое тело."""
+    _register_streamer()
+    from core.orchestrator import Orchestrator
+
+    orch = Orchestrator()
+    orch.skills = []
+    req = {"messages": [], "provider": "streamer", "metadata": {"session_id": "s1"}}
+
+    tokens = [chunk async for chunk in orch.stream(req, {"sub": "u1"})]
+    full = "".join(tokens)
+    assert "empty_request" in full
+    assert "[DONE]" in full
+    # Провайдер не вызывался: без текста вопроса отвечать нечем
+    assert "Answer text" not in full
+
+
+# ═══════════════════════════════════════════════════════════════
+# confidence_state / uncertainty в SSE — та же логика, что в /book/ask
+# ═══════════════════════════════════════════════════════════════
+
+
+@pytest.mark.asyncio
+async def test_stream_provenance_carries_partial_state_with_uncertainty():
+    """Флаг has_unknowns из Pulse → confidence_state=partial в стриме."""
+    _register_streamer()
+    from core.orchestrator import Orchestrator
+    from skills.base import SkillResult
+
+    orch = Orchestrator()
+    orch.skills = [
+        _FakeSkill(
+            "book",
+            SkillResult(
+                handled=True,
+                response="Ответ из книги",
+                metadata={
+                    "source": "knowledge:theme",
+                    "llm_used": False,
+                    "confidence": 0.5,
+                    "uncertainty": {"has_unknowns": True, "unknown_aspects": ["точная хронология"]},
+                },
+            ),
+        )
+    ]
+    req = {"messages": [{"role": "user", "content": "Какова хронология?"}], "provider": "streamer", "metadata": {"session_id": "s1"}}
+
+    tokens = [chunk async for chunk in orch.stream(req, {"sub": "u1"})]
+    frames = _provenance_frames(tokens)
+    assert len(frames) == 1
+    assert frames[0]["confidence_state"] == "partial"
+    assert frames[0]["uncertainty"] == {"has_unknowns": True, "unknown_aspects": ["точная хронология"]}
+
+
+@pytest.mark.asyncio
+async def test_stream_provenance_marks_silence_as_insufficient():
+    """source=silence (Pulse не нашёл оснований) → confidence_state=insufficient."""
+    _register_streamer()
+    from core.orchestrator import Orchestrator
+    from skills.base import SkillResult
+
+    orch = Orchestrator()
+    orch.skills = [
+        _FakeSkill(
+            "book",
+            SkillResult(
+                handled=True,
+                response="Не знаю",
+                metadata={"source": "silence", "llm_used": False, "confidence": 0.0},
+            ),
+        )
+    ]
+    req = {"messages": [{"role": "user", "content": "Вне книги"}], "provider": "streamer", "metadata": {"session_id": "s1"}}
+
+    tokens = [chunk async for chunk in orch.stream(req, {"sub": "u1"})]
+    frames = _provenance_frames(tokens)
+    assert len(frames) == 1
+    assert frames[0]["confidence_state"] == "insufficient"

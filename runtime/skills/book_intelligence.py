@@ -63,6 +63,10 @@ class BookIntelligenceSkill(Skill):
 
             confidence = utterance.pulse_response.confidence
             source = utterance.source
+            # Структурированная неопределённость Pulse — ровно то, что Keeper
+            # отдаёт в POST /book/ask. Без неё чат не отличит «partial» от
+            # «confirmed» и соврёт читателю про полноту знания из книги.
+            uncertainty = self._serialize_uncertainty(utterance.pulse_response)
 
             # CASE 1: Pulse знает ответ с высокой уверенностью — возвращаем напрямую
             if confidence >= MIN_CONFIDENCE_DIRECT and source != "silence":
@@ -74,6 +78,7 @@ class BookIntelligenceSkill(Skill):
                         "source": source,
                         "llm_used": utterance.llm_used,
                         "confidence": confidence,
+                        "uncertainty": uncertainty,
                         "routing": "direct",
                     },
                 )
@@ -95,6 +100,7 @@ class BookIntelligenceSkill(Skill):
                         "source": source,
                         "llm_used": utterance.llm_used,
                         "confidence": confidence,
+                        "uncertainty": uncertainty,
                         "routing": "llm_assisted",
                     },
                 )
@@ -109,6 +115,7 @@ class BookIntelligenceSkill(Skill):
                     "source": "silence",
                     "llm_used": False,
                     "confidence": 0.0,
+                    "uncertainty": uncertainty,
                     "routing": "honest_ignorance",
                 },
             )
@@ -118,6 +125,23 @@ class BookIntelligenceSkill(Skill):
                 handled=True,
                 response="Извините, произошла ошибка при обращении к книге. Попробуйте спросить о персонажах, темах или событиях книги.",
             )
+
+    @staticmethod
+    def _serialize_uncertainty(pulse_response) -> dict | None:
+        """UncertaintyFlag → JSON-контракт AskAnswer.uncertainty.
+
+        Повторяет сериализацию KeeperAgent.act (has_unknowns / unknown_aspects /
+        confidence_breakdown). None, когда неопределённости нет: отсутствие
+        данных не подменяется выдуманным значением.
+        """
+        u = getattr(pulse_response, "uncertainty", None)
+        if u is None:
+            return None
+        return {
+            "has_unknowns": bool(getattr(u, "has_unknowns", False)),
+            "unknown_aspects": list(getattr(u, "unknown_aspects", None) or []),
+            "confidence_breakdown": list(getattr(u, "confidence_breakdown", None) or []),
+        }
 
     def _ignorance_response(self, query: str) -> str:
         """Честный ответ, когда книга не знает."""

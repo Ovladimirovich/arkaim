@@ -250,6 +250,24 @@ class Orchestrator:
             yield "data: [DONE]\n\n"
             return
 
+        # Нормализация входа: читатель на ПЕРВЫЙ вопрос шлёт messages: []
+        # (диалоговой истории ещё нет), передавая текст вопроса в поле question.
+        # Раньше req["messages"][-1] падал с IndexError внутри генератора:
+        # StreamingResponse уже отдал заголовки 200 + text/event-stream,
+        # поэтому тело оставалось ПУСТЫМ, а читатель видел «Получен пустой ответ.».
+        messages = req.get("messages") or []
+        if not messages:
+            question = str(req.get("question") or "").strip()
+            if question:
+                messages = [{"role": "user", "content": question}]
+                req = {**req, "messages": messages}
+        if not messages:
+            # Честный кадр ошибки вместо 200 с пустым телом.
+            log.warning("stream_empty_request trace_id=%s", trace_id)
+            yield f"data: {json.dumps({'error': 'empty_request', 'message': 'Пустой запрос: не переданы ни messages, ни question.'}, ensure_ascii=False)}\n\n"
+            yield "data: [DONE]\n\n"
+            return
+
         metrics.increment("chat_started")
         ctx = SkillContext(
             messages=req["messages"],
@@ -367,8 +385,13 @@ class Orchestrator:
         """Final provenance frame before [DONE].
 
         Maps real SkillResult.metadata onto the AskAnswer field names
-        (source, pulse_confidence, llm_used) without inventing values:
-        anything the skill did not send is omitted, not defaulted.
+        (source, pulse_confidence, llm_used, confidence_state, uncertainty)
+        without inventing values: anything the skill did not send is omitted,
+        not defaulted.
+
+        confidence_state считается той же функцией KeeperAgent, что в
+        POST /book/ask: состояние НЕ выводится из confidence — оно
+        определяется источником ответа и флагами неопределённости Pulse.
         """
         if not skill_meta:
             return None
@@ -379,6 +402,20 @@ class Orchestrator:
             payload["pulse_confidence"] = skill_meta["confidence"]
         if skill_meta.get("llm_used") is not None:
             payload["llm_used"] = skill_meta["llm_used"]
+        uncertainty = skill_meta.get("uncertainty")
+        if isinstance(uncertainty, dict):
+            payload["uncertainty"] = uncertainty
+        source = skill_meta.get("source")
+        if source is not None:
+            try:
+                from agents.keeper import KeeperAgent  # noqa: PLC0415
+
+                payload["confidence_state"] = KeeperAgent._derive_confidence_state(
+                    source if isinstance(source, str) else "",
+                    uncertainty if isinstance(uncertainty, dict) else None,
+                )
+            except Exception as exc:  # агент недоступен — состояние не выдумываем
+                log.warning("confidence_state_unavailable error=%s", exc)
         if not payload:
             return None
         return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
