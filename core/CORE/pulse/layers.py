@@ -76,6 +76,31 @@ def _detect_unknown_sources() -> list[str]:
     return unknown_files
 
 
+def _build_catalog_uncertainty() -> UncertaintyFlag:
+    """Частичное знание по факту механики: catalog_text возвращает дословный
+    фрагмент книги, найденный по лексическому совпадению слов запроса.
+
+    Это честное «частичное знание» (а не недостаток оснований): фрагмент точен
+    (AUTHOR_CANON), но это не полный синтез по теме запроса — ответ заверяет
+    только сам фрагмент, а не весь вопрос. Состояние НЕ выводится арифметически
+    из confidence — оно задано явно.
+    """
+    return UncertaintyFlag(
+        has_unknowns=True,
+        unknown_aspects=[
+            "ответ — дословный фрагмент книги, найденный по лексическому "
+            "совпадению; полный синтез по теме запроса не выполнялся"
+        ],
+        confidence_breakdown=[
+            {
+                "aspect": "catalog_text",
+                "category": "AUTHOR_CANON",
+                "confidence": 0.7,
+            }
+        ],
+    )
+
+
 def _build_uncertainty_for_unknown(
     aspect_hint: str,
 ) -> UncertaintyFlag | None:
@@ -768,7 +793,7 @@ class KnowledgeLayer(BaseLayer):
                             source="knowledge:catalog_text",
                             confidence=0.7,
                             provenance=[_canon_tag("catalog", f"book text: {entry.get('source', 'book')}")],
-                            uncertainty=_build_uncertainty_for_unknown("книжный каталог — частичные данные"),
+                            uncertainty=_build_catalog_uncertainty(),
                         )
                 return None
 
@@ -810,7 +835,7 @@ class KnowledgeLayer(BaseLayer):
                     source="knowledge:catalog_text",
                     confidence=min(best_score, 0.95),
                     provenance=[_canon_tag("catalog", f"book text: {scored[0][1].get('source', 'book')}")],
-                    uncertainty=_build_uncertainty_for_unknown("книжный каталог — частичные данные"),
+                    uncertainty=_build_catalog_uncertainty(),
                 )
 
         # Поиск через ChromaDB retriever (если подключён)

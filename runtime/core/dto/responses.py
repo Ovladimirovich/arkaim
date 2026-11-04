@@ -79,6 +79,15 @@ class BookAskResponse(BaseModel):
     uncertainty: dict | None = None
     pulse_confidence: float = 1.0
     llm_used: bool = False
+    confidence_state: str | None = Field(
+        default=None,
+        description=(
+            "Состояние уверенности Pulse: "
+            "confirmed (подтверждённое знание) | partial (частичный ответ) | "
+            "insufficient (недостаточно оснований). Не является производным "
+            "от pulse_confidence."
+        ),
+    )
 
 
 class BookGenomeResponse(BaseModel):

@@ -28,6 +28,10 @@ export type SourceBadgeProps = {
   confidence?: number;
   /** AskAnswer.llm_used. */
   llmUsed?: boolean;
+  /** AskAnswer.confidence_state: confirmed | partial | insufficient. */
+  confidenceState?: string | null;
+  /** AskAnswer.uncertainty — структурированная неопределённость (необязательно). */
+  uncertainty?: { has_unknowns?: boolean; unknown_aspects?: string[] } | null;
 };
 
 type SourceMeta = { icon: React.ReactNode; color: string; label: string };
@@ -37,10 +41,14 @@ function metaOf(source: string): SourceMeta {
   if (source === 'mock') {
     return { icon: <AlertOutlined />, color: '#6b7280', label: 'Заглушка' };
   }
+  if (source === 'silence') {
+    // Pulse не нашёл оснований (вне книги). Не выдумываем — сообщаем как есть.
+    return { icon: <ThunderboltOutlined />, color: '#64748b', label: 'Нет ответа в книге' };
+  }
   if (source === 'pulse' || source.startsWith('pulse')) {
     return { icon: <DatabaseOutlined />, color: '#059669', label: 'Геном' };
   }
-  if (source.startsWith('knowledge:rag')) {
+  if (source.startsWith('knowledge:rag') || source.startsWith('knowledge:catalog')) {
     return { icon: <DatabaseOutlined />, color: '#2563eb', label: 'База знаний' };
   }
   if (source.startsWith('knowledge:theme')) {
@@ -50,6 +58,12 @@ function metaOf(source: string): SourceMeta {
   return { icon: <ThunderboltOutlined />, color: '#7c3aed', label: 'Голос книги' };
 }
 
+/** Индикатор состояния уверенности, отражающий трёхчастную шкалу. */
+const STATE_META: Record<string, { label: string; color: string }> = {
+  partial: { label: 'Частичный ответ', color: '#d97706' },
+  insufficient: { label: 'В книге нет ответа', color: '#64748b' },
+};
+
 /** Доверяем только числу 0..1; иное не показываем, чтобы не выдумывать проценты. */
 function confidencePercent(confidence?: number): number | undefined {
   return typeof confidence === 'number' && Number.isFinite(confidence) && confidence >= 0 && confidence <= 1
@@ -57,15 +71,21 @@ function confidencePercent(confidence?: number): number | undefined {
     : undefined;
 }
 
-export function SourceBadge({ source, confidence, llmUsed }: SourceBadgeProps) {
+export function SourceBadge({ source, confidence, llmUsed, confidenceState, uncertainty }: SourceBadgeProps) {
   if (!source) return null;
 
   const meta = metaOf(source);
   const percent = confidencePercent(confidence);
+  const stateMeta = confidenceState && STATE_META[confidenceState] ? STATE_META[confidenceState] : null;
+  const unknownAspects = uncertainty?.unknown_aspects;
 
   const tooltipLines = [`Источник: ${source}`];
   if (percent !== undefined) tooltipLines.push(`Уверенность Pulse: ${percent}%`);
   if (llmUsed) tooltipLines.push('LLM-синтез: включён');
+  if (stateMeta) tooltipLines.push(`Состояние: ${stateMeta.label}`);
+  if (unknownAspects && unknownAspects.length) {
+    tooltipLines.push('Причина: ' + unknownAspects.join('; '));
+  }
 
   return (
     <Tooltip title={tooltipLines.join('\n')}>
@@ -74,6 +94,11 @@ export function SourceBadge({ source, confidence, llmUsed }: SourceBadgeProps) {
           {meta.icon} {meta.label}
           {percent !== undefined ? ` · ${percent}%` : ''}
         </Tag>
+        {stateMeta && (
+          <Tag style={{ marginTop: 4, fontSize: 10, color: stateMeta.color, borderColor: stateMeta.color }}>
+            {stateMeta.label}
+          </Tag>
+        )}
         {llmUsed && (
           <Tag style={{ marginTop: 4, fontSize: 10, color: '#7c3aed', borderColor: '#7c3aed' }}>
             <ThunderboltOutlined /> AI-синтез

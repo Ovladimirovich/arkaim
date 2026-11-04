@@ -13,6 +13,10 @@ type ChatMessage = {
   pulseConfidence?: number;
   /** AskAnswer.llm_used. */
   llmUsed?: boolean;
+  /** AskAnswer.confidence_state: confirmed | partial | insufficient. */
+  confidenceState?: string | null;
+  /** AskAnswer.uncertainty — структурированная неопределённость. */
+  uncertainty?: { has_unknowns?: boolean; unknown_aspects?: string[] } | null;
   mood?: 'joy' | 'curiosity' | 'sadness' | 'doubt' | 'deep' | 'neutral';
   suggestion?: string;
 };
@@ -70,7 +74,7 @@ export function ChatBubble({ msg }: { msg: ChatMessage }) {
           )}
           {msg.source && (
             <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid #334155' }}>
-              <SourceBadge source={msg.source} confidence={msg.pulseConfidence} llmUsed={msg.llmUsed} />
+              <SourceBadge source={msg.source} confidence={msg.pulseConfidence} llmUsed={msg.llmUsed} confidenceState={msg.confidenceState} uncertainty={msg.uncertainty} />
             </div>
           )}
         </div>

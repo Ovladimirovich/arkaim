@@ -15,7 +15,7 @@ import { StateView } from '@/shared/ui/StateView';
 import Link from 'next/link';
 import type { AskAnswer, RelatedEntity } from '@/shared/api/contracts/book';
 
-type Message = { role: 'user' | 'assistant'; content: string; source?: string; time?: string; pulseConfidence?: number; llmUsed?: boolean; sessionId?: string; relatedEntities?: RelatedEntity[]; mood?: 'joy' | 'curiosity' | 'sadness' | 'doubt' | 'deep' | 'neutral'; suggestion?: string };
+type Message = { role: 'user' | 'assistant'; content: string; source?: string; time?: string; pulseConfidence?: number; llmUsed?: boolean; confidenceState?: string | null; uncertainty?: { has_unknowns?: boolean; unknown_aspects?: string[] } | null; sessionId?: string; relatedEntities?: RelatedEntity[]; mood?: 'joy' | 'curiosity' | 'sadness' | 'doubt' | 'deep' | 'neutral'; suggestion?: string };
 type ReaderProfile = { topics: Array<{ name: string; depth: number; questions: number }>; questions_total: number; last_topic: string };
 const POPULAR_QUESTIONS = [
   { q: 'Кто такой Велик?', tag: 'Персонаж' }, { q: 'Расскажи об Аркаиме', tag: 'Локация' },
@@ -78,7 +78,7 @@ function AskContent() {
         setMessages(prev => [...prev, { role: 'assistant', content: fullText || 'Получен пустой ответ.', source: sseSource, pulseConfidence: sseConfidence, llmUsed: sseLlmUsed, time: now(), sessionId, relatedEntities }]);
       } else {
         const result = await api.post<{ data: AskAnswer }>('/book/ask', { question: q, session_id: sessionId }); const data = result.data;
-        setMessages(prev => [...prev, { role: 'assistant', content: data.answer, source: data.source, pulseConfidence: data.pulse_confidence, llmUsed: data.llm_used, time: now(), sessionId, relatedEntities: data.related_entities, mood: data.mood as Message['mood'], suggestion: data.suggestion }]);
+        setMessages(prev => [...prev, { role: 'assistant', content: data.answer, source: data.source, pulseConfidence: data.pulse_confidence, llmUsed: data.llm_used, confidenceState: data.confidence_state, uncertainty: data.uncertainty, time: now(), sessionId, relatedEntities: data.related_entities, mood: data.mood as Message['mood'], suggestion: data.suggestion }]);
       }
     } catch { setPageError('Не удалось получить ответ от книги. Попробуйте ещё раз.'); }
     finally { setSending(false); setStreamingText(''); }

@@ -53,6 +53,10 @@ export interface AskAnswer {
   mood?: string;
   suggestion?: string;
   session_id?: string;
+  /** Состояние уверенности Pulse: confirmed | partial | insufficient. */
+  confidence_state?: string | null;
+  /** Структурированная неопределённость Pulse. */
+  uncertainty?: { has_unknowns?: boolean; unknown_aspects?: string[] } | null;
 }
 
 export function ask(req: AskRequest): Promise<AskAnswer> {

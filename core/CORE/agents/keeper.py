@@ -50,13 +50,19 @@ class KeeperAgent(BaseAgent):
             return {
                 "answer": "Система ещё не загрузила книгу. Попробуйте позже.",
                 "source": "pulse_unavailable",
+                "confidence_state": "insufficient",
             }
 
         if not self.pulse.is_loaded:
             self.pulse.load()
 
         if self._is_spam(question):
-            return {"answer": "", "source": "silence", "spam": True}
+            return {
+                "answer": "",
+                "source": "silence",
+                "spam": True,
+                "confidence_state": "insufficient",
+            }
 
         if self.voice:
             log.info(
@@ -85,8 +91,17 @@ class KeeperAgent(BaseAgent):
             if not identity_gate["passed"]:
                 answer_text = self._fallback_silence()
 
-        layer_used = utterance.pulse_response.source if self.voice else "pulse"
+        layer_used = (
+            utterance.pulse_response.source
+            if self.voice
+            else (response.source if response else "silence")
+        )
         confidence = utterance.pulse_response.confidence if self.voice else 1.0
+        direct_source = (
+            utterance.source
+            if self.voice
+            else (response.source if response else "silence")
+        )
         rag_source = ""
         if "rag" in layer_used or "catalog" in layer_used:
             rag_source = layer_used
@@ -101,7 +116,7 @@ class KeeperAgent(BaseAgent):
                 "metadata": {
                     "identity_gate": identity_gate,
                     "answer_length": len(answer_text),
-                    "source": utterance.source if self.voice else "pulse_direct",
+                    "source": direct_source,
                     "llm_used": utterance.llm_used if self.voice else False,
                     "layer_used": layer_used,
                     "confidence": confidence,
@@ -119,19 +134,29 @@ class KeeperAgent(BaseAgent):
         else:
             provenance = []
 
-        # Структурированная неопределённость
+        # Структурированная неопределённость (и с voice, и при прямом pulse без voice)
         uncertainty = None
-        if (
-            self.voice
-            and hasattr(utterance.pulse_response, "uncertainty")
-            and utterance.pulse_response.uncertainty
-        ):
-            u = utterance.pulse_response.uncertainty
+        pr = utterance.pulse_response if self.voice else response
+        if pr is not None and hasattr(pr, "uncertainty") and pr.uncertainty:
+            u = pr.uncertainty
             uncertainty = {
                 "has_unknowns": u.has_unknowns,
                 "unknown_aspects": u.unknown_aspects,
                 "confidence_breakdown": u.confidence_breakdown,
             }
+
+        # Три состояния честной неопределённости:
+        #   confirmed    — подтверждённое знание из книги;
+        #   partial      — частичный ответ (куски/фрагменты, неполное совпадение);
+        #   insufficient — недостаточно оснований (тишина вне книги).
+        # Состояние НЕ выводится арифметически из confidence: оно определяется
+        # фактическим источником ответа и флагами неопределённости Pulse.
+        state_source = (
+            utterance.source
+            if self.voice
+            else (response.source if response else "silence")
+        )
+        confidence_state = self._derive_confidence_state(state_source, uncertainty)
 
         # Инициатива книги — предложить уточняющий вопрос
         suggestion = self._suggest_followup(
@@ -140,7 +165,7 @@ class KeeperAgent(BaseAgent):
 
         result_payload = {
             "answer": answer_text,
-            "source": utterance.source if self.voice else "pulse",
+            "source": direct_source,
             "provenance": provenance,
             "uncertainty": uncertainty,
             "pulse_confidence": utterance.pulse_response.confidence
@@ -149,6 +174,7 @@ class KeeperAgent(BaseAgent):
             "llm_used": utterance.llm_used if self.voice else False,
             "mood": utterance.mood if self.voice else "neutral",
             "suggestion": suggestion,
+            "confidence_state": confidence_state,
         }
         # Option B, t1: внутренний канал Knowledge Context → /book/ask для
         # metadata-дельты. Роут снимает ключ ДО формирования публичного payload,
@@ -156,6 +182,22 @@ class KeeperAgent(BaseAgent):
         if self.voice and getattr(utterance, "knowledge_context", None):
             result_payload["_dialogue_context"] = utterance.knowledge_context
         return result_payload
+
+    @staticmethod
+    def _derive_confidence_state(source: str, uncertainty: dict | None) -> str:
+        """Классифицировать ответ по трём состояниям честной неопределённости.
+
+        Состояние НЕ вычисляется арифметически из confidence — оно определяется
+        фактическим источником ответа и флагами неопределённости Pulse:
+        - пустой источник или «silence» (Pulse не нашёл оснований) — insufficient;
+        - флаг has_unknowns (частичное знание) — partial;
+        - иначе — confirmed (подтверждённое знание из книги).
+        """
+        if not source or source == "silence":
+            return "insufficient"
+        if uncertainty and uncertainty.get("has_unknowns"):
+            return "partial"
+        return "confirmed"
 
     def _suggest_followup(self, answer: str, mood: str, source: str) -> str:
         """Предложить уточняющий вопрос на основе ответа и настроения."""

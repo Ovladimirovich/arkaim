@@ -23,6 +23,10 @@ type Message = {
   pulseConfidence?: number;
   /** AskAnswer.llm_used. */
   llmUsed?: boolean;
+  /** AskAnswer.confidence_state: confirmed | partial | insufficient. */
+  confidenceState?: string | null;
+  /** AskAnswer.uncertainty — структурированная неопределённость. */
+  uncertainty?: { has_unknowns?: boolean; unknown_aspects?: string[] } | null;
   mood?: 'joy' | 'curiosity' | 'sadness' | 'doubt' | 'deep' | 'neutral';
   suggestion?: string;
   relatedEntities?: RelatedEntity[];
@@ -186,6 +190,8 @@ function ChatContent() {
           source: data.source,
           pulseConfidence: data.pulse_confidence,
           llmUsed: data.llm_used,
+          confidenceState: data.confidence_state,
+          uncertainty: data.uncertainty,
           mood: data.mood as Message['mood'],
           suggestion: data.suggestion,
           relatedEntities: data.related_entities,
@@ -421,7 +427,7 @@ function ChatContent() {
                     <div style={{ color: 'var(--foreground)', fontSize: 14, lineHeight: 1.7 }}>
                       <Markdown content={msg.content} />
                     </div>
-                    <SourceBadge source={msg.source} confidence={msg.pulseConfidence} llmUsed={msg.llmUsed} />
+                    <SourceBadge source={msg.source} confidence={msg.pulseConfidence} llmUsed={msg.llmUsed} confidenceState={msg.confidenceState} uncertainty={msg.uncertainty} />
                     {msg.mood && <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 6, padding: '4px 8px', background: '#1e293b', borderRadius: 4, display: 'inline-block' }}>Настроение: {msg.mood}</div>}
                     {msg.suggestion && <div style={{ marginTop: 8, padding: '8px 12px', background: '#1e293b', borderRadius: 6, borderLeft: '3px solid #3b82f6' }}><span style={{ fontSize: 12, color: '#e2e8f0' }}>Подсказка: </span><span style={{ fontSize: 12, color: '#3b82f6', cursor: 'pointer' }} onClick={() => setInput(msg.suggestion!)}>{msg.suggestion}</span></div>}
                     {msg.relatedEntities && msg.relatedEntities.length > 0 && (
