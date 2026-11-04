@@ -59,8 +59,6 @@ class TestDevAuthDisabledByDefault:
         # DEV_AUTH_ENABLED=true the test must still verify that without that
         # variable the default is False (i.e. the code path, not the local .env).
         monkeypatch.delenv("DEV_AUTH_ENABLED", raising=False)
-        import importlib
-        import shared_config
         # Re-evaluate the class attribute after removing the env var.
         old_value = SharedSettings.DEV_AUTH_ENABLED
         SharedSettings.DEV_AUTH_ENABLED = os.getenv("DEV_AUTH_ENABLED", "false").strip().lower() in ("1", "true", "yes", "on")
