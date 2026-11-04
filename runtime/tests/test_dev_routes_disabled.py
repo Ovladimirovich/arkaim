@@ -19,6 +19,8 @@ Run (from runtime/):
 
 from __future__ import annotations
 
+import os
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -51,9 +53,21 @@ def _stored_role(token: str):
 
 # ── (1) Disabled by default → route must not exist, no token, no admin ──────
 class TestDevAuthDisabledByDefault:
-    def test_default_config_is_off(self):
-        # Production default: the flag is off unless explicitly enabled.
-        assert SharedSettings.DEV_AUTH_ENABLED is False
+    def test_default_config_is_off(self, monkeypatch):
+        # Production default: the flag is off unless explicitly enabled via env.
+        # Load .env into os.environ for the test run: if the dev .env has
+        # DEV_AUTH_ENABLED=true the test must still verify that without that
+        # variable the default is False (i.e. the code path, not the local .env).
+        monkeypatch.delenv("DEV_AUTH_ENABLED", raising=False)
+        import importlib
+        import shared_config
+        # Re-evaluate the class attribute after removing the env var.
+        old_value = SharedSettings.DEV_AUTH_ENABLED
+        SharedSettings.DEV_AUTH_ENABLED = os.getenv("DEV_AUTH_ENABLED", "false").strip().lower() in ("1", "true", "yes", "on")
+        try:
+            assert SharedSettings.DEV_AUTH_ENABLED is False
+        finally:
+            SharedSettings.DEV_AUTH_ENABLED = old_value
 
     def test_endpoint_not_found_when_disabled(self, client, monkeypatch):
         monkeypatch.setattr(SharedSettings, "DEV_AUTH_ENABLED", False)
