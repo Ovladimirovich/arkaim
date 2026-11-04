@@ -51,7 +51,7 @@ test.describe('Reader history — Этап 5', () => {
    * Отправить тестовый вопрос через /book/ask, чтобы в history появились данные.
    * Используем cookie (JWT) для авторизации запроса.
    */
-  async function seedHistoryWithQuestion(context: import('@playwright/test').APIRequestContext) {
+  async function seedHistoryWithQuestion(context: import('@playwright/test').BrowserContext) {
     const askResp = await context.request.post('/book/ask', {
       data: { question: 'Кто такой Велик?', session_id: `e2e-${Date.now()}` },
     });
