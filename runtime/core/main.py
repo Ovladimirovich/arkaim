@@ -45,8 +45,11 @@ from core.providers.openrouter import OpenRouterProvider
 from observability.metrics import metrics
 
 # ── In-memory rate limiter ──────────────────────────────
+# Лимит настраивается через env: полный локальный e2e-прогон (24 теста,
+# каждый со своей регистрацией) укладывается в 100/мин только в самом
+# начале — хвост падает по 429. Прод-значение по умолчанию не меняется.
 _rate_limits: dict[str, list[float]] = {}
-RATE_LIMIT_MAX_REQUESTS = 100
+RATE_LIMIT_MAX_REQUESTS = int(os.getenv("RATE_LIMIT_MAX_REQUESTS", "100"))
 RATE_LIMIT_WINDOW_SECONDS = 60
 
 
