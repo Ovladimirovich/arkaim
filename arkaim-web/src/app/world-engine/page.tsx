@@ -241,6 +241,11 @@ export default function WorldEnginePage() {
     const entityId = new URLSearchParams(window.location.search).get('entity_id');
     if (!entityId) return;
     const timer = setTimeout(() => {
+      // Клиентский переход из чата (EntityCard → router.push): URL обновляется
+      // ПОСЛЕ первого рендера, поэтому инициализатор activeTab не видит
+      // ?entity_id и вкладка остаётся «Поиск». Открываем вкладку здесь — иначе
+      // читатель видит пустую таблицу, хотя контекст сущности уже загружен.
+      setActiveTab('context');
       const el = document.getElementById('context-entity-id') as HTMLInputElement | null;
       if (el) el.value = entityId;
       void loadEntityContext(entityId);

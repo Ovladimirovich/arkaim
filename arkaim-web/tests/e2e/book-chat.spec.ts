@@ -77,6 +77,11 @@ test.describe('Чат с книгой: первый вопрос', () => {
     if ((await worldButton.count()) > 0) {
       await worldButton.click();
       await expect(page).toHaveURL(/\/world-engine\?/, { timeout: 15_000 });
+      // Регрессия клиентского перехода: панель «Контекст сущности» открывается
+      // сразу (при маршрутизации из чата URL обновляется после первого рендера),
+      // а не только при прямой загрузке страницы.
+      await expect(page.getByText('Контекст сущности')).toBeVisible({ timeout: 15_000 });
+      await expect(page.getByRole('button', { name: 'Временной контекст' })).toBeVisible({ timeout: 15_000 });
     }
   });
 });
