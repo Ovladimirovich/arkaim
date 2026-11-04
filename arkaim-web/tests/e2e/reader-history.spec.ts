@@ -10,13 +10,58 @@ function firstContentLocator(page: import('@playwright/test').Page, content: str
   return page.getByText(content, { exact: true }).first();
 }
 
+/**
+ * Auth setup: новый проект использует POST /auth/register вместо устаревшего /api/auth/dev-login.
+ * Регистрируем пользователя с уникальным username и сохраняем cookie в storage state.
+ * Для проверки истории и статистики — сначала отправляем вопрос через /book/ask,
+ * чтобы memory store имел данные для отображения.
+ */
 test.describe('Reader history — Этап 5', () => {
+  let cookie: { name: string; value: string } | null = null;
+
   test.beforeEach(async ({ context }) => {
-    const response = await context.request.post('/api/auth/dev-login');
-    expect(response.ok()).toBeTruthy();
+    // Регистрируем нового пользователя
+    const registerResp = await context.request.post('/auth/register', {
+      data: { username: `reader_${Date.now()}`, display_name: 'Reader Test' },
+    });
+    expect(registerResp.ok()).toBeTruthy();
+    const registerPayload = await registerResp.json();
+    expect(registerPayload.ok).toBeTruthy();
+
+    // Извлекаем cookie из Set-Cookie и применяем к контексту
+    const setCookie = registerResp.headers()['set-cookie'];
+    if (setCookie) {
+      const cookieName = setCookie.split('=')[0];
+      const cookieValue = setCookie.split(';')[0].split('=').slice(1).join('=');
+      cookie = { name: cookieName, value: cookieValue };
+      await context.addCookies([{
+        name: cookieName,
+        value: cookieValue,
+        domain: 'localhost',
+        path: '/',
+      }]);
+    }
   });
 
+  test.afterEach(() => {
+    cookie = null;
+  });
+
+  /**
+   * Отправить тестовый вопрос через /book/ask, чтобы в history появились данные.
+   * Используем cookie (JWT) для авторизации запроса.
+   */
+  async function seedHistoryWithQuestion(context: import('@playwright/test').APIRequestContext) {
+    const askResp = await context.request.post('/book/ask', {
+      data: { question: 'Кто такой Велик?', session_id: `e2e-${Date.now()}` },
+    });
+    expect(askResp.ok()).toBeTruthy();
+  }
+
   test('отображает реальные вопросы и статистику', async ({ context, page }) => {
+    // Сначала сеем историю, чтобы была data
+    await seedHistoryWithQuestion(context);
+
     const historyResponsePromise = waitForHistory(page);
     await page.goto('/history');
 
@@ -54,7 +99,10 @@ test.describe('Reader history — Этап 5', () => {
     await expect(sessionsValue).toHaveCSS('color', /^rgb\(/);
   });
 
-  test('данные сохраняются после F5', async ({ page }) => {
+  test('данные сохраняются после F5', async ({ context, page }) => {
+    // Сначала сеем историю
+    await seedHistoryWithQuestion(context);
+
     const initialResponsePromise = waitForHistory(page);
     await page.goto('/history');
     const initialPayload = await (await initialResponsePromise).json();
@@ -72,6 +120,9 @@ test.describe('Reader history — Этап 5', () => {
   });
 
   test('фильтр выбирает сессию и показывает диалог', async ({ context, page }) => {
+    // Сначала сеем историю
+    await seedHistoryWithQuestion(context);
+
     const sessionsResponse = await context.request.get('/book/reader/history/sessions');
     expect(sessionsResponse.ok()).toBeTruthy();
 

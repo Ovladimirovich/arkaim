@@ -16,8 +16,22 @@ type ChainPayload = {
 
 test.describe('Сквозная навигация World → Temporal', () => {
   test.beforeEach(async ({ context }) => {
-    const response = await context.request.post('/api/auth/dev-login');
-    expect(response.ok()).toBeTruthy();
+    // Регистрируем нового пользователя (вместо устаревшего /api/auth/dev-login)
+    const registerResp = await context.request.post('/auth/register', {
+      data: { username: `temporal_${Date.now()}`, display_name: 'Temporal Test' },
+    });
+    expect(registerResp.ok()).toBeTruthy();
+    const setCookie = registerResp.headers()['set-cookie'];
+    if (setCookie) {
+      const cookieName = setCookie.split('=')[0];
+      const cookieValue = setCookie.split(';')[0].split('=').slice(1).join('=');
+      await context.addCookies([{
+        name: cookieName,
+        value: cookieValue,
+        domain: 'localhost',
+        path: '/',
+      }]);
+    }
   });
 
   test('/world-engine открывает сущность и ведет в /temporal', async ({ page }) => {

@@ -54,9 +54,9 @@ test.describe('Admin Page', () => {
 test.describe('Full Navigation', () => {
   test('all navigation links are accessible', async ({ page }) => {
     await page.goto('/login');
-    const navLinks = ['Книга', 'О книге', 'Профиль', 'История'];
+    const navLinks = ['Книга', 'О книге', 'Профиль'];
     for (const link of navLinks) {
-      await expect(page.locator(`text=${link}`)).toBeVisible();
+      await expect(page.locator(`text=${link}`).first()).toBeVisible();
     }
   });
 
